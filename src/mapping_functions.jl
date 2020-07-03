@@ -16,16 +16,6 @@
 using ProgressMeter
 using Unitful
 
-@inline function find_position_periodic(pos::Vector{Float64}, k::Int64, boxsize::Float64)
-
-    x = !(k & 0x1) ? pos[1] : ( pos[1] > 0.0 ? pos[1] - boxsize : pos[1] + boxsize)
-    y = !(k & 0x2) ? pos[2] : ( pos[2] > 0.0 ? pos[2] - boxsize : pos[2] + boxsize)
-    z = !(k & 0x4) ? pos[3] : ( pos[3] > 0.0 ? pos[3] - boxsize : pos[3] + boxsize)
-
-    return [x, y, z]
-end
-
-
 @inline function get_d_hsml_2D(dx::Float64, dy::Float64, hsml_inv::Float64)
     sqrt( dx*dx + dy*dy ) * hsml_inv
 end
@@ -55,14 +45,13 @@ end
 end
 
 @inline function find_max_pixel(pos::Float64, hsml::Float64,
-                                minCoords::AbstractFloat, pixsize_inv::Float64,
+                                minCoords::AbstractFloat, pixsize_inv::Float64, 
                                 max_pixel::Integer)
 
-    pix = floor(Int64, (pos + hsml - minCoords) * pixsize_inv )
+    pix = floor(Int64, (pos + hsml  - minCoords) * pixsize_inv )
 
     return min(pix, max_pixel)
 end
-
 
 function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
                        param::mappingParameters, kernel,
@@ -93,7 +82,8 @@ function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
 
     #max_pixel = [length(param.x), length(param.y)]
 
-    cen = 0.5 .* [ param.x_size, param.y_size, param.z_size ]
+    # cen = 0.5 * param.pixelSideLength
+    #cen = 0.5 * param.x_size
 
     particles_in_image = 0
 
@@ -125,10 +115,10 @@ function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
         # only calculate the properties if the particle is in the image
         if in_image
 
-            # shift particles
-            @inbounds for dim = 1:3
-                pos[dim] += cen[dim]
-            end
+            # # shift particles
+            # @inbounds for dim = 1:3
+            #     pos[dim] += cen
+            # end
             
             # store this here for performance increase
             pixsize_inv = 1.0/param.pixelSideLength
@@ -173,7 +163,6 @@ function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
                 kernel_tab = zeros(N_distr)
                 d1_tab     = zeros(N_distr)
                 d2_tab     = zeros(N_distr)
-                dx_tab     = zeros(N_distr)
 
                 # weights table
                 wit1    = 0.
@@ -194,16 +183,16 @@ function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
                     @inbounds for j = pixmin[2]:pixmax[2]
 
                         dy = pos[2] - ( j - 0.5 ) * param.pixelSideLength
-                        djmin = max(xp1, j - 1.0)
-                        djmax = min(xp2, j)
+                        djmin = max(yp1, j - 1.0)
+                        djmax = min(yp2, j)
 
                         d1 = dimax - dimin
                         d2 = djmax - djmin
 
                         # compute distance to pixel center in units of hsml
-                        dx_tab[N_count] = get_d_hsml_2D(dx, dy, hsml_inv)
+                        dist = get_d_hsml_2D(dx, dy, hsml_inv)
                         # update pixel value
-                        wi = kernel_value_2D(kernel, dx_tab[N_count], hsml_inv)
+                        wi = kernel_value_2D(kernel, dist, hsml_inv)
 
                         wit1 += wi * d1 * d2
                         witd += d1 * d2
@@ -248,6 +237,9 @@ function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
 
             # second loop to calculate value
             @inbounds for i = pixmin[1]:pixmax[1]
+                if !conserve_quantities
+                    dx = pos[1] - ( i - 0.5 ) * param.pixelSideLength
+                end
 
                 @inbounds for j = pixmin[2]:pixmax[2]
 
@@ -255,7 +247,6 @@ function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
                     if !conserve_quantities
 
                         # calculate simple distance to pixel center
-                        dx = pos[1] - ( i - 0.5 ) * param.pixelSideLength
                         dy = pos[2] - ( j - 0.5 ) * param.pixelSideLength
                         distance_hsml = get_d_hsml_2D(dx, dy, hsml_inv)
 
@@ -263,7 +254,7 @@ function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
                         image[i, j] += bin_prefac * kernel_value_2D(kernel, distance_hsml, hsml_inv)
                     else
 
-                        if wit1 <= 1
+                        if wit1 <= 0
                             wi = fak * fak_hsml
                         else
                             wi = kernel_tab[N_count] * fak * fak_hsml
@@ -271,6 +262,9 @@ function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
                         # update pixel value with weights
                         image[i, j] += bin_q * wi *
                                        d1_tab[N_count] * d2_tab[N_count] * d3
+
+                        # println(bin_q, " ", wi, " ", d1_tab[N_count], " ", d2_tab[N_count], " ", d3 )
+                        # return
                         N_count += 1
                     end
 
@@ -295,6 +289,8 @@ function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
 
    return image
 end
+
+
 
 
 function sphMapping_3D(Pos, HSML, M, ρ, Bin_Quant;
@@ -324,7 +320,7 @@ function sphMapping_3D(Pos, HSML, M, ρ, Bin_Quant;
     minCoords = [param.x_lim[1], param.y_lim[1], param.z_lim[1]]
     maxCoords = [param.x_lim[2], param.y_lim[2], param.z_lim[2]]
 
-    cen = 0.5 .* [ param.x_size, param.y_size, param.z_size ]
+    #cen = 0.5 * param.pixelSideLength
 
     particles_in_image = 0
 
@@ -359,9 +355,9 @@ function sphMapping_3D(Pos, HSML, M, ρ, Bin_Quant;
         if in_image
 
             # shift particles
-            @inbounds for dim = 1:3
-                pos[dim] += cen[dim]
-            end
+            # @inbounds for dim = 1:3
+            #     pos[dim] += cen
+            # end
 
             # store this here for performance increase
             pixsize_inv = 1.0/param.pixelSideLength
@@ -438,8 +434,8 @@ function sphMapping_3D(Pos, HSML, M, ρ, Bin_Quant;
                         @inbounds for k = pixmin[3]:pixmax[3]
 
                             dz = pos[3] - ( k - 0.5 ) * param.pixelSideLength
-                            dkmin = max(xp1, k - 1.0)
-                            dkmax = min(xp2, k)
+                            dkmin = max(zp1, k - 1.0)
+                            dkmax = min(zp2, k)
 
                             d1 = dimax - dimin
                             d2 = djmax - djmin
