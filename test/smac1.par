@@ -1,0 +1,118 @@
+#=============================================================
+# Input file
+#=============================================================
+
+SIM_FORMAT = 4
+
+#**** Input file
+USE_KEYS = 0
+OUTPUT_DIR = 
+SNAP_BASE = 
+
+SNAP_FILE = 
+
+#**** Prefix of the output files:
+PREFIX_OUT = 
+
+
+#**** Halo ID
+HALO_ID = 0
+
+SNAP_START = 0
+SNAP_END   = 0
+
+INITIAL_Z = 0.0
+IMAGE_Z   = 0.0
+
+FILE_FORMAT = 4
+
+FILE_HEADER = 1
+
+KERNEL_TYPE = 3
+
+PART_DISTR = 1
+
+IMG_XY_UNITS = 2
+IMG_XY_SIZE  = 20.0
+
+IMG_Z_UNITS = 2
+IMG_Z_SIZE  = 10.0
+FILL_CARROT = 0.
+
+IMG_SIZE = 1024
+
+SMOOTH_UNITS = 0
+SMOOTH_FWHM  = 5.
+
+NSIDE = 8
+
+MIN_DIST =   5000.
+MAX_DIST = 420000.
+
+OUTPUT_MAP = 1
+OUTPUT_SUB = 1
+
+METAL_SPECIES = 0
+
+TEMP_UNIT = 1
+
+TEMP_CUT = 0.5
+
+XRAY_E0 = 0.5
+XRAY_E1 = 2.
+
+X_TABLES =
+
+FRQ_ZS = 300.
+
+#**** Input for Radio Maps
+#XCRP_TABLE_PATH gives the change of XCRP over radius.
+ECRP_MIN = 1e9
+FRQ_Pnu = 1.4e9
+XCRP = 0.01
+XCRP_TABLE_PATH = ~/
+B_TABLE_PATH = ~/
+KERNEL_TABLE_PATH =
+GAM_nu = 1.25
+#XCRP_TABLE_FILE_FMT = (1F8.6,2X,1F14.6)
+
+#energies in GeV
+E_gam = 1e1
+E_gam_min = 1e-2
+E_gam_max = 30e3
+
+# Number of momentum bins for CR model
+CR_nbins = 24
+CR_pmin = 1.0
+CR_pmax = 1.0e6
+CR_subsamples = 10
+CR_DSlope = 1.0e-6
+
+GIVE_MORE_INFO = 0
+
+PROJECT       = 1
+
+CENTER_MOTION = 0
+
+REMOVE_LOCAL_GROUP_VEL = 0
+
+CENTER = 1
+
+CENTER_X = 0.0
+CENTER_Y = 0.0
+CENTER_Z = 0.0
+
+PERIODIC = 1
+
+LIGHTCONE = 0
+X_ORIGIN = 0.
+Y_ORIGIN = 0.
+Z_ORIGIN = 0.
+OPEN_ANGLE = 1.0
+
+MAIN_PROG = /afs/mpa/project/hydrosims/Hutt/g676/csf/Post/main_prog.a_gas.gv
+
+HUBBLE = 0.7
+OMEGA  = 0.3
+LAMBDA = 0.7
+
