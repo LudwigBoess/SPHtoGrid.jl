@@ -1,4 +1,8 @@
-using SPHtoGrid, Test, DelimitedFiles, GadgetIO
+using Distributed
+addprocs(2)
+
+@everywhere using SPHtoGrid, Test, DelimitedFiles, GadgetIO
+
 
 @testset "SPH Kernels" begin
 
@@ -81,7 +85,7 @@ end
                                     24, 1.0, 1.e6, 10,
                                     1, 0.0, 0.0, 0.0)
 
-    # @test_warn "Read error: Incorrect image format!" read_smac1_binary_image(joinpath(dirname(@__FILE__), "image.dat"))
+    # @test_throws ErrorException("Read error: Incorrect image format!") read_smac1_binary_image(joinpath(dirname(@__FILE__), "snap_050"))
 
     filename = joinpath(dirname(@__FILE__), "Smac1.pix")
     info = read_smac1_binary_info(filename)
@@ -99,12 +103,12 @@ end
 
 @testset "SPH mappingParameters" begin
 
-    # @test_warn "Giving a center position requires extent in x, y and z direction." mappingParameters()
-    #
-    # @test_warn "Please specify pixelSideLenght or number of pixels!" mappingParameters(center=[0.0, 0.0, 0.0],
-    #                                                                                    xlim = [-1.0, 1.0],
-    #                                                                                    ylim = [-1.0, 1.0],
-    #                                                                                    zlim = [-1.0, 1.0])
+    @test_throws ErrorException("Giving a center position requires extent in x, y and z direction.") mappingParameters()
+    
+    @test_throws ErrorException("Please specify pixelSideLenght or number of pixels!") mappingParameters(center=[0.0, 0.0, 0.0],
+                                                                                       x_lim = [-1.0, 1.0],
+                                                                                       y_lim = [-1.0, 1.0],
+                                                                                       z_lim = [-1.0, 1.0])
 
     @test_nowarn mappingParameters(center=[0.0, 0.0, 0.0],
                                     x_lim = [-1.0, 1.0],
@@ -121,6 +125,10 @@ end
 
 @testset "SPH Mapping" begin
 
+    @info "SPH Mapping tests take a while..."
+
+    @info "Data read-in."
+    
     snap_file = joinpath(dirname(@__FILE__), "snap_050")
 
     h = head_to_obj(snap_file)
@@ -149,7 +157,8 @@ end
     par = mappingParameters(center = [3.0, 3.0, 3.0],
 							x_size = 6.0, y_size = 6.0, z_size = 6.0,
                             Npixels = 500)
-                            
+    
+    @info "Single core, no unit conservation."
     d = sphMapping(x, hsml, m, rho, bin_quantity,
 						  param=par, kernel=kernel,
 						  conserve_quantities=false,
@@ -163,5 +172,28 @@ end
     @test d[  1,  1] ≈ d_ideal[1, 1]
     @test d[ 30, 32] ≈ d_ideal[30, 32]
     @test d[117, 92] ≈ d_ideal[117, 92]
+
+
+    # @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity,
+	# 					  param=par, kernel=kernel,
+	# 					  conserve_quantities=false,
+	# 					  parallel = false,
+    #                       show_progress=true)
+
+    @info "Single core, unit conservation."
+    @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity,
+						  param=par, kernel=kernel,
+						  conserve_quantities=true,
+						  parallel = false,
+                          show_progress=false)
+
+                          
+    
+    @info "Multicore, unit conservation."
+    @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity,
+						  param=par, kernel=kernel,
+						  conserve_quantities=false,
+						  parallel = true,
+						  show_progress=false)
 
 end
