@@ -28,9 +28,9 @@ end
 # kernel values
 @inline function kernel_value_2D(kernel::Cubic, u::Float64, h_inv::Float64)
 
-    n = kernel.norm_3D * h_inv^2
+    @fastmath n = kernel.norm_3D * h_inv^2
 
-    if u < 0.5
+    @fastmath if u < 0.5
         return ( 1.0 - 6.0 * (1.0 - u) * u^2) * n
     elseif u < 1.0
         return ( 2.0 * (1.0 - u) * (1.0 - u) * (1.0 - u)) * n
@@ -42,9 +42,9 @@ end
 
 @inline function kernel_value_3D(kernel::Cubic, u::Float64, h_inv::Float64)
 
-    n = kernel.norm_3D * h_inv^3
+    @fastmath n = kernel.norm_3D * h_inv^3
 
-    if u < 0.5
+    @fastmath if u < 0.5
         return ( 1.0 + 6.0 * (u - 1.0) * u^2) * n
     elseif u < 1.0
         return ( 2.0 * (1.0 - u) * (1.0 - u) * (1.0 - u)) * n
@@ -71,9 +71,9 @@ end
 # kernel values
 @inline function kernel_value_2D(kernel::Quintic, u::Float64, h_inv::Float64)
 
-    n = kernel.norm_2D * h_inv^2
+    @fastmath n = kernel.norm_2D * h_inv^2
 
-    if u < 1.0/3.0
+    @fastmath if u < 1.0/3.0
         u_m1  = ( 1.0 - u )
         u_m23 = ( 2.0/3.0 - u )
         u_m13 = ( 1.0/3.0 - u )
@@ -93,9 +93,9 @@ end
 
 @inline function kernel_value_3D(kernel::Quintic, u::Float64, h_inv::Float64)
 
-    n = kernel.norm_3D * h_inv^3
+    @fastmath n = kernel.norm_3D * h_inv^3
 
-    if u < 1.0/3.0
+    @fastmath if u < 1.0/3.0
         u_m1  = ( 1.0 - u )
         u_m23 = ( 2.0/3.0 - u )
         u_m13 = ( 1.0/3.0 - u )
@@ -130,7 +130,7 @@ end
 # kernel values
 @inline function kernel_value_2D(kernel::WendlandC4, u::Float64, h_inv::Float64)
 
-    if u < 1.0
+    @fastmath if u < 1.0
         n = kernel.norm_2D * h_inv^2
         u_m1 = 1.0 - u
         u_m1_2 = u_m1 * u_m1  # (1.0 - u)^2
@@ -144,7 +144,7 @@ end
 
 @inline function kernel_value_3D(kernel::WendlandC4, u::Float64, h_inv::Float64)
 
-    if u < 1.0
+    @fastmath  if u < 1.0
         n = kernel.norm_3D * h_inv^3
         u_m1 = 1.0 - u
         u_m1_2 = u_m1 * u_m1  # (1.0 - u)^2
@@ -173,9 +173,9 @@ end
 # kernel values
 @inline function kernel_value_2D(kernel::WendlandC6, u::Float64, h_inv::Float64)
 
-    if u < 1.0
+    @fastmath if u < 1.0
         n = kernel.norm_2D * h_inv^2
-        u_m1 = 1.0 - u
+        u_m1 = (1.0 - u)
         u_m1 = u_m1 * u_m1  # (1.0 - u)^2
         u_m1 = u_m1 * u_m1  # (1.0 - u)^4
         u_m1 = u_m1 * u_m1  # (1.0 - u)^8
@@ -189,7 +189,7 @@ end
 
 @inline function kernel_value_3D(kernel::WendlandC6, u::Float64, h_inv::Float64)
 
-    if u < 1.0
+    @fastmath if u < 1.0
         n = kernel.norm_3D * h_inv^3
         u_m1 = 1.0 - u
         u_m1 = u_m1 * u_m1  # (1.0 - u)^2
