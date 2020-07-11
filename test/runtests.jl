@@ -157,6 +157,8 @@ end
     par = mappingParameters(center = [3.0, 3.0, 3.0],
 							x_size = 6.0, y_size = 6.0, z_size = 6.0,
                             Npixels = 500)
+
+    @info "2D"
     
     @info "Single core, no unit conservation."
     d = sphMapping(x, hsml, m, rho, bin_quantity,
@@ -194,6 +196,16 @@ end
 						  param=par, kernel=kernel,
 						  conserve_quantities=false,
 						  parallel = true,
-						  show_progress=false)
+                          show_progress=false)
+                          
+    # @info "3D"
+
+    # @info "Single core, no unit conservation."
+    # @test_nowarn  sphMapping(x, hsml, m, rho, bin_quantity,
+	# 					  param=par, kernel=kernel,
+	# 					  conserve_quantities=false,
+	# 					  parallel = false,
+    #                       show_progress=false,
+    #                       dimensions=3)
 
 end
