@@ -19,6 +19,24 @@ module SPHtoGrid
            write_smac1_par,
            write_smac2_par
 
+
+    """ 
+    'Domain decomposition':
+    Calculate array slices for each worker.
+    Could be done better!
+    """
+    function domain_decomposition(N::Int64, N_workers::Int64)
+
+        batch = Array{typeof(1:2)}(undef, N_workers)
+        size = Int(floor(N/N_workers))
+        @inbounds for i = 1:N_workers-1
+            batch[i] = 1+(i-1)*size:i*size
+        end
+        batch[N_workers] = 1 + (N_workers-1)*size:N
+
+        return batch
+    end
+
     """
         sphMapping(Pos, HSML, M, ρ, Bin_Quant;
                 param::mappingParameters,
@@ -66,12 +84,7 @@ module SPHtoGrid
 
                 # 'Domain decomposition':
                 # calculate array slices for each worker
-                batch = Array{typeof(1:2)}(undef, nworkers())
-                size = Int(floor(N/nworkers()))
-                @inbounds for i = 1:nworkers()-1
-                    batch[i] = 1+(i-1)*size:i*size
-                end
-                batch[nworkers()] = 1 + (nworkers()-1)*size:N
+                batch = domain_decomposition(N, nworkers())
 
                 # start remote processes
                 for (i, id) in enumerate(workers())
@@ -100,12 +113,7 @@ module SPHtoGrid
 
                 # 'Domain decomposition':
                 # calculate array slices for each worker
-                batch = Array{typeof(1:2)}(undef, nworkers())
-                size = Int(floor(N/nworkers()))
-                @inbounds for i = 1:nworkers()-1
-                    batch[i] = 1+(i-1)*size:i*size
-                end
-                batch[nworkers()] = 1 + (nworkers()-1)*size:N
+                batch = domain_decomposition(N, nworkers())
 
                 # start remote processes
                 for (i, id) in enumerate(workers())
