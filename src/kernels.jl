@@ -83,7 +83,6 @@ end
 
 Datatype for quintic sph spline.
 """
-# struct
 struct Quintic <: SPHKernel
     n_neighbours::Int64
     norm_2D::Float64
@@ -94,9 +93,9 @@ struct Quintic <: SPHKernel
 end
 
 """
-    kernel_value_2D(kernel::Cubic, u::Float64, h_inv::Float64)
+    kernel_value_2D(kernel::Quintic, u::Float64, h_inv::Float64)
 
-Evaluate cubic spline at position ``u = \frac{x}{h}``.
+Evaluate quintic spline at position ``u = \frac{x}{h}``.
 """
 @inline function kernel_value_2D(kernel::Quintic, u::Float64, h_inv::Float64)
 
@@ -120,6 +119,11 @@ Evaluate cubic spline at position ``u = \frac{x}{h}``.
 
 end
 
+"""
+    kernel_value_3D(kernel::Quintic, u::Float64, h_inv::Float64)
+
+Evaluate quintic spline at position ``u = \frac{x}{h}``.
+"""
 @inline function kernel_value_3D(kernel::Quintic, u::Float64, h_inv::Float64)
 
     @fastmath n = kernel.norm_3D * h_inv^3
@@ -144,9 +148,12 @@ end
 
 
 """
-            Wendland C4
+    struct WendlandC4 <: SPHKernel
+        n_neighbours::Int64
+        norm_2D::Float64
+        norm_3D::Float64
+    end
 """
-# struct
 struct WendlandC4 <: SPHKernel
     n_neighbours::Int64
     norm_2D::Float64
@@ -156,7 +163,11 @@ struct WendlandC4 <: SPHKernel
     end
 end
 
-# kernel values
+"""
+    kernel_value_2D(kernel::WendlandC4, u::Float64, h_inv::Float64)
+
+Evaluate WendlandC4 spline at position ``u = \frac{x}{h}``.
+"""
 @inline function kernel_value_2D(kernel::WendlandC4, u::Float64, h_inv::Float64)
 
     @fastmath if u < 1.0
@@ -171,6 +182,11 @@ end
 
 end
 
+"""
+    kernel_value_3D(kernel::WendlandC4, u::Float64, h_inv::Float64)
+
+Evaluate WendlandC4 spline at position ``u = \frac{x}{h}``.
+"""
 @inline function kernel_value_3D(kernel::WendlandC4, u::Float64, h_inv::Float64)
 
     @fastmath  if u < 1.0
@@ -187,9 +203,12 @@ end
 
 
 """
-            Wendland C6
+    struct WendlandC6 <: SPHKernel
+        n_neighbours::Int64
+        norm_2D::Float64
+        norm_3D::Float64
+    end
 """
-# struct
 struct WendlandC6 <: SPHKernel
     n_neighbours::Int64
     norm_2D::Float64
@@ -199,7 +218,11 @@ struct WendlandC6 <: SPHKernel
     end
 end
 
-# kernel values
+"""
+    kernel_value_2D(kernel::WendlandC6, u::Float64, h_inv::Float64)
+
+Evaluate WendlandC6 spline at position ``u = \frac{x}{h}``.
+"""
 @inline function kernel_value_2D(kernel::WendlandC6, u::Float64, h_inv::Float64)
 
     @fastmath if u < 1.0
@@ -216,6 +239,11 @@ end
 
 end
 
+"""
+    kernel_value_3D(kernel::WendlandC6, u::Float64, h_inv::Float64)
+
+Evaluate WendlandC6 spline at position ``u = \frac{x}{h}``.
+"""
 @inline function kernel_value_3D(kernel::WendlandC6, u::Float64, h_inv::Float64)
 
     @fastmath if u < 1.0
