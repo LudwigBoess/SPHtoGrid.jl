@@ -21,8 +21,9 @@ module SPHtoGrid
 
 
     """ 
-    'Domain decomposition':
-    Calculate array slices for each worker.
+        domain_decomposition(N::Int64, N_workers::Int64)
+
+    Calculate relevant array slices for each worker.
     Could be done better!
     """
     function domain_decomposition(N::Int64, N_workers::Int64)
@@ -36,6 +37,44 @@ module SPHtoGrid
 
         return batch
     end
+
+    """
+        check_center_and_move_particles(x, par::mappingParameters)
+    
+    Mapping only works if all coordinates are positive. This function shifts the particles into a positive coordinate region.
+    """
+    function check_center_and_move_particles(x, par::mappingParameters)
+
+        cen = par.center
+        xlim = par.x_lim
+        ylim = par.y_lim
+        zlim = par.z_lim
+        shift = 0.0
+        
+        if xlim[1] < 0
+            shift = abs(xlim[1])
+            xlim   .+= shift
+            cen[1]  += shift
+            x[:,1] .+= shift
+        end
+
+        if ylim[1] < 0
+            shift = abs(ylim[1])
+            ylim   .+= shift
+            cen[2]  += shift
+            x[:,2] .+= shift
+        end
+
+        if zlim[1] < 0
+            shift = abs(zlim[1])
+            zlim   .+= shift
+            cen[3]  += shift
+            x[:,3] .+= shift
+        end
+
+        return x, mappingParameters(center=cen, x_lim=xlim, y_lim=ylim, z_lim=zlim, Npixels=maximum(par.Npixels))
+    end
+
 
     """
         sphMapping(Pos, HSML, M, ρ, Bin_Quant;
@@ -66,8 +105,11 @@ module SPHtoGrid
                         kernel::SPHKernel,
                         show_progress::Bool=true,
                         conserve_quantities::Bool=false,
-                        parallel::Bool=true,
+                        parallel::Bool=false,
                         dimensions::Int=2)
+
+        # First check if all particles are in a positive region and shift them if they are not
+        Pos, param = check_center_and_move_particles(Pos, param)
 
         if (dimensions == 2)
 
