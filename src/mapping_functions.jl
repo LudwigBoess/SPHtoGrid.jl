@@ -16,15 +16,33 @@
 using ProgressMeter
 using Unitful
 
+"""
+    get_d_hsml_2D( dx::Float64, dy::Float64,
+                   hsml_inv::Float64 )
+
+Computes the distance in 2D to the pixel center in units of the kernel support.
+"""
 @inline function get_d_hsml_2D(dx::Float64, dy::Float64, hsml_inv::Float64)
     @fastmath sqrt( dx*dx + dy*dy ) * hsml_inv
 end
 
+"""
+    get_d_hsml_3D( dx::Float64, dy::Float64, dz::Float64,
+                   hsml_inv::Float64 )
+
+Computes the distance in 3D to the pixel center in units of the kernel support.
+"""
 @inline function get_d_hsml_3D(dx::Float64, dy::Float64, dz::Float64,
                                hsml_inv::Float64)
     @fastmath sqrt( dx*dx + dy*dy + dz*dz ) * hsml_inv
 end
 
+"""
+    check_in_image( pos::Float64, hsml::Float64,
+                    minCoords::Float64, maxCoords::Float64 )
+
+Checks if a particle is in the image frame.
+"""
 @inline function check_in_image(pos::Float64, hsml::Float64,
                                 minCoords::Float64, maxCoords::Float64)
 
@@ -35,6 +53,13 @@ end
     end
 end
 
+"""
+    find_min_pixel( pos::Float64, hsml::Float64,
+                    minCoords::Float64,
+                    pixsize_inv::Float64 )
+
+Computes the minimum pixel to which the particle contributes.
+"""
 @inline function find_min_pixel(pos::Float64, hsml::Float64,
                                 minCoords::Float64,
                                 pixsize_inv::Float64)
@@ -44,6 +69,13 @@ end
     return max(pix, 1)
 end
 
+"""
+    find_max_pixel( pos::Float64, hsml::Float64,
+                    minCoords::AbstractFloat, pixsize_inv::Float64, 
+                    max_pixel::Integer )
+
+Computes the maximum pixel to which the particle contributes.
+"""
 @inline function find_max_pixel(pos::Float64, hsml::Float64,
                                 minCoords::AbstractFloat, pixsize_inv::Float64, 
                                 max_pixel::Integer)
@@ -55,7 +87,14 @@ end
 
 
 
+"""
+   sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
+                 param::mappingParameters, kernel,
+                 conserve_quantities::Bool=false,
+                 show_progress::Bool=false)
 
+Underlying function to map SPH data to a 2D grid.
+"""
 function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
                        param::mappingParameters, kernel::SPHKernel,
                        conserve_quantities::Bool=false,
@@ -295,9 +334,14 @@ function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
 end
 
 
+"""
+   sphMapping_3D(Pos, HSML, M, ρ, Bin_Quant;
+                 param::mappingParameters, kernel,
+                 conserve_quantities::Bool=false,
+                 show_progress::Bool=false)
 
-
-
+Underlying function to map SPH data to a 3D grid.
+"""
 function sphMapping_3D(Pos, HSML, M, ρ, Bin_Quant;
                        param::mappingParameters, kernel::SPHKernel,
                        conserve_quantities::Bool=false,

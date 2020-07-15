@@ -10,12 +10,22 @@
 
 #using Distributed
 
+"""
+    SPHKernel
+
+Supertype for all SPH kernels.
+"""
 abstract type SPHKernel end
 
 """
-            Cubic
+    struct Cubic <: SPHKernel
+        n_neighbours::Int64
+        norm_2D::Float64
+        norm_3D::Float64
+    end
+
+Datatype for cubic sph spline.
 """
-# struct
 struct Cubic <: SPHKernel
     n_neighbours::Int64
     norm_2D::Float64
@@ -25,7 +35,11 @@ struct Cubic <: SPHKernel
     end
 end
 
-# kernel values
+"""
+    kernel_value_2D(kernel::Cubic, u::Float64, h_inv::Float64)
+
+Evaluate cubic spline at position ``u = \frac{x}{h}``.
+"""
 @inline function kernel_value_2D(kernel::Cubic, u::Float64, h_inv::Float64)
 
     @fastmath n = kernel.norm_3D * h_inv^2
@@ -40,6 +54,11 @@ end
 
 end
 
+"""
+    kernel_value_3D(kernel::Cubic, u::Float64, h_inv::Float64)
+
+Evaluate cubic spline at position ``u = \frac{x}{h}``.
+"""
 @inline function kernel_value_3D(kernel::Cubic, u::Float64, h_inv::Float64)
 
     @fastmath n = kernel.norm_3D * h_inv^3
@@ -56,7 +75,13 @@ end
 
 
 """
-            Quintic
+    struct Quintic <: SPHKernel
+        n_neighbours::Int64
+        norm_2D::Float64
+        norm_3D::Float64
+    end
+
+Datatype for quintic sph spline.
 """
 # struct
 struct Quintic <: SPHKernel
@@ -68,7 +93,11 @@ struct Quintic <: SPHKernel
     end
 end
 
-# kernel values
+"""
+    kernel_value_2D(kernel::Cubic, u::Float64, h_inv::Float64)
+
+Evaluate cubic spline at position ``u = \frac{x}{h}``.
+"""
 @inline function kernel_value_2D(kernel::Quintic, u::Float64, h_inv::Float64)
 
     @fastmath n = kernel.norm_2D * h_inv^2

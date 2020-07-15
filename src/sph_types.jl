@@ -13,6 +13,21 @@
 
 
 """
+    struct mappingParameters
+        x_lim::Vector{Float64}
+        y_lim::Vector{Float64}
+        z_lim::Vector{Float64}
+        center::Vector{Float64}
+        pixelSideLength::Float64
+        pixelArea::Float64
+        Npixels::Vector{Int64}
+        x_size::Float64
+        y_size::Float64
+        z_size::Float64
+    end
+
+# Constructor:
+
     mappingParameters(;x_lim::Vector{Float64}   = [-1.0, -1.0],
                        y_lim::Vector{Float64}   = [-1.0, -1.0],
                        z_lim::Vector{Float64}   = [-1.0, -1.0],
