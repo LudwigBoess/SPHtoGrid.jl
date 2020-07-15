@@ -68,11 +68,11 @@ function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
             @info "Stripping units..."
         end
 
-        Pos       = ustrip(Pos)
-        HSML      = ustrip(HSML)
-        M         = ustrip(M)
-        ρ         = ustrip(ρ)
-        Bin_Quant = ustrip(Bin_Quant)
+        Pos       = ustrip.(Pos)
+        HSML      = ustrip.(HSML)
+        M         = ustrip.(M)
+        ρ         = ustrip.(ρ)
+        Bin_Quant = ustrip.(Bin_Quant)
 
     end
 
@@ -91,7 +91,6 @@ function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
 
     if conserve_quantities
 
-        
         # max number of pixels over which the particle can be distributed
         max_hsml = maximum(HSML)
         N_distr = floor(Int64, (2.2max_hsml * pixsize_inv)^2) + 1
