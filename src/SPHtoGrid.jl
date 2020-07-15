@@ -44,7 +44,7 @@ module SPHtoGrid
     """
     function check_center_and_move_particles(x, par::mappingParameters)
 
-        cen = par.center
+        cen  = par.center
         xlim = par.x_lim
         ylim = par.y_lim
         zlim = par.z_lim
@@ -108,13 +108,13 @@ module SPHtoGrid
                         dimensions::Int=2)
 
         # First check if all particles are in a positive region and shift them if they are not
-        Pos, param = check_center_and_move_particles(Pos, param)
+        x, par = check_center_and_move_particles(Pos, param)
 
         if (dimensions == 2)
 
             if !parallel
-                return sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
-                                    param=param, kernel=kernel,
+                return sphMapping_2D(x, HSML, M, ρ, Bin_Quant;
+                                    param=par, kernel=kernel,
                                     conserve_quantities=conserve_quantities,
                                     show_progress=show_progress)
             else
@@ -129,10 +129,10 @@ module SPHtoGrid
 
                 # start remote processes
                 for (i, id) in enumerate(workers())
-                    futures[i] = @spawnat id sphMapping_2D(Pos[batch[i],:], HSML[batch[i]],
+                    futures[i] = @spawnat id sphMapping_2D(x[batch[i],:], HSML[batch[i]],
                                                         M[batch[i]], ρ[batch[i]],
                                                         Bin_Quant[batch[i]];
-                                                        param=param, kernel=kernel,
+                                                        param=par, kernel=kernel,
                                                         conserve_quantities=conserve_quantities,
                                                         show_progress=false)
                 end
@@ -143,8 +143,8 @@ module SPHtoGrid
 
         elseif (dimensions == 3 )
             if !parallel
-                return sphMapping_3D(Pos, HSML, M, ρ, Bin_Quant;
-                                    param=param, kernel=kernel,
+                return sphMapping_3D(x, HSML, M, ρ, Bin_Quant;
+                                    param=par, kernel=kernel,
                                     show_progress=show_progress)
             else
                 @info "Running on $(nworkers()) cores."
@@ -158,10 +158,10 @@ module SPHtoGrid
 
                 # start remote processes
                 for (i, id) in enumerate(workers())
-                    futures[i] = @spawnat id sphMapping_3D(Pos[batch[i],:], HSML[batch[i]],
+                    futures[i] = @spawnat id sphMapping_3D(x[batch[i],:], HSML[batch[i]],
                                                         M[batch[i]], ρ[batch[i]],
                                                         Bin_Quant[batch[i]];
-                                                        param=param, kernel=kernel,
+                                                        par=param, kernel=kernel,
                                                         conserve_quantities=conserve_quantities,
                                                         show_progress=false)
                 end
