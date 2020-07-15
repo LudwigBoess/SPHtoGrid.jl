@@ -1,6 +1,5 @@
 module SPHtoGrid
 
-    using Base.Threads
     using Distributed
 
     include("kernels.jl")
