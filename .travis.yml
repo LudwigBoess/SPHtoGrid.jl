@@ -4,9 +4,10 @@ os:
 julia:
   - 1.4
   - nightly
-matrix:
-  allow_failures:
-    - julia: nightly
+
+allow_failures:
+  - julia: nightly
+
 notifications:
   email: false
 # env:
