@@ -170,7 +170,10 @@ module SPHtoGrid
             else
                 @info "Running on $(nworkers()) cores."
 
-                N = length(M)
+                # Number of particles
+                N = length(m)
+
+                # allocate an array of Future objects
                 futures = Array{Future}(undef, nworkers())
 
                 # 'Domain decomposition':
@@ -199,7 +202,7 @@ module SPHtoGrid
             else
                 @info "Running on $(nworkers()) cores."
 
-                N = length(M)
+                N = length(m)
                 futures = Array{Future}(undef, nworkers())
 
                 # 'Domain decomposition':
