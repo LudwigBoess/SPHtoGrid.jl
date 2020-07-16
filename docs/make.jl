@@ -11,5 +11,6 @@ makedocs(
 # See "Hosting Documentation" and deploydocs() in the Documenter manual
 # for more information.
 deploydocs(
-    repo = "github.com/LudwigBoess/SPHtoGrid.jl.git"
+    repo = "github.com/LudwigBoess/SPHtoGrid.jl.git",
+    devbranch = "development"
 )
