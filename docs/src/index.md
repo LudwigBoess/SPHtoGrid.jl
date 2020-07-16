@@ -15,20 +15,23 @@ Depth = 3
 ## SPHtoGrid.jl
 
 
-You can map SPH data to a grid using the function:
+You can map SPH data to a grid using the function [`sphMapping`](@ref):
 
-```@docs
-sphMapping(Pos, HSML, M, ρ, Bin_Quant;
-                        param::mappingParameters,
-                        kernel::SPHKernel,
-                        show_progress::Bool=true,
-                        conserve_quantities::Bool=false,
-                        parallel::Bool=false,
-                        dimensions::Int=2)
+```julia
+sphMapping( Pos, HSML, M, ρ, Bin_Quant;
+            param::mappingParameters,
+            kernel::SPHKernel,
+            show_progress::Bool=true,
+            conserve_quantities::Bool=false,
+            parallel::Bool=false,
+            filter_particles::Bool=true,
+            dimensions::Int=2)
 ```
 
 ### Setup
-To map the data you need to define the mapping parameters via the `mappingParameters` object:
+
+To map the data you need to define the mapping parameters via the [`mappingParameters`](@ref) object.
+One way to set this up is by defining the limits of the map as
 
 ```julia
 par = mappingParameters(xlim=[xmin, xmax], 
@@ -36,6 +39,17 @@ par = mappingParameters(xlim=[xmin, xmax],
                         zlim=[zmin, zmax],
 			            Npixels=200)
 ```
+
+or give a center position and the size in each direction
+
+```julia
+par = mappingParameters(center=[x0, y0, z0], 
+                        x_size=x_size, 
+                        y_size=y_size,
+                        z_size=z_size,
+			            Npixels=200)
+```
+
 Instead of Npixels you can also give the keyword argument `pixelSideLength` if you prefer to define your image that way.
 
 You also need to choose the kernel you used in the simulation. I implemented the following ones:
@@ -48,6 +62,7 @@ You also need to choose the kernel you used in the simulation. I implemented the
 ```
 
 ### Mapping
+
 With the setup done you can now map (e.g.) density of your data using the function above as:
 
 ```julia
@@ -65,7 +80,7 @@ Per default the keyword `parallel = true` causes the run to use multiple process
 
 With the latest release you can map the particles to a grid while also conserving the particle volume, following the algorithm described in [Dolag et. al. 2006](https://ui.adsabs.harvard.edu/link_gateway/2005MNRAS.363...29D/doi:10.1111/j.1365-2966.2005.09452.x).
 
-This is switched off by default, but is slightly more expensive than simple mapping. If you don't want to use it simply call the mapping function with `conserve_quantities=false`.
+This is switched off by default since it's slightly more expensive than simple mapping. If you want to use it simply call the mapping function with `conserve_quantities=true`.
 
 
 
