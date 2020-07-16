@@ -37,7 +37,7 @@ One way to set this up is by defining the limits of the map as
 par = mappingParameters(xlim=[xmin, xmax], 
                         ylim=[ymin, ymax], 
                         zlim=[zmin, zmax],
-			            Npixels=200)
+                        Npixels=200)
 ```
 
 or give a center position and the size in each direction
@@ -47,7 +47,7 @@ par = mappingParameters(center=[x0, y0, z0],
                         x_size=x_size, 
                         y_size=y_size,
                         z_size=z_size,
-			            Npixels=200)
+                        Npixels=200)
 ```
 
 Instead of Npixels you can also give the keyword argument `pixelSideLength` if you prefer to define your image that way.
@@ -55,10 +55,10 @@ Instead of Npixels you can also give the keyword argument `pixelSideLength` if y
 You also need to choose the kernel you used in the simulation. I implemented the following ones:
 
 ```julia
-    k = Cubic()
-    k = Quintic()
-    k = WendlandC4()
-    k = WendlandC6()
+k = Cubic()
+k = Quintic()
+k = WendlandC4()
+k = WendlandC6()
 ```
 
 ### Mapping
