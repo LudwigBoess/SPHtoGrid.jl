@@ -7,11 +7,12 @@ julia> ]
 pkg> add https://github.com/LudwigBoess/SPHtoGrid.jl
 ```
 
-If you don't have it installed yet and until [https://github.com/JuliaLang/Pkg.jl/pull/1628](https://github.com/JuliaLang/Pkg.jl/pull/1628) has been merged you will also need to install [GadgetIO.jl](https://github.com/LudwigBoess/GadgetIO.jl) first
+If you want to get the latest version use
 
 ```@example
 julia> ]
-pkg> add https://github.com/LudwigBoess/GadgetIO.jl
+pkg> add https://github.com/LudwigBoess/SPHtoGrid.jl#development
 ```
+
 
 Now you should be good to go!
