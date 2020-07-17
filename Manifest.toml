@@ -47,14 +47,6 @@ version = "0.1.7"
 [[FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
-[[GadgetIO]]
-deps = ["Dates", "DelimitedFiles", "ProgressMeter", "Test"]
-git-tree-sha1 = "11f01938f07b7bafaa76f3ddc85d442fa3f5cb14"
-repo-rev = "master"
-repo-url = "https://github.com/LudwigBoess/GadgetIO.jl"
-uuid = "826b50da-1eb7-48f3-bd4b-d2350582c309"
-version = "0.2.0"
-
 [[InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
