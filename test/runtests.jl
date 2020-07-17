@@ -1,7 +1,7 @@
 using Distributed
 addprocs(2)
 
-@everywhere using SPHtoGrid, Test, DelimitedFiles, GadgetIO
+@everywhere using SPHtoGrid, Test, DelimitedFiles
 
 
 @testset "SPH Kernels" begin
@@ -172,29 +172,21 @@ end
     @info "SPH Mapping tests take a while..."
 
     @info "Data read-in."
-    
-    snap_file = joinpath(dirname(@__FILE__), "snap_050")
 
-    h = head_to_obj(snap_file)
-    info = read_info(snap_file, verbose=false)
+    fi = joinpath(dirname(@__FILE__), "bin_q.txt")
+    bin_quantity = Float32.(readdlm(fi))
 
-    bin_quantity = read_block_by_name(snap_file, "RHO",
-                                        info=info[getfield.(info, :block_name) .== "RHO"][1],
-                                        parttype=0)
+    fi = joinpath(dirname(@__FILE__), "x.txt")
+    x = Float32.(readdlm(fi))
 
-    x = read_block_by_name(snap_file, "POS",
-                            info=info[getfield.(info, :block_name) .== "POS"][1],
-                            parttype=0)
+    fi = joinpath(dirname(@__FILE__), "rho.txt")
+    rho = Float32.(readdlm(fi))
 
-    rho = read_block_by_name(snap_file, "RHO",
-                        info=info[getfield.(info, :block_name) .== "RHO"][1],
-                        parttype=0)
+    fi = joinpath(dirname(@__FILE__), "hsml.txt")
+    hsml = Float32.(readdlm(fi))
 
-    hsml = read_block_by_name(snap_file, "HSML",
-                            info=info[getfield.(info, :block_name) .== "HSML"][1],
-                        parttype=0)
-
-    m = read_block_by_name(snap_file, "MASS", parttype=0)
+    fi = joinpath(dirname(@__FILE__), "m.txt")
+    m = Float32.(readdlm(fi))
 
     kernel = WendlandC6()
 
@@ -281,5 +273,3 @@ end
                           dimensions=3)
 
 end
-
-
