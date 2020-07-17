@@ -2,9 +2,16 @@ using Documenter
 using SPHtoGrid
 
 makedocs(
-    sitename = "SPHtoGrid",
+    sitename = "SPHtoGrid.jl",
     format = Documenter.HTML(),
-    modules = [SPHtoGrid]
+    modules = [SPHtoGrid],
+    pages = [
+            "Table of Contents" => "index.md",
+            "Install" => "install.md",
+            "Mapping SPH Data" => "mapping.md",
+            "External Programs" => "external.md",
+            "API reference" => "api.md"
+            ]
 )
 
 # Documenter can also automatically deploy documentation to gh-pages.
