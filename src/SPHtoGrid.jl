@@ -45,10 +45,10 @@ module SPHtoGrid
     """
     function check_center_and_move_particles(x, par::mappingParameters)
 
-        cen  = par.center
-        xlim = par.x_lim
-        ylim = par.y_lim
-        zlim = par.z_lim
+        cen  = copy(par.center)
+        xlim = copy(par.x_lim)
+        ylim = copy(par.y_lim)
+        zlim = copy(par.z_lim)
         shift = 0.0
         
         if xlim[1] < 0
@@ -171,10 +171,13 @@ module SPHtoGrid
         if (dimensions == 2)
 
             if !parallel
-                return sphMapping_2D(x, hsml, m, rho, bin_q;
+                d = sphMapping_2D(x, hsml, m, rho, bin_q;
                                     param=par, kernel=kernel,
                                     conserve_quantities=conserve_quantities,
                                     show_progress=show_progress)
+
+                par = nothing
+                return d
             else
                 @info "Running on $(nworkers()) cores."
 
@@ -199,14 +202,18 @@ module SPHtoGrid
                 end
 
                 # get and reduce results
-                return sum(fetch.(futures))
+                d = sum(fetch.(futures))
+                par = nothing
+                return d
             end
 
         elseif (dimensions == 3 )
             if !parallel
-                return sphMapping_3D(x, hsml, m, rho, bin_q;
+                d = sphMapping_3D(x, hsml, m, rho, bin_q;
                                     param=par, kernel=kernel,
                                     show_progress=show_progress)
+                par = nothing
+                return d
             else
                 @info "Running on $(nworkers()) cores."
 
@@ -228,7 +235,9 @@ module SPHtoGrid
                 end
 
                 # get and reduce results
-                return sum(fetch.(futures))
+                d = sum(fetch.(futures))
+                par = nothing
+                return d
             end
         end
 
