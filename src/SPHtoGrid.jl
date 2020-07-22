@@ -72,6 +72,14 @@ module SPHtoGrid
             x[:,3] .+= shift
         end
 
+        x[:,1] .-= xlim[1]
+        x[:,2] .-= ylim[1]
+        x[:,3] .-= ylim[1]
+
+        xlim .-= xlim[1]
+        ylim .-= ylim[1]
+        zlim .-= zlim[1]
+
         return x, mappingParameters(center=cen, x_lim=xlim, y_lim=ylim, z_lim=zlim, Npixels=maximum(par.Npixels))
     end
 
