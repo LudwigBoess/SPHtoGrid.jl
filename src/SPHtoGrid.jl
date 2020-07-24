@@ -2,18 +2,17 @@ module SPHtoGrid
 
     using Distributed
 
-    include("kernels.jl")
     include("sph_types.jl")
     include("mapping_functions.jl")
     include("smac1_utility.jl")
     include("smac2_utility.jl")
 
 
-    export Cubic, Quintic, WendlandC4, WendlandC6,    # Kernels
-           kernel_value_2D, kernel_value_3D,
-           mappingParameters,                         # parameters for SPH mapping
+    export mappingParameters,                         # parameters for SPH mapping
            sphMapping,                                # main function for mapping 
            filter_particles_in_image,                 # helper function to preselect particles
+           get_map_grid_2D,
+           get_map_grid_3D,
            read_smac1_binary_info,
            read_smac1_binary_image,
            write_smac1_par,
@@ -114,6 +113,43 @@ module SPHtoGrid
         end
 
         return p_in_image
+    end
+
+    function get_map_grid_2D(par::mappingParameters)
+
+        x_grid = zeros(par.Npixels[1])
+        y_grid = zeros(par.Npixels[2])
+
+        for i = 1:par.Npixels[1]
+            x_grid[i] = par.x_lim[1] + ( i - 0.5 ) * par.pixelSideLength
+        end
+
+        for i = 1:par.Npixels[2]
+            y_grid[i] = par.y_lim[1] + ( i - 0.5 ) * par.pixelSideLength
+        end
+
+        return x_grid, y_grid
+    end
+
+    function get_map_grid_3D(par::mappingParameters)
+
+        x_grid = zeros(par.Npixels[1])
+        y_grid = zeros(par.Npixels[2])
+        z_grid = zeros(par.Npixels[3])
+
+        for i = 1:par.Npixels[1]
+            x_grid[i] = par.x_lim[1] + ( i - 0.5 ) * par.pixelSideLength
+        end
+
+        for i = 1:par.Npixels[2]
+            y_grid[i] = par.y_lim[1] + ( i - 0.5 ) * par.pixelSideLength
+        end
+
+        for i = 1:par.Npixels[3]
+            z_grid[i] = par.y_lim[1] + ( i - 0.5 ) * par.pixelSideLength
+        end
+
+        return x_grid, y_grid, z_grid
     end
 
     """
