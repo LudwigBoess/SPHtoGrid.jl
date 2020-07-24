@@ -46,7 +46,7 @@ Instead of Npixels you can also give the keyword argument `pixelSideLength` if y
 
 ## Select Kernel
 
-You also need to choose the kernel you used in the simulation. I implemented the following ones:
+You also need to choose the kernel you used in the simulation. For this you need to install the package [SPHKernels.jl](https://github.com/LudwigBoess/SPHKernels.jl). You can currently use these kernels:
 
 ```julia
 k = Cubic()
@@ -55,7 +55,7 @@ k = WendlandC4()
 k = WendlandC6()
 ```
 
-Feel free to add new ones and issue pull requests!
+Please see the SPHKernels [docs](https://ludwigboess.github.io/SPHKernels.jl/stable/) for more details.
 
 ## Mapping
 

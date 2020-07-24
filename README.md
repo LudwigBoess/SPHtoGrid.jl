@@ -43,7 +43,7 @@ par = mappingParameters(center=[x0, y0, z0],
 
 Instead of Npixels you can also give the keyword argument `pixelSideLength` if you prefer to define your image that way.
 
-You also need to choose the kernel you used in the simulation. I implemented the following ones:
+You also need to choose the kernel you used in the simulation. For this you need to install the package [SPHKernels.jl](https://github.com/LudwigBoess/SPHKernels.jl). You can currently use these kernels:
 
 ```julia
 k = Cubic()
@@ -51,6 +51,8 @@ k = Quintic()
 k = WendlandC4()
 k = WendlandC6()
 ```
+
+Please see the SPHKernels [docs](https://ludwigboess.github.io/SPHKernels.jl/stable/) for more details.
 
 ### Mapping
 
