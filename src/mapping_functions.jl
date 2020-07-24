@@ -15,6 +15,7 @@
 
 using ProgressMeter
 using Unitful
+using SPHKernels
 
 """
     get_d_hsml_2D( dx::Float64, dy::Float64,
@@ -117,7 +118,7 @@ function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
 
     N = length(M)  # number of particles
 
-    image = zeros(param.Npixels[1], param.Npixels[2])
+    image = zeros(param.Npixels[2], param.Npixels[1])
 
     minCoords = [param.x_lim[1], param.y_lim[1], param.z_lim[1]]
     maxCoords = [param.x_lim[2], param.y_lim[2], param.z_lim[2]]
@@ -294,7 +295,7 @@ function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
                         distance_hsml = get_d_hsml_2D(dx, dy, hsml_inv)
 
                         # update pixel value
-                        image[i, j] += bin_prefac * kernel_value_2D(kernel, distance_hsml, hsml_inv)
+                        image[j, i] += bin_prefac * kernel_value_2D(kernel, distance_hsml, hsml_inv)
                     else
 
                         if wit1_leq_0
@@ -303,7 +304,7 @@ function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
                             wi = kernel_tab[N_count] * fak * fak_hsml
                         end
                         # update pixel value with weights
-                        image[i, j] += bin_q * wi *
+                        image[j, i] += bin_q * wi *
                                        d1_tab[N_count] * d2_tab[N_count] * d3
 
                         # println(bin_q, " ", wi, " ", d1_tab[N_count], " ", d2_tab[N_count], " ", d3 )
