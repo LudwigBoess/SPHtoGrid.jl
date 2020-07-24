@@ -1,8 +1,8 @@
 module SPHtoGrid
 
     using Distributed
-    using SPHKernel 
-    
+    using SPHKernels 
+
     include("sph_types.jl")
     include("mapping_functions.jl")
     include("smac1_utility.jl")
