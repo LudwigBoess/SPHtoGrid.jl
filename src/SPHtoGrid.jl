@@ -3,10 +3,11 @@ module SPHtoGrid
     using Distributed
     using SPHKernels 
 
-    include("sph_types.jl")
+    include("parameters.jl")
     include("mapping_functions.jl")
     include("smac1_utility.jl")
     include("smac2_utility.jl")
+    include("rotate_particles.jl")
 
 
     export mappingParameters,                         # parameters for SPH mapping
@@ -17,7 +18,11 @@ module SPHtoGrid
            read_smac1_binary_info,
            read_smac1_binary_image,
            write_smac1_par,
-           write_smac2_par
+           write_smac2_par,
+           rotate_3D, rotate_3D!,
+           project_along_axis,
+           WendlandC6
+
 
 
     """ 
@@ -43,8 +48,9 @@ module SPHtoGrid
     
     Mapping only works if all coordinates are positive. This function shifts the particles into a positive coordinate region.
     """
-    function check_center_and_move_particles(x, par::mappingParameters)
+    function check_center_and_move_particles(x::Array{<:Real}, par::mappingParameters)
 
+        # explicitly copy to its own variable to avoid memory overwrite
         cen  = copy(par.center)
         xlim = copy(par.x_lim)
         ylim = copy(par.y_lim)
@@ -88,7 +94,7 @@ module SPHtoGrid
 
     Checks if a particle is contained in the image and returns an array of Bool.
     """
-    function filter_particles_in_image(x, hsml, param::mappingParameters)
+    function filter_particles_in_image(x::Array{<:Real}, hsml::Array{<:Real}, param::mappingParameters)
 
         p_in_image = falses(length(hsml))
         in_image   = false
@@ -179,7 +185,9 @@ module SPHtoGrid
     - `filter_particles::Bool=true`: Find the particles that are actually contained in the image.
     - `dimensions::Int=2`: Number of mapping dimensions (2 = to grid, 3 = to cube).
     """
-    function sphMapping(Pos, HSML, M, ρ, Bin_Quant;
+    function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, 
+                        M::Array{<:Real}, ρ::Array{<:Real}, 
+                        Bin_Quant::Array{<:Real};
                         param::mappingParameters,
                         kernel::SPHKernel,
                         show_progress::Bool=true,

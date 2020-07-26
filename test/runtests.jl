@@ -95,6 +95,44 @@ addprocs(2)
 
     end
 
+    @testset "Rotate particles" begin
+        
+        # no rotation
+        x_in = [1.0, 1.0, 1.0]
+        x_out = SPHtoGrid.rotate_3D_quantity(x_in, 0.0, 0.0, 0.0)
+        @test x_out ≈ x_in
+
+        # matrix no rotation
+        x_in = rand(10,3)
+        x_out = rotate_3D(x_in, 0.0, 0.0, 0.0)
+        @test x_out ≈ x_in
+
+        # inplace
+        rotate_3D!(x_out, 0.0, 0.0, 0.0)
+        @test x_out ≈ x_in
+
+        # project along axis
+        x_in = [ 1.0 1.0 0.0
+                 1.0 1.0 0.0 ]
+
+        # along z-axis should not change anything
+        x_out = project_along_axis(x_in, 3)
+
+        @test x_out ≈ x_in
+
+        # along y-axis
+        x_out = project_along_axis(x_in, 2)
+
+        @test x_out ≈ [ 1.0 0.0 1.0
+                        1.0 0.0 1.0 ]
+
+        # along x-axis
+        x_out = project_along_axis(x_in, 2)
+
+        @test x_out ≈ [ 1.0 0.0 1.0
+                        1.0 0.0 1.0 ]
+    end
+
     @testset "SPH Mapping" begin
 
         @info "SPH Mapping tests take a while..."

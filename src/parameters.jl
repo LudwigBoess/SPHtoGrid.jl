@@ -53,6 +53,8 @@ struct mappingParameters
     x_size::Float64
     y_size::Float64
     z_size::Float64
+    boxsize::Float64
+    periodic::Bool
 
     function mappingParameters(;x_lim::Vector{Float64}   = [-1.0, -1.0],
                                 y_lim::Vector{Float64}   = [-1.0, -1.0],
@@ -62,7 +64,8 @@ struct mappingParameters
                                 y_size::Float64          =  -1.0,
                                 z_size::Float64          =  -1.0,
                                 pixelSideLength::Float64 =  -1.0,
-                                Npixels::Int64           =   0)
+                                Npixels::Int64           =   0,
+                                boxSize::Float64         =  -1.0)
 
 
         # calculate limits if center position and sizes are given
@@ -97,6 +100,8 @@ struct mappingParameters
             pixelSideLength = max_size/Npixels
         elseif (pixelSideLength != -1.0) & (Npixels == 0)
             Npixels = floor(Int64, max_size/pixelSideLength)
+            # recalculate pixelSideLenght to account for rounding
+            pixelSideLength = max_size/Npixels
         else
             error("Please specify pixelSideLenght or number of pixels!")
         end
@@ -107,12 +112,20 @@ struct mappingParameters
                  floor(y_size/pixelSideLength),
                  floor(z_size/pixelSideLength) ]
 
+        periodic = false 
+
+        if boxSize != -1.0
+            periodic = true
+        end
+
+
         new(x_lim, y_lim, z_lim,
             center,
             pixelSideLength,
             pixelArea,
             Npix,
-            x_size, y_size, z_size)
+            x_size, y_size, z_size,
+            boxSize, periodic)
 
     end
 end
