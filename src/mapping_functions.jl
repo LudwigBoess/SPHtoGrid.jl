@@ -664,7 +664,7 @@ function sphMapping_Smac2(  Pos, HSML, M, Rho, Bin_Q, Weights;
         rho = Rho[p,1] / len2pix^3
         dz  = m / rho / area
 
-        if par.periodic
+        if param.periodic
             k_start = 0
         else
             k_start = 8
@@ -672,8 +672,8 @@ function sphMapping_Smac2(  Pos, HSML, M, Rho, Bin_Q, Weights;
 
         for k = k_start:8
 
-            if par.periodic
-                pos = find_position_periodic!(pos, _pos, k, par.boxsize)
+            if param.periodic
+                pos = find_position_periodic!(pos, _pos, k, param.boxsize)
                 hsml_periodic = Float64(HSML[p,1])
 
                 # check if the particle is still in the image
