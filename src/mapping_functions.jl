@@ -155,8 +155,8 @@ function sphMapping_2D(Pos, HSML, M, ρ, Bin_Quant;
     @inbounds for p = 1:N
 
         # save stuff from array to single variables
-        pos  = Float64.(Pos[p,:])
-        hsml = Float64(HSML[p])
+        pos  = Pos[p,:]
+        hsml = HSML[p]
 
         in_image = false
 
@@ -591,3 +591,194 @@ function sphMapping_3D(Pos, HSML, M, ρ, Bin_Quant;
    return image
 end
 
+@inline function get_dist_hsml_periodic()
+    
+end
+
+@inline function find_position_periodic!(pos_in::Vector{Float64}, pos::Vector{Float64}, k::Int64, boxsize::Float64)
+    
+    pos_in[1] = (k & 0x1) == 0 ? pos[1] : (pos[1] > 0 ? 
+			pos[1] - boxsize : pos[1] + boxsize)
+	
+	pos_in[2] = (k & 0x2) == 0 ? pos[2] : (pos[2] > 0 ? 
+			pos[2] - boxsize : pos[2] + boxsize)
+
+	pos_in[3] = (k & 0x4) == 0 ? pos[3] : (pos[3] > 0 ? 
+            pos[3] - boxsize : pos[3] + boxsize)
+            
+    return pos_in
+end
+
+
+function sphMapping_Smac2(  Pos, HSML, M, Rho, Bin_Q, Weights;
+                            param::mappingParameters, kernel::SPHKernel,
+                            conserve_quantities::Bool=false,
+                            show_progress::Bool=false   )
+
+    N = length(M)  # number of particles
+
+    image = zeros(param.Npixels[2] * param.Npixels[1])
+    w_image = zeros(param.Npixels[2] * param.Npixels[1])
+
+    # store this here for performance increase
+    len2pix = 1.0/param.pixelSideLength
+
+    if param.periodic
+        halfXsize = 0.5 * param.x_size
+        halfYsize = 0.5 * param.y_size
+        halfZsize = 0.5 * param.z_size
+    end
+
+    # max number of pixels over which the particle can be distributed
+    #max_hsml = maximum(HSML)
+    N_distr = param.Npixels[2] * param.Npixels[1]
+
+    # allocate arrays for weights
+    wk = zeros(N_distr)
+
+    pos = [0.0, 0.0, 0.0]
+    k_start = 8
+
+    is_undersampled = false
+    particles_in_image = 0
+
+    if show_progress
+        P = Progress(N)
+        idx_p = 0
+        #P_lock = SpinLock()  # uncomment to make thread-safe if needed in the future
+    end
+
+    @inbounds for p = 1:N
+
+        hsml = Float64(HSML[p,1])
+        _pos = Float64.(Pos[p,:])
+        weight = Float64(Weights[p,1])
+
+        hsml *= len2pix
+        hsml_inv = 1.0/hsml
+
+        area  = π * hsml^2
+
+        m = M[p,1]
+
+        rho = Rho[p,1] / len2pix^3
+        dz  = m / rho / area
+
+        if par.periodic
+            k_start = 0
+        else
+            k_start = 8
+        end
+
+        for k = k_start:8
+
+            if par.periodic
+                pos = find_position_periodic!(pos, _pos, k, par.boxsize)
+                hsml_periodic = Float64(HSML[p,1])
+
+                # check if the particle is still in the image
+                if  ( pos[1] - hsml_periodic ) > halfXsize ||  ( pos[1] + hsml_periodic ) < -halfXsize ||
+                    ( pos[2] - hsml_periodic ) > halfYsize ||  ( pos[2] + hsml_periodic ) < -halfYsize ||
+                    ( pos[3] - hsml_periodic ) > halfZsize ||  ( pos[3] + hsml_periodic ) < -halfZsize
+
+                    continue
+                end
+            else
+                pos = _pos
+            end
+
+            pos .*= len2pix
+            x = pos[1] + 0.5 * param.Npixels[1]  
+            y = pos[2] + 0.5 * param.Npixels[2]
+            
+            iMin = max(floor(x - hsml), 0)
+            iMax = min(floor(x + hsml) + 1, param.Npixels[1])
+
+            jMin = max(floor(y - hsml), 0)
+            jMax = min(floor(y + hsml) + 1, param.Npixels[2])
+
+            is_undersampled = false
+
+            if hsml <= 1.0
+                is_undersampled = true
+            end
+
+            distr_weight = 0.0
+            distr_area   = 0.0
+
+            n_distr_pix = 0
+
+            for i = iMin:iMax
+                dx = min(x + hsml, i + 1) - max(x - hsml, i)
+                x_dist = x - i - 0.5
+
+                for j = jMin:jMax
+                    dy = min(y + hsml, j + 1) - max(y - hsml, j)
+
+                    idx = i * param.Npixels[1] + j + 1
+
+                    dxdy = dx * dy
+                    distr_area += dxdy
+
+                    if is_undersampled
+
+                        wk[idx] = dxdy
+                        distr_weight += dxdy
+                        n_distr_pix  += 1
+
+                    else
+
+                        y_dist = y - j - 0.5
+
+                        u = get_d_hsml_2D(x_dist, y_dist, hsml_inv)
+
+                        if u < 1.0
+                            wk[idx] = kernel_value_2D(k, u, hsml_inv)
+
+                            if conserve_quantities
+                                wk[idx] *= dxdy
+
+                                n_distr_pix += 1
+                            end
+                        else
+                            wk[idx] = 0.0
+                        end # u < 1.0
+
+                    end # is_undersampled
+                end # j
+            end # i
+
+            @fastmath @inbounds if conserve_quantities
+                weight_per_pix = n_distr_pix / distr_weight
+                kernel_norm = area / n_distr_pix
+                area_norm = kernel_norm * weight_per_pix * part_weight * dz
+                bin_q = Bin_Q[p,1]
+            else
+                bin_q = (Bin_Q[p,1] * m / Rho[p,1])
+                area_norm = 1.0
+            end # conserve_quantities
+
+            @fastmath @inbounds for i = iMin:iMax, j = jMin:jMax
+                idx = i * param.Npixels[1] + j + 1
+                pix_weight = area_norm * wk[idx]
+
+                # update image value and weight
+                image[idx]   += bin_q * pix_weight
+                w_image[idx] += pix_weight
+            end # i, j 
+
+        end # k
+
+         # update for ProgressMeter
+        if show_progress
+            #lock(P_lock)  # uncomment to make thread-safe if needed in the future
+            idx_p += 1
+            ProgressMeter.update!(P, idx_p)
+            #unlock(P_lock)
+        end
+
+    end # p
+
+    return image, w_image #reshape(image, (param.Npixels[2], param.Npixels[1]))
+
+end # function 
