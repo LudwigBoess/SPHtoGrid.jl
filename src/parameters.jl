@@ -65,7 +65,7 @@ struct mappingParameters
                                 z_size::Float64          =  -1.0,
                                 pixelSideLength::Float64 =  -1.0,
                                 Npixels::Int64           =   0,
-                                boxSize::Float64         =  -1.0)
+                                boxsize::Float64         =  -1.0)
 
 
         # calculate limits if center position and sizes are given
@@ -114,7 +114,7 @@ struct mappingParameters
 
         periodic = false 
 
-        if boxSize != -1.0
+        if boxsize != -1.0
             periodic = true
         end
 
@@ -125,7 +125,7 @@ struct mappingParameters
             pixelArea,
             Npix,
             x_size, y_size, z_size,
-            boxSize, periodic)
+            boxsize, periodic)
 
     end
 end
