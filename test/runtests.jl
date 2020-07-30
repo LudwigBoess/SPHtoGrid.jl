@@ -168,7 +168,7 @@ addprocs(2)
         d = sphMapping(x, hsml, m, rho, bin_quantity, ones(length(rho)),
                             param=par, kernel=kernel,
                             parallel = false,
-                            show_progress=true)
+                            show_progress=false)
 
 
         ideal_file = joinpath(dirname(@__FILE__), "image.dat")
@@ -196,7 +196,7 @@ addprocs(2)
         @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(length(rho)),
                             param=par, kernel=kernel,
                             parallel = false,
-                            show_progress=true)
+                            show_progress=false)
 
         @info "Multi core."
         @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(length(rho)),
