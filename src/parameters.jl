@@ -47,12 +47,10 @@ struct mappingParameters
     y_lim::Vector{Float64}
     z_lim::Vector{Float64}
     center::Vector{Float64}
+    halfsize::Vector{Float64}
+    len2pix::Float64
     pixelSideLength::Float64
-    pixelArea::Float64
     Npixels::Vector{Int64}
-    x_size::Float64
-    y_size::Float64
-    z_size::Float64
     boxsize::Float64
     periodic::Bool
 
@@ -118,13 +116,16 @@ struct mappingParameters
             periodic = true
         end
 
+        halfsize = 0.5 .* [ x_size, y_size, z_size ]
+
+        len2pix = 1.0/pixelSideLength
 
         new(x_lim, y_lim, z_lim,
             center,
+            halfsize,
+            len2pix,
             pixelSideLength,
-            pixelArea,
             Npix,
-            x_size, y_size, z_size,
             boxsize, periodic)
 
     end

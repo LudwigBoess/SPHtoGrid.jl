@@ -17,6 +17,45 @@ using ProgressMeter
 using Unitful
 using SPHKernels
 
+
+"""
+    check_in_image(x::Real, y::Real, z::Real, hsml::Real,
+                                halfXsize::Real, halfYsize::Real, halfZsize::Real)
+
+Checks if a particle is in the image frame.
+"""
+@inline function check_in_image(x::Real, y::Real, z::Real, hsml::Real,
+                                halfXsize::Real, halfYsize::Real, halfZsize::Real)
+
+    return (( x - hsml ) < halfXsize ||  ( x + hsml ) > -halfXsize ||
+            ( y - hsml ) < halfYsize ||  ( y + hsml ) > -halfYsize ||
+            ( z - hsml ) < halfZsize ||  ( z + hsml ) > -halfZsize )
+end
+
+
+"""
+        Positions and distances
+"""
+
+"""
+    find_position_periodic( pos::Array{<:Real}, k::Integer, boxsize::Real)
+
+Performs a periodic mapping of the particle position.
+"""
+@inline function find_position_periodic( pos::Array{<:Real}, k::Integer, boxsize::Real)
+    
+    x = (k & 0x1) == 0 ? pos[1] : (pos[1] > 0 ? 
+			pos[1] - boxsize : pos[1] + boxsize)
+	
+	y = (k & 0x2) == 0 ? pos[2] : (pos[2] > 0 ? 
+			pos[2] - boxsize : pos[2] + boxsize)
+
+	z = (k & 0x4) == 0 ? pos[3] : (pos[3] > 0 ? 
+            pos[3] - boxsize : pos[3] + boxsize)
+            
+    return x, y, z
+end
+
 """
     get_d_hsml_2D( dx::Real, dy::Real,
                    hsml_inv::Real )
@@ -39,82 +78,117 @@ Computes the distance in 3D to the pixel center in units of the kernel support.
 end
 
 """
-    check_in_image( pos::Real, hsml::Real,
-                    minCoords::Real, maxCoords::Real )
+    function get_dxyz(x::Real, hsml::Real, i::Integer)
 
-Checks if a particle is in the image frame.
+Calculates the extent of the current particle size in units of pixels.
 """
-@inline function check_in_image(pos::Real, hsml::Real,
-                                minCoords::Real, maxCoords::Real)
-
-    if ( (minCoords - hsml) < pos < (maxCoords + hsml) )
-        return true
-    else
-        return false
-    end
-end
-
-"""
-    find_min_pixel( pos::Real, hsml::Real,
-                    minCoords::Real,
-                    pixsize_inv::Real )
-
-Computes the minimum pixel to which the particle contributes.
-"""
-@inline function find_min_pixel(pos::Real, hsml::Real,
-                                minCoords::Real,
-                                pixsize_inv::Real)
-
-    @fastmath pix = floor(Int64, (pos - hsml - minCoords) * pixsize_inv )
-
-    return max(pix, 1)
-end
-
-"""
-    find_max_pixel( pos::Real, hsml::Real,
-                    minCoords::AbstractFloat, pixsize_inv::Real, 
-                    max_pixel::Integer )
-
-Computes the maximum pixel to which the particle contributes.
-"""
-@inline function find_max_pixel(pos::Real, hsml::Real,
-                                minCoords::AbstractFloat, pixsize_inv::Real, 
-                                max_pixel::Integer)
-
-    @fastmath pix = floor(Int64, (pos + hsml  - minCoords) * pixsize_inv )
-
-    return min(pix, max_pixel)
-end
-
-
-@inline function find_position_periodic( pos::Array{<:Real}, k::Integer, boxsize::Real)
-    
-    x = (k & 0x1) == 0 ? pos[1] : (pos[1] > 0 ? 
-			pos[1] - boxsize : pos[1] + boxsize)
-	
-	y = (k & 0x2) == 0 ? pos[2] : (pos[2] > 0 ? 
-			pos[2] - boxsize : pos[2] + boxsize)
-
-	z = (k & 0x4) == 0 ? pos[3] : (pos[3] > 0 ? 
-            pos[3] - boxsize : pos[3] + boxsize)
-            
-    return x, y, z
-end
-
-
 @inline @fastmath function get_dxyz(x::Real, hsml::Real, i::Integer)
     return min(x + hsml, i + 1) - max(x - hsml, i)
 end
 
+"""
+    function get_xyz( pos::Vector{<:Real}, hsml::Real, k::Integer,
+                      len2pix::Real, x_pixels::Integer, y_pixels::Integer, z_pixels::Integer,
+                      boxsize::Real, periodic::Bool,
+                      halfXsize::Real, halfYsize::Real, halfZsize::Real,
+                      Ndim::Integer)
+
+Calculates `x, y, z` position in units of pixels and performs periodic mapping, if required.
+"""
+@inline @fastmath function get_xyz( pos::Vector{<:Real}, hsml::Real, k::Integer,
+                                   len2pix::Real, x_pixels::Integer, y_pixels::Integer, z_pixels::Integer,
+                                   boxsize::Real, periodic::Bool,
+                                   halfXsize::Real, halfYsize::Real, halfZsize::Real,
+                                   Ndim::Integer)
+    
+    if periodic
+        x, y, z = find_position_periodic(pos, k, boxsize)
+
+        # check if the particle is still in the image
+        if (( x - hsml ) > halfXsize ||  ( x + hsml ) < -halfXsize ||
+            ( y - hsml ) > halfYsize ||  ( y + hsml ) < -halfYsize ||
+            ( z - hsml ) > halfZsize ||  ( z + hsml ) < -halfZsize )
+
+            if Ndim == 2
+                return x, y, true
+            elseif Ndim == 3
+                return x, y, z, true
+            end
+        end
+    else
+        x = pos[1]
+        y = pos[2]
+        z = pos[3]
+    end
+
+    x *= len2pix
+    y *= len2pix
+    x += 0.5 * x_pixels  
+    y += 0.5 * y_pixels
+
+    if Ndim == 2
+        return x, y, false
+    elseif Ndim == 3
+        z *= len2pix
+        z += 0.5 * z_pixels
+        return x, y, z, false
+    end
+end
+
+
+"""
+            Indices
+"""
+
+"""
+    function get_ijk_min_max( x::Real, hsml::Real,
+                              x_pixels::Integer)
+
+Calculates the minimum and maximum pixel to which a particle contributes.
+"""
+@inline @fastmath function get_ijk_min_max(x::Real, hsml::Real,
+                                           x_pixels::Integer)
+
+    iMin = max(floor(Integer, x - hsml), 0)
+    iMax = min(floor(Integer, x + hsml) + 1, x_pixels-1)
+
+    return iMin, iMax
+end
+
+"""
+    function calculate_index_2D(i::Integer, j::Integer, x_pixels::Integer)
+
+Calculates the index of a flattened 2D image array.
+"""
 @inline @fastmath function calculate_index_2D(i::Integer, j::Integer, x_pixels::Integer)
     return floor(Integer, i * x_pixels + j ) + 1
 end
 
+"""
+    function calculate_index_3D(i::Integer, j::Integer, x_pixels::Integer)
+
+Calculates the index of a flattened 3D image array.
+"""
 @inline @fastmath function calculate_index_3D(  i::Integer, j::Integer, k::Integer,
                                                 x_pixels::Integer, y_pixels::Integer)
     return floor(Integer, i * x_pixels + j * y_pixels + k) + 1
 end
 
+
+"""
+            Weights
+"""
+
+"""
+    function calculate_weights_2D(  wk::Array{<:Real,1}, 
+                                    iMin::Integer, iMax::Integer, 
+                                    jMin::Integer, jMax::Integer,
+                                    x::Real, y::Real, hsml::Real, hsml_inv::Real,
+                                    kernel::SPHKernel,
+                                    x_pixels::Integer )
+
+Calculates the kernel- and geometric weights of the pixels a particle contributes to.
+"""
 @inline @fastmath function calculate_weights_2D(  wk::Array{<:Real,1}, 
                                                 iMin::Integer, iMax::Integer, 
                                                 jMin::Integer, jMax::Integer,
@@ -178,6 +252,18 @@ end
     return wk, n_distr_pix, distr_weight, distr_area
 end
 
+"""
+    function calculate_weights_3D(  wk::Array{<:Real,1}, 
+                                    iMin::Integer, iMax::Integer, 
+                                    jMin::Integer, jMax::Integer,
+                                    kMin::Integer, kMax::Integer,
+                                    x::Real, y::Real, z::Real, 
+                                    hsml::Real, hsml_inv::Real,
+                                    kernel::SPHKernel,
+                                    x_pixels::Integer, y_pixels::Integer )
+                                                
+Calculates the kernel- and geometric weights of the pixels a particle contributes to.
+"""
 @inline @fastmath function calculate_weights_3D(  wk::Array{<:Real,1}, 
                                                 iMin::Integer, iMax::Integer, 
                                                 jMin::Integer, jMax::Integer,
@@ -248,15 +334,14 @@ end
     return wk, n_distr_pix, distr_weight, distr_volume
 end
 
-@inline @fastmath function get_ijk_min_max(x::Real, hsml::Real,
-                                          x_pixels::Integer)
 
-    iMin = max(floor(Integer, x - hsml), 0)
-    iMax = min(floor(Integer, x + hsml) + 1, x_pixels-1)
+"""
+    function update_image( image::Real, w_image::Real, 
+                           wk::Real, bin_q::Real, 
+                           geometry_norm::Real )
 
-    return iMin, iMax
-end
-
+Applies the different contributions to the image and the weight image.
+"""
 @inline @fastmath function update_image( image::Real, w_image::Real, 
                                          wk::Real, bin_q::Real, 
                                          geometry_norm::Real )
@@ -269,6 +354,13 @@ end
 
     return image, w_image
 end
+
+
+
+"""
+        Helper functions for variables
+"""
+
 
 @inline @fastmath function get_quantities_2D(pos::Array{<:Real}, weight::Real, hsml::Real, 
                                           rho::Real, m::Real, len2pix::Real)
@@ -294,77 +386,9 @@ end
     return pos, weight, hsml, hsml_inv, volume, m, rho, dz
 end
 
-@inline @fastmath function reduce_image_2D( image::Array{<:Real}, w_image::Array{<:Real},
-                                         x_pixels::Integer, y_pixels::Integer)
 
 
-    im_plot = zeros(x_pixels, y_pixels)
-    k = 1
-    @inbounds for i = 1:x_pixels, j = 1:y_pixels
-        im_plot[i,j] = image[k]
-        if w_image[k] > 0.0
-            im_plot[i, j] /= w_image[k]
-        end
-        k += 1
-    end
-    return im_plot
-end
 
-@inline @fastmath function reduce_image_3D( image::Array{<:Real}, w_image::Array{<:Real},
-                                         x_pixels::Integer, y_pixels::Integer, z_pixels::Real)
-
-
-    im_plot = zeros(x_pixels, y_pixels, z_pixels)
-    m = 1
-    @inbounds for i = 1:x_pixels, j = 1:y_pixels, k = 1:z_pixels
-        im_plot[i,j,k] = image[m]
-        if w_image[m] > 0.0
-            im_plot[i, j, k] /= w_image[m]
-        end
-        m += 1
-    end
-    return im_plot
-end
-
-@inline @fastmath function get_xyz( pos::Vector{<:Real}, hsml::Real, k::Integer,
-                                   len2pix::Real, x_pixels::Integer, y_pixels::Integer, z_pixels::Integer,
-                                   boxsize::Real, periodic::Bool,
-                                   halfXsize::Real, halfYsize::Real, halfZsize::Real,
-                                   Ndim::Integer)
-    
-    if periodic
-        x, y, z = find_position_periodic(pos, k, boxsize)
-
-        # check if the particle is still in the image
-        if  ( x - hsml ) > halfXsize ||  ( x + hsml ) < -halfXsize ||
-            ( y - hsml ) > halfYsize ||  ( y + hsml ) < -halfYsize ||
-            ( z - hsml ) > halfZsize ||  ( z + hsml ) < -halfZsize
-
-            if Ndim == 2
-                return x, y, true
-            elseif Ndim == 3
-                return x, y, z, true
-            end
-        end
-    else
-        x = pos[1]
-        y = pos[2]
-        z = pos[3]
-    end
-
-    x *= len2pix
-    y *= len2pix
-    x += 0.5 * x_pixels  
-    y += 0.5 * y_pixels
-
-    if Ndim == 2
-        return x, y, false
-    elseif Ndim == 3
-        z *= len2pix
-        z += 0.5 * z_pixels
-        return x, y, z, false
-    end
-end
 
 
 """
@@ -389,9 +413,9 @@ function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real},
     # store this here for performance increase
     len2pix = 1.0/param.pixelSideLength
 
-    halfXsize = 0.5 * param.x_size
-    halfYsize = 0.5 * param.y_size
-    halfZsize = 0.5 * param.z_size
+    halfXsize = param.halfsize[1]
+    halfYsize = param.halfsize[2]
+    halfZsize = param.halfsize[3]
 
     if param.periodic
         k_start = 0
@@ -477,8 +501,7 @@ function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real},
         end
     end # p
 
-    return reduce_image_2D( image, w_image, 
-                         param.Npixels[1], param.Npixels[2] )
+    return image, w_image
 
 end # function 
 
