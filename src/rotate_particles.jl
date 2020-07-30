@@ -103,9 +103,8 @@ function project_along_axis(x::Array{<:Real}, projection_axis::Integer=3)
         return rotate_to_xz_plane(x)
     end
 
-    # rotation to xy-plane -> nothing is done
+    # rotation to yz-plane
     if projection_axis == 1
         return rotate_to_yz_plane(x)
     end
 end
-
