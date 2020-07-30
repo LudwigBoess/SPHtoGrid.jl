@@ -1,6 +1,6 @@
 | **Documentation**                                                 | **Build Status**                                                                                | **Licence**                                                                                |
 |:-----------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:| :-----------------------------------------------------------------------------------------------:|
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://LudwigBoess.github.io/SPHtoGrid.jl/stable) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://LudwigBoess.github.io/SPHtoGrid.jl/dev) | [![Build Status](https://travis-ci.org/LudwigBoess/SPHtoGrid.jl.svg?branch=master)](https://travis-ci.org/LudwigBoess/SPHtoGrid.jl) [![codecov.io](https://codecov.io/gh/LudwigBoess/SPHtoGrid.jl/coverage.svg?branch=master)](https://codecov.io/gh/LudwigBoess/SPHtoGrid.jl?branch=master) | [![The MIT License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE.md)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://LudwigBoess.github.io/SPHtoGrid.jl/stable) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://LudwigBoess.github.io/SPHtoGrid.jl/dev) | [![Build Status](https://travis-ci.org/LudwigBoess/SPHtoGrid.jl.svg?branch=master)](https://travis-ci.org/LudwigBoess/SPHtoGrid.jl) [![codecov.io](https://codecov.io/gh/LudwigBoess/SPHtoGrid.jl/coverage.svg?branch=master)](https://codecov.io/gh/LudwigBoess/SPHtoGrid.jl?branch=master) | [![The MIT License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE.md) |
 
 # SPHtoGrid.jl
 
@@ -13,7 +13,6 @@ sphMapping( Pos, HSML, M, ρ, Bin_Quant;
             param::mappingParameters,
             kernel::SPHKernel,
             show_progress::Bool=true,
-            conserve_quantities::Bool=false,
             parallel::Bool=false,
             filter_particles::Bool=true,
             dimensions::Int=2 )

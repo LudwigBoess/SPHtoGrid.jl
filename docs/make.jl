@@ -9,6 +9,7 @@ makedocs(
             "Table of Contents" => "index.md",
             "Install" => "install.md",
             "Mapping SPH Data" => "mapping.md",
+            "Rotating Images" => "rotating.md",
             "External Programs" => "external.md",
             "API reference" => "api.md"
             ]
