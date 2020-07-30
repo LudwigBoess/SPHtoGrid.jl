@@ -20,7 +20,7 @@ function check_center_and_move_particles(x::Array{<:Real}, par::mappingParameter
     ylim .-= cen[2]
     zlim .-= cen[3]
 
-    return x, mappingParameters(center=cen, x_lim=xlim, y_lim=ylim, z_lim=zlim, Npixels=maximum(par.Npixels), boxsize=par.boxsize)
+    return x, mappingParameters(center=[0.0, 0.0, 0.0], x_lim=xlim, y_lim=ylim, z_lim=zlim, Npixels=maximum(par.Npixels), boxsize=par.boxsize)
 end
 
 
@@ -47,7 +47,13 @@ function filter_particles_in_image(pos::Array{<:Real}, hsml::Array{<:Real}, para
 
         for k_periodic = k_start:8
 
-            x, y, z = find_position_periodic(pos, k_periodic, param.boxsize)
+            if param.periodic
+                x, y, z = find_position_periodic(pos, k_periodic, param.boxsize)
+            else
+                x = pos[p,1]
+                y = pos[p,2]
+                z = pos[p,3]
+            end
 
             in_image = check_in_image(x, y, z, hsml[p], param.halfsize[1], param.halfsize[2], param.halfsize[3])
             

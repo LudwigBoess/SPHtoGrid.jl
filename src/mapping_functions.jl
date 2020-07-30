@@ -27,9 +27,14 @@ Checks if a particle is in the image frame.
 @inline function check_in_image(x::Real, y::Real, z::Real, hsml::Real,
                                 halfXsize::Real, halfYsize::Real, halfZsize::Real)
 
-    return (( x - hsml ) < halfXsize ||  ( x + hsml ) > -halfXsize ||
-            ( y - hsml ) < halfYsize ||  ( y + hsml ) > -halfYsize ||
-            ( z - hsml ) < halfZsize ||  ( z + hsml ) > -halfZsize )
+    if (( x + hsml ) > halfXsize ||  ( x - hsml ) < -halfXsize ||
+        ( y + hsml ) > halfYsize ||  ( y - hsml ) < -halfYsize ||
+        ( z + hsml ) > halfZsize ||  ( z - hsml ) < -halfZsize )
+
+        return false
+    else
+        return true
+    end
 end
 
 
@@ -407,11 +412,13 @@ function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real},
                         show_progress::Bool=false )
 
     N = length(M)  # number of particles
-    image = zeros(param.Npixels[1] * param.Npixels[2])
-    w_image = zeros(param.Npixels[1] * param.Npixels[2])
+    
+    N_distr = param.Npixels[1] * param.Npixels[2] * param.Npixels[3]
+
+    image = zeros(N_distr)
+    w_image = zeros(N_distr)
 
     # store this here for performance increase
-    len2pix = 1.0/param.pixelSideLength
 
     halfXsize = param.halfsize[1]
     halfYsize = param.halfsize[2]
@@ -447,13 +454,13 @@ function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real},
             continue
         end
 
-        _pos, weight, hsml, hsml_inv, area, m, rho, dz = get_quantities_2D(Pos[p,:], Weights[p], HSML[p], Rho[p], M[p], len2pix)
+        _pos, weight, hsml, hsml_inv, area, m, rho, dz = get_quantities_2D(Pos[p,:], Weights[p], HSML[p], Rho[p], M[p], param.len2pix)
 
         for k = k_start:8
 
 
             x, y, skip_k = get_xyz( _pos, HSML[p], k, 
-                                   len2pix, param.Npixels[1], param.Npixels[2], param.Npixels[3], 
+                                   param.len2pix, param.Npixels[1], param.Npixels[2], param.Npixels[3], 
                                    param.boxsize, param.periodic,
                                    halfXsize, halfYsize, halfZsize, 2)
 
@@ -529,13 +536,11 @@ function sphMapping_3D( Pos::Array{<:Real}, HSML::Array{<:Real},
     image = zeros(N_distr)
     w_image = zeros(N_distr)
 
-    # store this here for performance increase
-    len2pix = 1.0/param.pixelSideLength
+    halfXsize = param.halfsize[1]
+    halfYsize = param.halfsize[2]
+    halfZsize = param.halfsize[3]
 
     if param.periodic
-        halfXsize = 0.5 * param.x_size
-        halfYsize = 0.5 * param.y_size
-        halfZsize = 0.5 * param.z_size
         k_start = 0
     else
         k_start = 8
@@ -562,13 +567,13 @@ function sphMapping_3D( Pos::Array{<:Real}, HSML::Array{<:Real},
             continue
         end
 
-        _pos, weight, hsml, hsml_inv, volume, m, rho, dz = get_quantities_3D(Pos[p,:], Weights[p], HSML[p], Rho[p], M[p], len2pix)
+        _pos, weight, hsml, hsml_inv, volume, m, rho, dz = get_quantities_3D(Pos[p,:], Weights[p], HSML[p], Rho[p], M[p], param.len2pix)
 
         for k_periodic = k_start:8
 
 
             x, y, z, skip_k = get_xyz( _pos, HSML[p], k_periodic, 
-                                   len2pix, param.Npixels[1], param.Npixels[2], param.Npixels[3], 
+                                   param.len2pix, param.Npixels[1], param.Npixels[2], param.Npixels[3], 
                                    param.boxsize, param.periodic,
                                    halfXsize, halfYsize, halfZsize, 3)
 
@@ -623,7 +628,6 @@ function sphMapping_3D( Pos::Array{<:Real}, HSML::Array{<:Real},
         end
     end # p
 
-    return reduce_image_3D( image, w_image, 
-                            param.Npixels[1], param.Npixels[2], param.Npixels[3] )
+    return image, w_image
 
 end # function 

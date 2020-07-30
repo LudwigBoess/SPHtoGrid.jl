@@ -45,11 +45,11 @@ end
 
 
 """
-    function reduce_futures(fut::Array{<:Tuple{Array{<:Real}, Array{<:Real}}})
+    function reduce_futures(fut::Array{<:Tuple})
 
 Reduces the touple returned by the Array of `Future`s to image arrays. 
 """
-@inline @fastmath function reduce_futures(fut::Array{<:Tuple{Array{<:Real}, Array{<:Real}}})
+@inline @fastmath function reduce_futures(fut::Array{<:Tuple})
     
     image   = fut[1][1]
     w_image = fut[1][2]

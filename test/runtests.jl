@@ -76,7 +76,7 @@ addprocs(2)
 
     @testset "Shift particles" begin
         
-        par = mappingParameters(center = [0.0, 0.0, 0.0],
+        par = mappingParameters(center = [1.0, 1.0, 1.0],
                                 x_size = 6.0, y_size = 6.0, z_size = 6.0,
                                 Npixels = 500)
 
@@ -86,12 +86,13 @@ addprocs(2)
 
         hsml = [0.5, 0.5]
 
-        x, par = SPHtoGrid.check_center_and_move_particles(x, par)
+        x, par2 = SPHtoGrid.check_center_and_move_particles(x, par)
 
-        @test x[1, :] ≈ [ 4.0, 4.0, 4.0]
-        @test x[2, :] ≈ [ 0.0, 2.0, 4.0]
+        @test x[1, :] ≈ [ 0.0, 0.0, 0.0]
+        @test x[2, :] ≈ [ -4.0, -2.0, 0.0]
 
-        @test par.center ≈ [ 3.0, 3.0, 3.0 ]
+        @test par.center ≈ [ 1.0, 1.0, 1.0 ]
+        @test par2.center ≈ [ 0.0, 0.0, 0.0 ]
 
     end
 
@@ -157,17 +158,17 @@ addprocs(2)
         kernel = WendlandC6()
 
         par = mappingParameters(center = [3.0, 3.0, 3.0],
-                                x_size = 6.0, y_size = 6.0, z_size = 6.0,
-                                Npixels = 500)
+                        x_size = 6.0, y_size = 6.0, z_size = 6.0,
+                        Npixels = 200,
+                        boxsize = 6.0)
 
         @info "2D"
-        
-        @info "Single core, no unit conservation."
-        d = sphMapping(x, hsml, m, rho, bin_quantity,
+
+        @info "Single core."
+        d = sphMapping(x, hsml, m, rho, bin_quantity, ones(length(rho)),
                             param=par, kernel=kernel,
-                            conserve_quantities=false,
                             parallel = false,
-                            show_progress=false)
+                            show_progress=true)
 
 
         ideal_file = joinpath(dirname(@__FILE__), "image.dat")
@@ -178,65 +179,30 @@ addprocs(2)
         @test d[117, 92] ≈ d_ideal[117, 92]
 
 
-        # @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity,
-        # 					  param=par, kernel=kernel,
-        # 					  conserve_quantities=false,
-        # 					  parallel = false,
-        #                       show_progress=true)
-
-        par = mappingParameters(center = [3.0, 3.0, 3.0],
-                                x_size = 6.0, y_size = 6.0, z_size = 6.0,
-                                Npixels = 50)
-
-        @info "Single core, unit conservation."
-        @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity,
+        @info "Multi core."
+        @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(length(rho)),
                             param=par, kernel=kernel,
-                            conserve_quantities=true,
-                            parallel = false,
-                            show_progress=false)
-
-                            
-        
-        @info "Multicore, unit conservation."
-        @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity,
-                            param=par, kernel=kernel,
-                            conserve_quantities=false,
                             parallel = true,
                             show_progress=false)
-                            
+
         @info "3D"
 
         par = mappingParameters(center = [3.0, 3.0, 3.0],
-                                x_size = 6.0, y_size = 6.0, z_size = 6.0,
-                                Npixels = 20)
-
-        @info "Single core, no unit conservation."
-        @test_nowarn  sphMapping(x, hsml, m, rho, bin_quantity,
+                        x_size = 6.0, y_size = 6.0, z_size = 6.0,
+                        Npixels = 10,
+                        boxsize = 6.0)
+        
+        @info "Single core."
+        @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(length(rho)),
                             param=par, kernel=kernel,
-                            conserve_quantities=false,
                             parallel = false,
-                            show_progress=false,
-                            dimensions=3)
+                            show_progress=true)
 
-        par = mappingParameters(center = [3.0, 3.0, 3.0],
-                                x_size = 6.0, y_size = 6.0, z_size = 6.0,
-                                Npixels = 20)
-
-        @info "Single core, unit conservation."
-        @test_nowarn  sphMapping(x, hsml, m, rho, bin_quantity,
+        @info "Multi core."
+        @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(length(rho)),
                             param=par, kernel=kernel,
-                            conserve_quantities=true,
-                            parallel = false,
-                            show_progress=false,
-                            dimensions=3)
-
-        @info "Multi core, no unit conservation."
-        @test_nowarn  sphMapping(x, hsml, m, rho, bin_quantity,
-                            param=par, kernel=kernel,
-                            conserve_quantities=false,
                             parallel = true,
-                            show_progress=false,
-                            dimensions=3)
+                            show_progress=false)
 
     end
 
