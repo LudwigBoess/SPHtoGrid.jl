@@ -24,7 +24,11 @@ module SPHtoGrid
            write_smac1_par,
            write_smac2_par,
            rotate_3D, rotate_3D!,
-           project_along_axis
+           project_along_axis,
+           part_weight_one,
+           part_weight_physical, 
+           part_weight_emission,
+           part_weight_XrayBand
 
     
 
