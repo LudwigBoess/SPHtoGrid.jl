@@ -48,14 +48,14 @@ function filter_particles_in_image(pos::Array{<:Real}, hsml::Array{<:Real}, para
         for k_periodic = k_start:8
 
             if param.periodic
-                x, y, z = find_position_periodic(pos, k_periodic, param.boxsize)
+                x, y, z = find_position_periodic(pos[p,:], k_periodic, param.boxsize)
             else
                 x = pos[p,1]
                 y = pos[p,2]
                 z = pos[p,3]
             end
 
-            in_image = check_in_image(x, y, z, hsml[p], param.halfsize[1], param.halfsize[2], param.halfsize[3])
+            in_image = check_in_image(x, y, z, 0.5hsml[p], param.halfsize[1], param.halfsize[2], param.halfsize[3])
             
             if in_image
                 break
