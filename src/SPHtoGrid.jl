@@ -2,6 +2,8 @@ module SPHtoGrid
 
     using Distributed
     using SPHKernels
+    using Unitful
+    using Printf
 
     include("parameters.jl")
     include("filter_shift.jl")
@@ -31,6 +33,9 @@ module SPHtoGrid
            part_weight_XrayBand
 
     
+    function output_time(t1, t2)
+        return @sprintf("%0.3e", Float64((t2-t1))*1.e-9)
+    end
 
     """
         function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, 
@@ -76,10 +81,22 @@ module SPHtoGrid
         N_in = length(Bin_Quant)
 
         # filter particles if they are contained in the image
+        
+
+        if show_progress
+            @info "Filtering particles..."
+            t1 = time_ns()
+        end
+
         if filter_particles
             p_in_image = filter_particles_in_image(Pos, HSML, param)
         else
             p_in_image = trues(N_in)
+        end
+
+        if show_progress
+            t2 = time_ns()
+            @info "  elapsed: $(output_time(t1,t2)) s"
         end
 
         # if this is not a float it has units, which need to be stripped
@@ -87,6 +104,7 @@ module SPHtoGrid
 
             if show_progress
                 @info "Stripping units..."
+                t1 = time_ns()
             end
 
             # allocate reduced arrays
@@ -98,6 +116,11 @@ module SPHtoGrid
             weights = ustrip(Weights[p_in_image])
 
         else
+            if show_progress
+                @info "Assigning arrays..."
+                t1 = time_ns()
+            end
+            
             # allocate reduced arrays
             x       = Pos[p_in_image, :]
             hsml    = HSML[p_in_image]
@@ -106,22 +129,48 @@ module SPHtoGrid
             bin_q   = Bin_Quant[p_in_image]
             weights = Weights[p_in_image]
         end
+
+        if show_progress
+            t2 = time_ns()
+            @info "  elapsed: $(output_time(t1,t2)) s"
+        end
         
         N_map = length(m)
 
         @info "Particles in image: $N_map / $N_in"
 
         # First check if all particles are centered around 0 and shift them if they are not
+        if show_progress
+            @info "Centering on [0.0, 0.0, 0.0]"
+            t1 = time_ns()
+        end
         x, par = check_center_and_move_particles(x, param)
+
+        if show_progress
+            t2 = time_ns()
+            @info "  elapsed: $(output_time(t1,t2)) s"
+        end
+       
+
+        if show_progress
+            @info "Mapping..."
+            t1 = time_ns()
+        end
 
         if (dimensions == 2)
 
             if !parallel
-                image, w_image = sphMapping_2D(x, hsml, m, rho, bin_q, weights;
+
+                image = sphMapping_2D(x, hsml, m, rho, bin_q, weights;
                                     param=par, kernel=kernel,
                                     show_progress=show_progress)
 
-                return reduce_image_2D( image, w_image, 
+                if show_progress
+                    t2 = time_ns()
+                    @info "  elapsed: $(output_time(t1,t2)) s"
+                end
+
+                return reduce_image_2D( image,
                          param.Npixels[1], param.Npixels[2] )
             else
                 @info "Running on $(nworkers()) cores."
@@ -145,19 +194,29 @@ module SPHtoGrid
                                                            show_progress=false)
                 end
                 
-                image, w_image = reduce_futures(fetch.(futures))
+                image = sum(fetch.(futures))
 
-                return reduce_image_2D( image, w_image, 
+                if show_progress
+                    t2 = time_ns()
+                    @info "  elapsed: $(output_time(t1,t2)) s"
+                end
+
+                return reduce_image_2D( image, 
                          param.Npixels[1], param.Npixels[2] )
             end
 
         elseif (dimensions == 3 )
             if !parallel
-                image, w_image = sphMapping_3D(x, hsml, m, rho, bin_q, weights;
+                image = sphMapping_3D(x, hsml, m, rho, bin_q, weights;
                                     param=par, kernel=kernel,
                                     show_progress=show_progress)
+
+                if show_progress
+                    t2 = time_ns()
+                    @info "  elapsed: $(output_time(t1,t2)) s"
+                end
                                     
-                return reduce_image_3D( image, w_image, 
+                return reduce_image_3D( image, 
                          param.Npixels[1], param.Npixels[2], param.Npixels[3] )
             else
                 @info "Running on $(nworkers()) cores."
@@ -179,9 +238,14 @@ module SPHtoGrid
                 end
 
                 # get and reduce results
-                image, w_image = reduce_futures(fetch.(futures))
+                image = sum(fetch.(futures))
 
-                return reduce_image_3D( image, w_image, 
+                if show_progress
+                    t2 = time_ns()
+                    @info "  elapsed: $(output_time(t1,t2)) s"
+                end
+
+                return reduce_image_3D( image,
                          param.Npixels[1], param.Npixels[2], param.Npixels[3] )
             end
         end
