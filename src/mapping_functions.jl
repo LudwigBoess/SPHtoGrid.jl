@@ -1,8 +1,6 @@
 """
             Functions for sph mapping to grid.
 
-            sphMapping_2D without property conservation works like SPLASH by
-            Daniel Price: http://users.monash.edu.au/~dprice/splash/.
 
             The property conservation is based on Smac by Dolag et. al. 2005:
             https://ui.adsabs.harvard.edu/abs/2005MNRAS.363...29D/abstract
@@ -14,9 +12,7 @@
 """
 
 using ProgressMeter
-using Unitful
 using SPHKernels
-
 
 """
     check_in_image(x::Real, y::Real, z::Real, hsml::Real,
@@ -30,6 +26,19 @@ Checks if a particle is in the image frame.
     if (( x + hsml ) > halfXsize ||  ( x - hsml ) < -halfXsize ||
         ( y + hsml ) > halfYsize ||  ( y - hsml ) < -halfYsize ||
         ( z + hsml ) > halfZsize ||  ( z - hsml ) < -halfZsize )
+
+        return false
+    else
+        return true
+    end
+end
+
+@inline function check_in_image(pos::Array{<:Real}, hsml::Real,
+                                halfsize::Array{<:Real})
+
+    if (( pos[1] + hsml ) > halfsize[1] ||  ( pos[1] - hsml ) < -halfsize[1] ||
+        ( pos[2] + hsml ) > halfsize[2] ||  ( pos[2] - hsml ) < -halfsize[2] ||
+        ( pos[3] + hsml ) > halfsize[3] ||  ( pos[3] - hsml ) < -halfsize[3] )
 
         return false
     else
@@ -59,6 +68,53 @@ Performs a periodic mapping of the particle position.
             pos[3] - boxsize : pos[3] + boxsize)
             
     return x, y, z
+end
+
+@inline function find_position_periodic( x::Real, y::Real, z::Real, k::Integer, boxsize::Real)
+    
+    x = (k & 0x1) == 0 ? x : (x > 0 ? 
+			x - boxsize : x + boxsize)
+	
+	y = (k & 0x2) == 0 ? y : ( y > 0 ? 
+			y - boxsize : y + boxsize)
+
+	z = (k & 0x4) == 0 ? z : (z > 0 ? 
+            z - boxsize : z + boxsize)
+            
+    return x, y, z
+end
+
+@inline function find_position_periodic( pos::Array{<:Real}, k::Integer, boxsize::Real)
+    
+    x = (k & 0x1) == 0 ? pos[1] : (pos[1] > 0 ? 
+			pos[1] - boxsize : pos[1] + boxsize)
+	
+	y = (k & 0x2) == 0 ? pos[2] : (pos[2] > 0 ? 
+			pos[2] - boxsize : pos[2] + boxsize)
+
+	z = (k & 0x4) == 0 ? pos[3] : (pos[3] > 0 ? 
+            pos[3] - boxsize : pos[3] + boxsize)
+            
+    return x, y, z
+end
+
+@inline function add_subtr_box(pos::Real, boxsize::Real)
+    if pos > 0.0
+        return pos - boxsize
+    else
+        return pos + boxsize
+    end
+end
+
+@inline function find_position_periodic!( _pos::Array{<:Real}, pos::Array{<:Real}, k::Integer, boxsize::Real)
+    
+    _pos[1] = (k & 0x1) == 0 ? pos[1] : add_subtr_box(pos[1], boxsize)
+	
+	_pos[2] = (k & 0x2) == 0 ? pos[2] : add_subtr_box(pos[2], boxsize)
+
+	_pos[3] = (k & 0x4) == 0 ? pos[3] : add_subtr_box(pos[3], boxsize)
+
+    return _pos
 end
 
 """
@@ -140,6 +196,29 @@ Calculates `x, y, z` position in units of pixels and performs periodic mapping, 
     end
 end
 
+@inline @fastmath function pos2pix( _pos::Vector{<:Real}, pos::Vector{<:Real}, hsml::Real, k::Integer,
+                                   par::mappingParameters, Ndim::Integer)
+    
+    if par.periodic
+        find_position_periodic!(_pos, pos, k, par.boxsize)
+
+        # check if the particle is still in the image
+        if !check_in_image(_pos, hsml, par.halfsize)
+            return _pos, true
+        end
+    else
+        _pos = pos
+    end
+
+
+    @inbounds for i = 1:Ndim
+        _pos[i] *= par.len2pix
+        _pos[i] += 0.5 * par.Npixels[i]
+    end  
+
+    return _pos, false
+end
+
 
 """
             Indices
@@ -184,6 +263,48 @@ end
             Weights
 """
 
+
+@inline @fastmath function calc_kernel_and_weights(  is_undersampled::Bool,
+                    n_distr_pix::Integer, distr_weight::Real, distr_area::Real,
+                    dx::Real, dy::Real, x_dist::Real, y_dist::Real, 
+                    hsml_inv::Real, kernel::SPHKernel)
+
+    dxdy = dx * dy
+    distr_area += dxdy
+
+    if is_undersampled
+
+        wk = dxdy
+        distr_weight += dxdy
+        n_distr_pix  += 1
+
+    else # is_undersampled
+
+        u = get_d_hsml_2D(x_dist, y_dist, hsml_inv)
+
+        if u <= 1.0
+
+            wk = kernel_value_2D(kernel, u, hsml_inv)
+            wk *= dxdy
+            distr_weight += wk
+            n_distr_pix += 1
+        else
+            wk = 0.0
+        end # u < 1.0
+
+    end # is_undersampled
+
+    return wk, distr_weight, distr_area, n_distr_pix
+end
+
+@inline @fastmath function  get_x_dx(x::Real, hsml::Real, i::Integer)
+
+    dx = get_dxyz(x, hsml, i)
+    x_dist = x - i - 0.5
+
+    return x_dist, dx
+end
+
 """
     function calculate_weights_2D(  wk::Array{<:Real,1}, 
                                     iMin::Integer, iMax::Integer, 
@@ -209,48 +330,20 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
 
     distr_weight = 0.0
     distr_area   = 0.0
-    n_distr_pix = 0
+    n_distr_pix  = 0
 
 
     @inbounds for i = iMin:iMax
-        dx = get_dxyz(x, hsml, i)
-        x_dist = x - i - 0.5
+        x_dist, dx = get_x_dx(x, hsml, i)
 
         @inbounds for j = jMin:jMax
-            dy = get_dxyz(y, hsml, j)
+            y_dist, dy = get_x_dx(y, hsml, j)
 
             idx = calculate_index_2D(i, j, x_pixels)
 
-            dxdy = dx * dy
-            distr_area += dxdy
-
-            if is_undersampled
-
-                wk[idx] = dxdy
-                distr_weight += dxdy
-                n_distr_pix  += 1
-
-                continue
-
-            else # is_undersampled
-
-                y_dist = y - j - 0.5
-
-                u = get_d_hsml_2D(x_dist, y_dist, hsml_inv)
-
-                if u <= 1.0
-
-                    wk[idx] = kernel_value_2D(kernel, u, hsml_inv)
-                    wk[idx] *= dxdy
-                    distr_weight += wk[idx]
-                    n_distr_pix += 1
-                
-                else
-                    wk[idx] = 0.0
-                    continue
-                end # u < 1.0
-
-            end # is_undersampled
+            wk[idx], distr_weight, distr_area, n_distr_pix = calc_kernel_and_weights(is_undersampled, n_distr_pix, 
+                                                                                     distr_weight, distr_area, dx, dy, 
+                                                                                     x_dist, y_dist, hsml_inv, kernel)
         end # j
     end # i
 
@@ -360,6 +453,33 @@ Applies the different contributions to the image and the weight image.
     return image, w_image
 end
 
+@inline @fastmath function update_image( image::Array{<:Real}, 
+                                         wk::Real, bin_q::Real, 
+                                         geometry_norm::Real )
+
+    if wk > 0.0
+        pix_weight = geometry_norm * wk
+        image[1] += bin_q * pix_weight
+        image[2] += pix_weight
+    end
+
+    return image[1], image[2]
+end
+
+@inline @fastmath function update_image!( idx::Integer, 
+                                          image::Array{<:Real}, 
+                                          wk::Array{<:Real}, bin_q::Real, 
+                                          geometry_norm::Real )
+
+    if wk[idx] > 0.0
+        pix_weight = geometry_norm * wk[idx]
+        image[idx,1] += bin_q * pix_weight
+        image[idx,2] += pix_weight
+    end
+
+    image
+end
+
 
 
 """
@@ -413,10 +533,10 @@ function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real},
 
     N = length(M)  # number of particles
     
-    N_distr = param.Npixels[1] * param.Npixels[2] * param.Npixels[3]
+    N_distr = param.Npixels[1] * param.Npixels[2]
 
-    image = zeros(N_distr)
-    w_image = zeros(N_distr)
+    image = zeros(N_distr, 2)
+    #w_image = zeros(N_distr)
 
     # store this here for performance increase
 
@@ -427,7 +547,7 @@ function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real},
     if param.periodic
         k_start = 0
     else
-        k_start = 8
+        k_start = 7
     end
 
     # max number of pixels over which the particle can be distributed
@@ -456,7 +576,7 @@ function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real},
 
         _pos, weight, hsml, hsml_inv, area, m, rho, dz = get_quantities_2D(Pos[p,:], Weights[p], HSML[p], Rho[p], M[p], param.len2pix)
 
-        for k = k_start:8
+        for k = k_start:7
 
 
             x, y, skip_k = get_xyz( _pos, HSML[p], k, 
@@ -473,9 +593,9 @@ function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real},
             jMin, jMax = get_ijk_min_max( y, hsml, param.Npixels[2] )
 
             wk, n_distr_pix, distr_weight, distr_area = calculate_weights_2D(wk, iMin, iMax, jMin, jMax,
-                                                                x, y, hsml, hsml_inv, 
-                                                                kernel,
-                                                                param.Npixels[1])
+                                                                            x, y, hsml, hsml_inv, 
+                                                                            kernel,
+                                                                            param.Npixels[1])
            
             # skip if the particle is not contained in the image 
             # ( should only happen with periodic boundary conditions )
@@ -490,7 +610,7 @@ function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real},
             @fastmath @inbounds for i = iMin:iMax, j = jMin:jMax
                 idx = calculate_index_2D(i, j, param.Npixels[1])
 
-                image[idx], w_image[idx] = update_image( image[idx], w_image[idx], 
+                image[idx,1], image[idx,2] = update_image( image[idx,1], image[idx,2], 
                                                          wk[idx], bin_q, area_norm)
                 
 
@@ -508,7 +628,7 @@ function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real},
         end
     end # p
 
-    return image, w_image
+    return image#, w_image
 
 end # function 
 
@@ -533,8 +653,7 @@ function sphMapping_3D( Pos::Array{<:Real}, HSML::Array{<:Real},
     # max number of pixels over which the particle can be distributed
     N_distr = param.Npixels[1] * param.Npixels[2] * param.Npixels[3]
 
-    image = zeros(N_distr)
-    w_image = zeros(N_distr)
+    image = zeros(N_distr,2)
 
     halfXsize = param.halfsize[1]
     halfYsize = param.halfsize[2]
@@ -611,7 +730,7 @@ function sphMapping_3D( Pos::Array{<:Real}, HSML::Array{<:Real},
                                          param.Npixels[1],
                                          param.Npixels[2])
 
-                image[idx], w_image[idx] = update_image( image[idx], w_image[idx], 
+                image[idx,1], image[idx,2] = update_image( image[idx,1], image[idx,2], 
                                                          wk[idx], bin_q, volume_norm)
                 
             end # i, j, k
@@ -628,6 +747,6 @@ function sphMapping_3D( Pos::Array{<:Real}, HSML::Array{<:Real},
         end
     end # p
 
-    return image, w_image
+    return image
 
 end # function 
