@@ -196,13 +196,39 @@ addprocs(2)
         @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(length(rho)),
                             param=par, kernel=kernel,
                             parallel = false,
-                            show_progress=false)
+                            show_progress=false,
+                            dimensions=3)
 
         @info "Multi core."
         @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(length(rho)),
                             param=par, kernel=kernel,
                             parallel = true,
-                            show_progress=false)
+                            show_progress=false,
+                            dimensions=3)
+
+    end
+
+    @testset "TSC Mapping" begin
+
+        fi = joinpath(dirname(@__FILE__), "x.txt")
+        x = Float32.(readdlm(fi))
+
+        fi = joinpath(dirname(@__FILE__), "bin_q.txt")
+        bin_quantity = Float32.(readdlm(fi))
+
+
+        par = mappingParameters(center = [3.0, 3.0, 3.0],
+                        x_size = 6.0, y_size = 6.0, z_size = 6.0,
+                        Npixels = 200,
+                        boxsize = 6.0)
+
+        @test_nowarn sphMapping( x, bin_quantity, 
+                        param=par, show_progress=false)
+
+
+        @test_nowarn sphMapping( x, bin_quantity, 
+                        param=par, show_progress=false,
+                        dimensions=3)
 
     end
 
