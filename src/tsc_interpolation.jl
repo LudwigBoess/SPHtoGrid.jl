@@ -25,10 +25,10 @@ end
 
 function reduce_image_2D_tsc(tsc::Array{<:Real}, par::mappingParameters)
     
-    image = zeros(par.Npixels[1], par.Npixels[2])                    
+    image = zeros(par.Npixels[2], par.Npixels[1])                    
     @inbounds for ix = 1:par.Npixels[1], iy = 1:par.Npixels[2], iz = 1:par.Npixels[3]
 
-        image[ix, iy] += tsc[ix, iy, iz]
+        image[iy, ix] += tsc[ix, iy, iz]
 
     end # ix, iy, iz
 
@@ -144,6 +144,7 @@ function sphMapping(Pos::Array{<:Real}, Bin_Quant::Array{<:Real};
 
     if (dimensions == 2)
         image = reduce_image_2D_tsc(tsc, param)
+        #image = copy(transpose(image))
     elseif (dimensions == 3 )
         image = reduce_image_3D_tsc(tsc, param)
     end
