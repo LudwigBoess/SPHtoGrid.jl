@@ -84,19 +84,6 @@ end
     return x, y, z
 end
 
-@inline function find_position_periodic( pos::Array{<:Real}, k::Integer, boxsize::Real)
-    
-    x = (k & 0x1) == 0 ? pos[1] : (pos[1] > 0 ? 
-			pos[1] - boxsize : pos[1] + boxsize)
-	
-	y = (k & 0x2) == 0 ? pos[2] : (pos[2] > 0 ? 
-			pos[2] - boxsize : pos[2] + boxsize)
-
-	z = (k & 0x4) == 0 ? pos[3] : (pos[3] > 0 ? 
-            pos[3] - boxsize : pos[3] + boxsize)
-            
-    return x, y, z
-end
 
 @inline function add_subtr_box(pos::Real, boxsize::Real)
     if pos > 0.0
