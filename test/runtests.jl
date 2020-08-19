@@ -232,4 +232,84 @@ addprocs(2)
 
     end
 
+    @testset "FITS io" begin
+       
+        # map data
+        fi = joinpath(dirname(@__FILE__), "bin_q.txt")
+        bin_quantity = Float32.(readdlm(fi))
+
+        fi = joinpath(dirname(@__FILE__), "x.txt")
+        x = Float32.(readdlm(fi))
+
+        fi = joinpath(dirname(@__FILE__), "rho.txt")
+        rho = Float32.(readdlm(fi))
+
+        fi = joinpath(dirname(@__FILE__), "hsml.txt")
+        hsml = Float32.(readdlm(fi))
+
+        fi = joinpath(dirname(@__FILE__), "m.txt")
+        m = Float32.(readdlm(fi))
+
+        kernel = WendlandC6()
+
+        par = mappingParameters(center = [3.0, 3.0, 3.0],
+                        x_size = 6.0, y_size = 6.0, z_size = 6.0,
+                        Npixels = 200,
+                        boxsize = 6.0)
+
+        d = sphMapping(x, hsml, m, rho, bin_quantity, ones(length(rho)),
+                            param=par, kernel=kernel,
+                            parallel = false,
+                            show_progress=false)
+
+        # store image in a file
+        fits_file = joinpath(dirname(@__FILE__), "image.fits")
+
+        write_fits_image(fits_file, d, par)
+
+        # read image back into memory and compare
+        image, fits_par, snap = read_fits_image(fits_file)
+
+        @test image ≈ d 
+        @test par.boxsize == fits_par.boxsize
+        @test par.center == fits_par.center
+
+
+    end
+
+    @testset "Reconstructing Grid" begin
+        par = mappingParameters(center = [3.0, 3.0, 3.0],
+                        x_size = 6.0, y_size = 6.0, z_size = 6.0,
+                        Npixels = 200,
+                        boxsize = 6.0)
+
+        @test_nowarn get_map_grid_2D(par)
+        @test_nowarn get_map_grid_3D(par)
+    end
+
+    @testset "Weight functions" begin
+
+        weight = part_weight_one(1)
+        @test weight[1] == 1.0
+
+        par = mappingParameters(center = [3.0, 3.0, 3.0],
+                        x_size = 6.0, y_size = 6.0, z_size = 6.0,
+                        Npixels = 200,
+                        boxsize = 6.0)
+
+        weight = part_weight_physical(1, par)
+        @test weight[1] == par.pixelSideLength
+
+        weight = part_weight_emission([0.5, 0.5], [0.5, 0.5])
+        @test weight[1] ≈ 0.1767766952966369
+
+        # weight = part_weight_spectroscopic([0.5, 0.5], [0.5, 0.5])
+        # @test weight[1] ≈ 0.42044820762685725
+
+        # weight = part_weight_XrayBand([0.5, 0.5], 0.5, 1.5)
+        # @test weight[1] ≈ 0.0
+
+
+    end
 end
+
