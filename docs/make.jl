@@ -10,6 +10,7 @@ makedocs(
             "Install" => "install.md",
             "Mapping SPH Data" => "mapping.md",
             "Rotating Images" => "rotating.md",
+            "Saving/Loading Images" => "io.md",
             "External Programs" => "external.md",
             "API reference" => "api.md"
             ]
