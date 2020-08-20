@@ -91,6 +91,12 @@ struct mappingParameters
             z_size = z_lim[2] - z_lim[1]
         end
 
+        if center == [-1.0, -1.0, -1.0]
+            center[1] = x_lim[1] + 0.5*x_size
+            center[2] = y_lim[1] + 0.5*y_size
+            center[3] = z_lim[1] + 0.5*z_size
+        end
+
         # find the maximum extent of the map
         max_size = max(x_size, y_size)
 

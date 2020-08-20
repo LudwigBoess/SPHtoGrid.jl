@@ -20,6 +20,8 @@ module SPHtoGrid
     include("rotate_particles.jl")
     include("cic_interpolation.jl")
     include("tsc_interpolation.jl")
+    include("weight_functions.jl")
+    include("io.jl")
     
 
 
@@ -37,7 +39,9 @@ module SPHtoGrid
            part_weight_one,
            part_weight_physical, 
            part_weight_emission,
-           part_weight_XrayBand
+           part_weight_XrayBand,
+           read_fits_image,
+           write_fits_image
 
 
 end # module
