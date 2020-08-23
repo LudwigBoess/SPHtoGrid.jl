@@ -175,11 +175,11 @@ uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[TriangularShapedCloudInterpolation]]
 deps = ["Documenter", "DocumenterTools", "Test"]
-git-tree-sha1 = "82fe776039dc2de3c876ef97747040d85a8c1027"
+git-tree-sha1 = "20c7b7b392a136ee10be73d0ccd0c6ad3e9795fd"
 repo-rev = "master"
 repo-url = "https://github.com/LudwigBoess/TriangularShapedCloudInterpolation.jl.git"
 uuid = "51f55a63-7ec5-4b6d-a5a9-9bbf03ec1f62"
-version = "0.0.1"
+version = "0.1.0"
 
 [[UUIDs]]
 deps = ["Random", "SHA"]
