@@ -168,7 +168,7 @@ addprocs(2)
         d = sphMapping(x, hsml, m, rho, bin_quantity, ones(length(rho)),
                             param=par, kernel=kernel,
                             parallel = false,
-                            show_progress=false)
+                            show_progress=true)
 
 
         ideal_file = joinpath(dirname(@__FILE__), "image.dat")
