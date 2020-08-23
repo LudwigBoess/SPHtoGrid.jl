@@ -7,21 +7,6 @@ function filter_particles_tsc(pos::Array{<:Real}, par::mappingParameters)
                     (par.z_lim[1] .<= pos[:,3] .< par.z_lim[2]) )
 end
 
-function construct_positions_tsc(pos::Array{<:Real}, par::mappingParameters)
-
-    pos_tsc = zeros(length(pos[:,1]),3)
-
-    dx   = -(par.x_lim[1] - par.x_lim[2]) / par.Npixels[1]
-    pos_tsc[:,1] = ( pos[:,1] .- par.x_lim[1] ) ./ dx 
-
-    dy   = -(par.y_lim[1] - par.y_lim[2]) / par.Npixels[2]
-    pos_tsc[:,2] = ( pos[:,2] .- par.y_lim[1] ) ./ dy 
-
-    dz   = -(par.z_lim[1] - par.z_lim[2]) / par.Npixels[3]
-    pos_tsc[:,3] = ( pos[:,3] .- par.z_lim[1] ) ./ dz
-
-    return pos_tsc
-end
 
 function reduce_image_2D_tsc(tsc::Array{<:Real}, par::mappingParameters)
     
@@ -113,7 +98,7 @@ function sphMapping(Pos::Array{<:Real}, Bin_Quant::Array{<:Real};
         @info "constructing grid positions..."
         t1 = time_ns()
     end
-    pos_tsc = construct_positions_tsc(x, param)
+    pos_tsc = get_tsc_positions(x, param.Npixels)
 
     if show_progress
         t2 = time_ns()
@@ -127,9 +112,7 @@ function sphMapping(Pos::Array{<:Real}, Bin_Quant::Array{<:Real};
     end
 
     tsc = TSCInterpolation( bin_q, 
-                            pos_tsc[:,1], param.Npixels[1], 
-                            pos_tsc[:,2], param.Npixels[2], 
-                            pos_tsc[:,3], param.Npixels[3], 
+                            pos_tsc, param.Npixels, 
                             average=true)
 
     if show_progress
