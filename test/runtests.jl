@@ -193,11 +193,13 @@ addprocs(2)
                         boxsize = 6.0)
         
         @info "Single core."
-        @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(length(rho)),
+        d = sphMapping(x, hsml, m, rho, bin_quantity, ones(length(rho)),
                             param=par, kernel=kernel,
                             parallel = false,
-                            show_progress=false,
+                            show_progress=true,
                             dimensions=3)
+
+        @test !isnan(d[1,1,1])
 
         @info "Multi core."
         @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(length(rho)),
@@ -221,6 +223,11 @@ addprocs(2)
                         x_size = 6.0, y_size = 6.0, z_size = 6.0,
                         Npixels = 200,
                         boxsize = 6.0)
+
+        d = sphMapping( x, bin_quantity, 
+                        param=par, show_progress=true)
+
+        @test !isnan(d[1,1])
 
         @test_nowarn sphMapping( x, bin_quantity, 
                         param=par, show_progress=false)
