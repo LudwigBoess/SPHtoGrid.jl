@@ -54,16 +54,16 @@ struct mappingParameters
     boxsize::Float64
     periodic::Bool
 
-    function mappingParameters(;x_lim::Vector{Float64}   = [-1.0, -1.0],
-                                y_lim::Vector{Float64}   = [-1.0, -1.0],
-                                z_lim::Vector{Float64}   = [-1.0, -1.0],
-                                center::Vector{Float64}  = [-1.0, -1.0, -1.0],
-                                x_size::Float64          =  -1.0,
-                                y_size::Float64          =  -1.0,
-                                z_size::Float64          =  -1.0,
-                                pixelSideLength::Float64 =  -1.0,
-                                Npixels::Int64           =   0,
-                                boxsize::Float64         =  -1.0)
+    function mappingParameters(;x_lim::Vector{<:Real}   = [-1.0, -1.0],
+                                y_lim::Vector{<:Real}   = [-1.0, -1.0],
+                                z_lim::Vector{<:Real}   = [-1.0, -1.0],
+                                center::Vector{<:Real}  = [-1.0, -1.0, -1.0],
+                                x_size::Real            =  -1.0,
+                                y_size::Real            =  -1.0,
+                                z_size::Real            =  -1.0,
+                                pixelSideLength::Real   =  -1.0,
+                                Npixels::Integer        =   0,
+                                boxsize::Real           =  -1.0)
 
 
         # calculate limits if center position and sizes are given
