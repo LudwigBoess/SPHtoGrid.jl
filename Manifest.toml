@@ -153,9 +153,9 @@ uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
 [[SPHKernels]]
 deps = ["Documenter", "DocumenterTools", "Test"]
-git-tree-sha1 = "acc73fb7ddea09e1fb1d616bb9a1d74480d6fa51"
+git-tree-sha1 = "7726a78d089e5c4ff0a74de0643f38071cc55158"
 uuid = "54ab9b88-2582-4358-b400-8014666a1730"
-version = "1.2.1"
+version = "1.2.2"
 
 [[Sass]]
 deps = ["BinaryProvider", "Libdl", "Test"]
