@@ -318,5 +318,17 @@ addprocs(2)
 
 
     end
+
+    @testset "Effect functions" begin
+
+        @test density_2D(1.0, 1.0) ≈ 2.088976598481755
+
+        @test SPHtoGrid.Tcmb(0.0)  ≈ 2.728
+        @test SPHtoGrid.Tcmb(10.0) ≈ 30.008000000000003
+
+        @test kinetic_SZ(1.0, 1.0) ≈ -2.2190366589946296e-35
+
+        @test thermal_SZ(1.0, 1.0) ≈ 3.876935843260665e-34
+    end
 end
 

@@ -21,6 +21,7 @@ module SPHtoGrid
     include("cic_interpolation.jl")
     include("tsc_interpolation.jl")
     include("weight_functions.jl")
+    include("effects.jl")
     include("io.jl")
     
 
@@ -34,14 +35,23 @@ module SPHtoGrid
            read_smac1_binary_image,
            write_smac1_par,
            write_smac2_par,
+           # rotate particles
            rotate_3D, rotate_3D!,
            project_along_axis,
+           # Weight functions
            part_weight_one,
            part_weight_physical, 
            part_weight_emission,
            part_weight_XrayBand,
+           # effect functions
+           density_2D, 
+           kinetic_SZ,
+           thermal_SZ,
+           # IO
            read_fits_image,
            write_fits_image
+
+           
 
 
 end # module
