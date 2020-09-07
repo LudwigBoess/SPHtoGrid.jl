@@ -47,6 +47,7 @@ module SPHtoGrid
            density_2D, 
            kinetic_SZ,
            thermal_SZ,
+           x_ray_emission,
            # IO
            read_fits_image,
            write_fits_image
