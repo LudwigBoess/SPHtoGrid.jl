@@ -9,6 +9,7 @@ makedocs(
             "Table of Contents" => "index.md",
             "Install" => "install.md",
             "Mapping SPH Data" => "mapping.md",
+            "Effect maps" => "effects.md",
             "Rotating Images" => "rotating.md",
             "Saving/Loading Images" => "io.md",
             "External Programs" => "external.md",
