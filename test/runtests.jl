@@ -329,6 +329,10 @@ addprocs(2)
         @test kinetic_SZ(1.0, 1.0) ≈ -2.2190366589946296e-35
 
         @test thermal_SZ(1.0, 1.0) ≈ 3.876935843260665e-34
+
+        @test x_ray_emission(1.0, 1.0) == 0.0
+       
+        @test x_ray_emission(1.0, 1.0e21) == 4.4991265349972785e-23
     end
 end
 
