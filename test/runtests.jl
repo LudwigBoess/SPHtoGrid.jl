@@ -165,7 +165,7 @@ addprocs(2)
         @info "2D"
 
         @info "Single core."
-        d = sphMapping(x, hsml, m, rho, bin_quantity, ones(length(rho)),
+        d = sphMapping(x, hsml, m, rho, bin_quantity, rho,
                             param=par, kernel=kernel,
                             parallel = false,
                             show_progress=true)
