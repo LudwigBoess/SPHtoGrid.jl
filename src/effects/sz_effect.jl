@@ -1,11 +1,9 @@
-
 """
     Tcmb(z::Real)
 
 Computes the temperature of the CMB at redshift `z`.
 """
 Tcmb(z::Real) = ( 2.728 * ( 1.0 + z ) )
-
 
 """
     kSzPrefac(ν::Real, z::Real, DI_over_I::Bool)
@@ -14,36 +12,15 @@ Prefactor for the kinetic Sunyaev-Zel'dovich effect.
 """
 function kSzPrefac(ν::Real, z::Real, DI_over_I::Bool)
 
-    c   = 2.9979e10
-    σ_T = 6.65245e-25
-    
-    kSzPrefac  = -1.0 * σ_T / c
+    kSzPrefac  = -1.0 * σ_T / c_light
 
     if DI_over_I
-        h   = 6.6261e-27
-        k_B = 1.38066e-16
-        x   = h * ν / ( k_B * Tcmb(z) )
+        x   = h_planck * ν / ( k_B * Tcmb(z) )
 
         kSzPrefac *= exp(x) - 1 / (x * exp(x))
     end
 
     return kSzPrefac
-end
-
-
-"""
-    yPrefac()
-
-Prefactor for the Compton-Y parameter.
-"""
-function yPrefac()   
-
-    k_B = 1.38066e-16
-    c   = 2.9979e10
-    σ_T = 6.65245e-25
-    m_e = 9.10953e-28
-
-    return σ_T * k_B / (m_e * c * c)
 end
 
 """
@@ -66,7 +43,7 @@ end
 Computes the Compton-Y parameter from electron density `n_cm3` and temperature `T` in Kelvin at redshift `z`.
 """
 function comptonY(n_cm3::Real, T_K::Real, z::Real)
-    return yPrefac() * n_cm3 * ( T_K - Tcmb(z) )
+    return yPrefac * n_cm3 * ( T_K - Tcmb(z) )
 end
 
 """
@@ -75,9 +52,8 @@ end
 Computes the prefactor for the thermal Sunyaev-Zel'dovich effect.
 """
 function tSzPrefac(ν::Real, z::Real, DI_over_I::Bool)
-    h   = 6.6261e-27
-    k_B = 1.38066e-16
-    x   = h * ν / ( k_B * Tcmb(z) )
+
+    x   = h_planck * ν / ( k_B * Tcmb(z) )
     tSzPrefac = (x * (exp(x) + 1.0) / (exp(x) - 1.0) - 4.0)
 
     if DI_over_I
