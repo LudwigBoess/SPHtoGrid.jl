@@ -44,7 +44,7 @@ end
 
 Computes Xray weighted emission of a defined energy band. Emin and Emax are energies in eV.
 """
-function part_weight_XrayBand(T::Array{<:Real}, Emin::Real, Emax::Real)
+function part_weight_XrayBand(T::Array{<:Real}, Emin::Real=5.0e4, Emax::Real=1.0e10)
     # convert Kelvin to eV
     T_eV = T .* K2eV
 
