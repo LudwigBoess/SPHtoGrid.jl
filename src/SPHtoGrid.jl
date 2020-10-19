@@ -21,8 +21,15 @@ module SPHtoGrid
     include("cic_interpolation.jl")
     include("tsc_interpolation.jl")
     include("weight_functions.jl")
-    include("effects.jl")
+    # effect functions
+    include("effects/constants.jl")
+    include("effects/density.jl")
+    include("effects/synchrotron.jl")
+    include("effects/sz_effect.jl")
+    include("effects/x_ray.jl")
+    #read/write images
     include("io.jl")
+    
     
 
 
@@ -48,6 +55,7 @@ module SPHtoGrid
            kinetic_SZ,
            thermal_SZ,
            x_ray_emission,
+           analytic_synchrotron_emission,
            # IO
            read_fits_image,
            write_fits_image
