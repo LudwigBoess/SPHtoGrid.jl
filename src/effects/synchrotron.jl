@@ -79,7 +79,7 @@ end
 """
     CS14_acc(M::Real)
 
-Efficiency from Caprioli&Spitkovsky 2015, doi: 10.1088/0004-637x/783/2/91.
+Efficiency from Caprioli&Spitkovsky 2015, doi: 10.1088/0004-637x/783/2/91
 Same simplified approach as Vazza+12 -> is roughly half the efficiency of Kang&Ryu 2013.
 """
 function CS14_acc(M::Real)
@@ -88,7 +88,9 @@ function CS14_acc(M::Real)
 end
 
 """
-    Constant efficiency as in Pfrommer+ 2016
+    P16_acc(M::Real)
+
+Constant efficiency as in Pfrommer+ 2016, doi: 10.1093/mnras/stw2941 
 """
 function P16_acc(M::Real)
     return 0.5
@@ -127,7 +129,32 @@ end
 
 
 """
-    analytic_synchrotron_emission()
+    analytic_synchrotron_emission( rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
+                                   T_K::Array{<:Real}, Mach::Array{<:Real};
+                                   xH::Real=0.76, dsa_model::Integer=1, ν0::Real=1.4e9,
+                                   integrate_pitch_angle::Bool=true )
+
+Computes the analytic synchrotron emission with the simplified approach described in Longair Eq. 8.128.
+
+# Arguments
+- `rho_cgs::Array{<:Real}`: Density in ``g/cm^3``.
+- `B_cgs::Array{<:Real}`:   Magnetic field in Gauss.
+- `T_K::Array{<:Real}`:     Temperature in Kelvin.
+- `Mach::Array{<:Real}`:    Mach number.
+
+# Keyword Arguments
+- `xH::Float64 = 0.76`:               Hydrogen fraction of the simulation, if run without chemical model.
+- `dsa_model::Integer=1`:             Diffuse-Shock-Acceleration model. Takes values `0...4`, see next section.
+- `ν0::Real=1.4e9`:                   Observation frequency in ``Hz``.
+- `integrate_pitch_angle::Bool=true`: Integrates over the pitch angle as in Longair Eq. 8.87.
+
+# DSA models
+- `0`: [`KR07_acc`](@ref). Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1.
+- `1`: [`KR13_acc`](@ref). Efficiency model from Kang&Ryu 2013, doi:10.1088/0004-637X/764/1/95 .
+- `2`: [`Ryu19_acc`](@ref). Efficiency model from Ryu et al. 2019, https://arxiv.org/abs/1905.04476 .
+- `3`: [`CS14_acc`](@ref). Efficiency model from Caprioli&Spitkovsky 2015, doi: 10.1088/0004-637x/783/2/91 .
+- `4`: [`P16_acc`](@ref). Constant efficiency as in Pfrommer+ 2016, doi: 10.1093/mnras/stw2941 .
+
 """
 function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
                                        T_K::Array{<:Real}, Mach::Array{<:Real};
@@ -185,17 +212,6 @@ function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Re
             S_ν[i] = prefac * n0 * B^( 0.5 * ( s + 1.0 ) )
         else
             S_ν[i] = 0.0
-        end
-
-        
-
-        if isnan(S_ν[i])
-            println("\ni = $i")
-            println("n0 = $n0")
-            println("s = $s")
-            println("prefac = $prefac")
-            println("S_ν[i] = $(S_ν[i])")
-            error("Done!")
         end
     end
 
