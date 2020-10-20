@@ -333,6 +333,28 @@ addprocs(2)
         @test x_ray_emission(1.0, 1.0) == 0.0
        
         @test x_ray_emission(1.0, 1.0e21) ≈ 4.4991265349972785e-23
+
+        @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0])[1] ≈ 6.519225967570028e-25
+
+        @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0])[1] == 0.0
+
+        @test_throws ErrorException("Invalid DSA model selection!") analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0], dsa_model=10)
+
+    end
+
+    @testset "DSA models" begin
+        # KR07
+        @test SPHtoGrid.KR07_acc(5.0) ≈ 0.25185919999999995
+        # KR13
+        @test SPHtoGrid.KR13_acc( 5.0) ≈ 0.09999999999999998
+        @test SPHtoGrid.KR13_acc(10.0) ≈ 0.19631644350722818
+        @test SPHtoGrid.KR13_acc(25.0) ≈ 0.21152
+        # Ryu+19
+        @test SPHtoGrid.Ryu19_acc( 5.0) ≈ 0.017286554080677037
+        @test SPHtoGrid.Ryu19_acc(55.0) ≈ 0.0348
+        # CS14
+        @test SPHtoGrid.CS14_acc(5.0) ≈ 0.04999999999999999
+        # Pfrommer+16
+        @test SPHtoGrid.P16_acc(5.0) == 0.5
     end
 end
-
