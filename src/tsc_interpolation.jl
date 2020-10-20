@@ -25,6 +25,7 @@ function reduce_image_3D_tsc(tsc::Array{<:Real}, par::mappingParameters)
     return tsc
 end
 
+
 """
     sphMapping( Pos::Array{<:Real}, Bin_Quant::Array{<:Real};
                 param::mappingParameters,
@@ -37,11 +38,14 @@ Maps the data in `Bin_Quant` to a grid using triangualar shaped cloud (TSC) inte
 - `Pos`: Array with particle positions.
 - `Bin_Quant`: Array with particle quantity to be mapped.
 - `show_progress::Bool=true`: Show progress bar.
+- `filter_particles::Bool=true`: If particles should be filtered before mapping.
 - `dimensions::Int=2`: Number of mapping dimensions (2 = to grid, 3 = to cube).
 """
 function sphMapping(Pos::Array{<:Real}, Bin_Quant::Array{<:Real};
                     param::mappingParameters,
                     show_progress::Bool=true,
+                    filter_particles::Bool=true,
+                    parallel::Bool=false,
                     dimensions::Int=2)
 
     
@@ -53,8 +57,10 @@ function sphMapping(Pos::Array{<:Real}, Bin_Quant::Array{<:Real};
         t1 = time_ns()
     end
 
-    # filter particles if they are contained in the image
-    p_in_image = filter_particles_tsc(Pos, param)
+    if filter_particles
+        # filter particles if they are contained in the image
+        p_in_image = filter_particles_tsc(Pos, param)
+    end
 
     if show_progress
         t2 = time_ns()
@@ -69,9 +75,14 @@ function sphMapping(Pos::Array{<:Real}, Bin_Quant::Array{<:Real};
             t1 = time_ns()
         end
 
-        # allocate reduced arrays
-        x       = ustrip(Pos[p_in_image, :])
-        bin_q   = ustrip(Bin_Quant[p_in_image])
+        if filter_particles
+            # allocate reduced arrays
+            x       = ustrip(Pos[p_in_image, :])
+            bin_q   = ustrip(Bin_Quant[p_in_image])
+        else
+            x       = ustrip(Pos)
+            bin_q   = ustrip(Bin_Quant)
+        end
 
     else
         if show_progress
@@ -79,9 +90,14 @@ function sphMapping(Pos::Array{<:Real}, Bin_Quant::Array{<:Real};
             t1 = time_ns()
         end
         
-        # allocate reduced arrays
-        x       = Pos[p_in_image, :]
-        bin_q   = Bin_Quant[p_in_image]
+        if filter_particles
+            # allocate reduced arrays
+            x       = Pos[p_in_image, :]
+            bin_q   = Bin_Quant[p_in_image]
+        else
+            x       = Pos
+            bin_q   = Bin_Quant
+        end
     end
 
     if show_progress
@@ -111,9 +127,35 @@ function sphMapping(Pos::Array{<:Real}, Bin_Quant::Array{<:Real};
         t1 = time_ns()
     end
 
-    tsc = TSCInterpolation( bin_q, 
-                            pos_tsc, param.Npixels, 
-                            average=true)
+    if !parallel
+        tsc = TSCInterpolation( bin_q, 
+                                pos_tsc, param.Npixels, 
+                                average=true)
+    else
+        if show_progress
+            @info "Running on $(nworkers()) cores."
+        end
+
+        # Number of particles
+        N = length(bin_q)
+
+        # allocate an array of Future objects
+        futures = Array{Future}(undef, nworkers())
+
+        # 'Domain decomposition':
+        # calculate array slices for each worker
+        batch = domain_decomposition(N, nworkers())
+
+        # start remote processes
+        for (i, id) in enumerate(workers())
+            futures[i] = @spawnat id TSCInterpolation(bin_q[batch[i],:], pos_tsc[batch[i]],
+                                                      param.Npixels, 
+                                                      average=true)
+        end
+        
+        tsc = sum(fetch.(futures))
+    end
+
 
     if show_progress
         t2 = time_ns()
