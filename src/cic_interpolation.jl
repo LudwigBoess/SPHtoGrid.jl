@@ -41,9 +41,14 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
     # store number of input particles
     N_in = length(Bin_Quant)
 
-    # filter particles if they are contained in the image
-    
+    # check if weights need to be applied
+    if Weights == part_weight_one(N_in) || Weights == part_weight_physical(N_in, param)
+        reduce_image = false
+    else
+        reduce_image = true
+    end
 
+    # filter particles if they are contained in the image
     if show_progress
         @info "Filtering particles..."
         t1 = time_ns()
@@ -131,8 +136,12 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
                 @info "  elapsed: $(output_time(t1,t2)) s"
             end
 
+            if !reduce_image 
+                image[:,2] .= 1.0
+            end
+
             return reduce_image_2D( image,
-                        param.Npixels[1], param.Npixels[2] )
+                            param.Npixels[1], param.Npixels[2] )
         else
             @info "Running on $(nworkers()) cores."
 
@@ -162,6 +171,10 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
                 @info "  elapsed: $(output_time(t1,t2)) s"
             end
 
+            if !reduce_image 
+                image[:,2] .= 1.0
+            end
+
             return reduce_image_2D( image, 
                         param.Npixels[1], param.Npixels[2] )
         end
@@ -175,6 +188,10 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
             if show_progress
                 t2 = time_ns()
                 @info "  elapsed: $(output_time(t1,t2)) s"
+            end
+
+            if !reduce_image 
+                image[:,2] .= 1.0
             end
                                 
             return reduce_image_3D( image, 
@@ -204,6 +221,10 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
             if show_progress
                 t2 = time_ns()
                 @info "  elapsed: $(output_time(t1,t2)) s"
+            end
+
+            if !reduce_image 
+                image[:,2] .= 1.0
             end
 
             return reduce_image_3D( image,
