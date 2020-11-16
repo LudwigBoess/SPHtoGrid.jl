@@ -330,9 +330,9 @@ addprocs(2)
 
         @test thermal_SZ(1.0, 1.0) ≈ 3.876935843260665e-34
 
-        @test x_ray_emission(1.0, 1.0) == 0.0
+        @test x_ray_emission(1.0, 1.0e8) ≈ 4.87726213161308e-26
        
-        @test x_ray_emission(1.0, 1.0e21) ≈ 4.4991265349972785e-23
+        @test x_ray_emission(1.0, 1.0e9) ≈ 2.8580049510920225e-23
 
         @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0])[1] ≈ 6.519225967570028e-25
 
