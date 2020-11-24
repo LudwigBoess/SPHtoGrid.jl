@@ -39,13 +39,25 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
 
     
     # store number of input particles
-    N_in = length(Bin_Quant)
+    N_in = size(Bin_Quant,1)
 
     # check if weights need to be applied
     if Weights == part_weight_one(N_in) || Weights == part_weight_physical(N_in, param)
         reduce_image = false
     else
         reduce_image = true
+    end
+
+    # First check if all particles are centered around 0 and shift them if they are not
+    if show_progress
+        @info "Centering on [0.0, 0.0, 0.0]"
+        t1 = time_ns()
+    end
+    Pos, par = check_center_and_move_particles(Pos, param)
+
+    if show_progress
+        t2 = time_ns()
+        @info "  elapsed: $(output_time(t1,t2)) s"
     end
 
     # filter particles if they are contained in the image
@@ -104,18 +116,6 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
     N_map = length(m)
 
     @info "Particles in image: $N_map / $N_in"
-
-    # First check if all particles are centered around 0 and shift them if they are not
-    if show_progress
-        @info "Centering on [0.0, 0.0, 0.0]"
-        t1 = time_ns()
-    end
-    x, par = check_center_and_move_particles(x, param)
-
-    if show_progress
-        t2 = time_ns()
-        @info "  elapsed: $(output_time(t1,t2)) s"
-    end
     
 
     if show_progress
