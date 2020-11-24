@@ -45,6 +45,7 @@ module SPHtoGrid
            # rotate particles
            rotate_3D, rotate_3D!,
            project_along_axis,
+           project_along_axis!,
            # Weight functions
            part_weight_one,
            part_weight_physical, 
