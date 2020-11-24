@@ -29,7 +29,7 @@ end
 
 
 """
-    rotate_3D(x::AbstractArray, alpha::Real, beta::Real, gamma::Real)
+    rotate_3D(x::Array{<:Real}, alpha::Real, beta::Real, gamma::Real)
 
 Rotates and array of 3D positions around the euler angles α, β and γ corresponding to rotations around the x, y, and z-axis respectively.
 α, β and γ need to be given in degrees.
@@ -40,7 +40,7 @@ function rotate_3D(x::Array{<:Real}, alpha::Real, beta::Real, gamma::Real)
     β = deg2rad(beta)
     γ = deg2rad(gamma)
 
-    N = length(x[:,1])
+    N = size(x,1)
     ret = zeros(eltype(x[1,1]), N,3)
     @threads for i = 1:N
         @inbounds ret[i,:] = rotate_3D_quantity(x[i,:], α, β, γ)
@@ -51,7 +51,7 @@ end
 
 
 """
-    rotate_3D!(x::AbstractArray, alpha::Real, beta::Real, gamma::Real)
+    rotate_3D!(x::Array{<:Real}, alpha::Real, beta::Real, gamma::Real)
 
 Rotates and array of 3D positions around the euler angles α, β and γ corresponding to rotations around the x, y, and z-axis respectively.
 α, β and γ need to be given in degrees.
@@ -62,7 +62,7 @@ function rotate_3D!(x::Array{<:Real}, alpha::Real, beta::Real, gamma::Real)
     β = deg2rad(beta)
     γ = deg2rad(gamma)
 
-    @threads for i = 1:length(x[:,1])
+    @threads for i = 1:size(x,1)
         @inbounds x[i,:] = rotate_3D_quantity(x[i,:], α, β, γ)
     end
 
@@ -71,27 +71,64 @@ end
 
 
 """
-    rotate_to_xz_plane(x::AbstractArray)
+    rotate_to_xz_plane!(x::Array{<:Real})
 
 Rotates an array of 3D positions into the xz-plane.
 """
-rotate_to_xz_plane(x::Array{<:Real}) = [ x[:,1] x[:,3] x[:,2] ]
+function rotate_to_xz_plane!(x::Array{<:Real}) 
+
+    @threads for i = 1:size(x,1)
+        @inbounds x[i,:] = [ x[i,1], x[i,3], x[i,2] ]
+    end
+    x
+end
 
 """
-    rotate_to_yz_plane(x::AbstractArray)
+    rotate_to_xz_plane!(x::Array{<:Real})
+
+Rotates an array of 3D positions into the xz-plane.
+"""
+function rotate_to_xz_plane!(x::Array{<:Real}, x_in::Array{<:Real}) 
+
+    @threads for i = 1:size(x,1)
+        @inbounds x[i,:] = [ x_in[i,1], x_in[i,3], x_in[i,2] ]
+    end
+    x
+end
+
+"""
+    rotate_to_yz_plane(x::Array{<:Real})
 
 Rotates an array of 3D positions into the yz-plane.
 """
-rotate_to_yz_plane(x::Array{<:Real}) = [ x[:,2] x[:,3] x[:,1] ]
+function rotate_to_yz_plane!(x::Array{<:Real}) 
 
+    @threads for i = 1:size(x,1)
+        @inbounds x[i,:] = [ x[i,2], x[i,3], x[i,1] ]
+    end
+    x
+end
 
 """
-    project_along_axis(x::AbstractArray, projection_axis::Integer=3)
+    rotate_to_yz_plane(x::Array{<:Real}, x_in::Array{<:Real})
+
+Rotates an array of 3D positions into the yz-plane.
+"""
+function rotate_to_yz_plane!(x::Array{<:Real}, x_in::Array{<:Real}) 
+
+    @threads for i = 1:size(x,1)
+        @inbounds x[i,:] = [ x_in[i,2], x_in[i,3], x_in[i,1] ]
+    end
+    x
+end
+
+"""
+    project_along_axis!(x::Array{<:Real}, projection_axis::Integer=3)
 
 Projects and array of 3D along one of the principle axes.
 projection_axis ∈ {1, 2, 3} => x, y, z axis.
 """
-function project_along_axis(x::Array{<:Real}, projection_axis::Integer=3)
+function project_along_axis!(x::Array{<:Real}, projection_axis::Integer=3)
    
     # rotation to xy-plane -> nothing is done
     if projection_axis == 3
@@ -100,11 +137,64 @@ function project_along_axis(x::Array{<:Real}, projection_axis::Integer=3)
 
     # rotation to xz-plane
     if projection_axis == 2
-        return rotate_to_xz_plane(x)
+        return rotate_to_xz_plane!(x)
     end
 
     # rotation to yz-plane
     if projection_axis == 1
-        return rotate_to_yz_plane(x)
+        return rotate_to_yz_plane!(x)
+    end
+end
+
+"""
+    project_along_axis!(x::Array{<:Real}, projection_axis::Integer=3)
+
+Projects and array of 3D along one of the principle axes.
+projection_axis ∈ {1, 2, 3} => x, y, z axis.
+"""
+function project_along_axis!(x::Array{<:Real}, x_in::Array{<:Real}, projection_axis::Integer=3)
+   
+    # rotation to xy-plane -> nothing is done
+    if projection_axis == 3
+        x = x_in
+        return x
+    end
+
+    # rotation to xz-plane
+    if projection_axis == 2
+        return rotate_to_xz_plane!(x, x_in)
+    end
+
+    # rotation to yz-plane
+    if projection_axis == 1
+        return rotate_to_yz_plane!(x, x_in)
+    end
+end
+
+"""
+    project_along_axis!(x::Array{<:Real}, projection_axis::Integer=3)
+
+Projects and array of 3D along one of the principle axes.
+projection_axis ∈ {1, 2, 3} => x, y, z axis.
+"""
+function project_along_axis(x::Array{<:Real}, projection_axis::Integer=3)
+   
+    # allocate new array
+    ret = zeros(eltype(x[1,1]), size(x,1),3)
+
+    # rotation to xy-plane -> nothing is done
+    if projection_axis == 3
+        ret = x
+        return ret
+    end
+
+    # rotation to xz-plane
+    if projection_axis == 2
+        return rotate_to_xz_plane!(ret, x)
+    end
+
+    # rotation to yz-plane
+    if projection_axis == 1
+        return rotate_to_yz_plane!(x)
     end
 end
