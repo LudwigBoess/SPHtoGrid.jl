@@ -65,21 +65,31 @@ Read a FITS file and return the image, mappingParameters and the snapshot number
 - par:   mappingParameters used for the image 
 - snap:  Number of the mapped snapshot
 """
-function read_fits_image(filename::String)
+function read_fits_image(filename::String; verbose::Bool=false)
 
-    @info "Reading image: $filename"
+    if verbose
+        @info "Reading image: $filename"
+    end
 
     f = FITS(filename)
 
-    @info "Opened file"
+    if verbose
+        @info "Opened file"
+    end
 
     # read image
     image = read(f[1])
-    @info "Read Image"
+
+    if verbose
+        @info "Read Image"
+    end
 
     # read the header
     header = read_header(f[1])
-    @info "Read Header"
+
+    if verbose
+        @info "Read Header"
+    end
 
     # construct mappingParameters by now
     par = mappingParameters( x_lim = [ header["XMIN"], header["XMAX"] ],
