@@ -19,7 +19,7 @@ TriangularShapedCloudInterpolation = "51f55a63-7ec5-4b6d-a5a9-9bbf03ec1f62"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
-Documenter = "0.25"
+Documenter = "0.25, 0.26"
 DocumenterTools = "0.1"
 FITSIO = "0.16"
 ProgressMeter = "1.3"
