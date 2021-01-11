@@ -561,7 +561,7 @@ function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real},
             continue
         end
 
-        _pos, weight, hsml, hsml_inv, area, m, rho, dz = get_quantities_2D(Pos[p,:], Weights[p], HSML[p], Rho[p], M[p], param.len2pix)
+        _pos, weight, hsml, hsml_inv, area, m, rho, dz = get_quantities_2D(Pos[:,p], Weights[p], HSML[p], Rho[p], M[p], param.len2pix)
 
         for k = k_start:7
 
@@ -635,7 +635,7 @@ function sphMapping_3D( Pos::Array{<:Real}, HSML::Array{<:Real},
                         param::mappingParameters, kernel::SPHKernel,
                         show_progress::Bool=false )
 
-    N = length(M)  # number of particles
+    N = size(M,1)  # number of particles
 
     # max number of pixels over which the particle can be distributed
     N_distr = param.Npixels[1] * param.Npixels[2] * param.Npixels[3]
@@ -673,7 +673,7 @@ function sphMapping_3D( Pos::Array{<:Real}, HSML::Array{<:Real},
             continue
         end
 
-        _pos, weight, hsml, hsml_inv, volume, m, rho, dz = get_quantities_3D(Pos[p,:], Weights[p], HSML[p], Rho[p], M[p], param.len2pix)
+        _pos, weight, hsml, hsml_inv, volume, m, rho, dz = get_quantities_3D(Pos[:,p], Weights[p], HSML[p], Rho[p], M[p], param.len2pix)
 
         for k_periodic = k_start:8
 

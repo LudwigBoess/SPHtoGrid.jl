@@ -12,8 +12,8 @@ function check_center_and_move_particles(x::Array{<:Real}, par::mappingParameter
     zlim = copy(par.z_lim)
     shift = 0.0
     
-    @inbounds for i = 1:length(x[:,1]), dim = 1:3
-        x[i, dim] -= cen[dim]
+    @inbounds for i = 1:size(x,2), dim = 1:3
+        x[dim, i] -= cen[dim]
     end
 
     xlim .-= cen[1]
@@ -31,7 +31,7 @@ Checks if a particle is contained in the image and returns an array of `Bool`.
 """
 function filter_particles_in_image(pos::Array{<:Real}, hsml::Array{<:Real}, param::mappingParameters)
 
-    N = length(hsml)
+    N = size(hsml,1)
 
     p_in_image = falses(N)
 
@@ -50,9 +50,9 @@ function filter_particles_in_image(pos::Array{<:Real}, hsml::Array{<:Real}, para
         @inbounds for k_periodic = k_start:7
 
             if param.periodic
-                find_position_periodic!(_pos, pos[p,:], k_periodic, param.boxsize)
+                find_position_periodic!(_pos, pos[:,p], k_periodic, param.boxsize)
             else
-                _pos = pos[p, :]
+                _pos = pos[:,p]
             end
 
             in_image = check_in_image(_pos, -hsml[p], param.halfsize)

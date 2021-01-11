@@ -86,7 +86,7 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
         end
 
         # allocate reduced arrays
-        x       = ustrip(Pos[p_in_image, :])
+        x       = ustrip(Pos[:,p_in_image])
         hsml    = ustrip(HSML[p_in_image])
         m       = ustrip(M[p_in_image])
         rho     = ustrip(ρ[p_in_image])
@@ -100,7 +100,7 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
         end
         
         # allocate reduced arrays
-        x       = Pos[p_in_image, :]
+        x       = Pos[:,p_in_image]
         hsml    = HSML[p_in_image]
         m       = M[p_in_image]
         rho     = ρ[p_in_image]
@@ -157,7 +157,7 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
 
             # start remote processes
             for (i, id) in enumerate(workers())
-                futures[i] = @spawnat id sphMapping_2D(x[batch[i],:], hsml[batch[i]],
+                futures[i] = @spawnat id sphMapping_2D(x[:,batch[i]], hsml[batch[i]],
                                                         m[batch[i]], rho[batch[i]],
                                                         bin_q[batch[i]], weights[batch[i]];
                                                         param=par, kernel=kernel,
@@ -208,7 +208,7 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
 
             # start remote processes
             for (i, id) in enumerate(workers())
-                futures[i] = @spawnat id sphMapping_3D(x[batch[i],:], hsml[batch[i]],
+                futures[i] = @spawnat id sphMapping_3D(x[:,batch[i]], hsml[batch[i]],
                                                     m[batch[i]], rho[batch[i]],
                                                     bin_q[batch[i]], weights[batch[i]];
                                                     param=par, kernel=kernel,

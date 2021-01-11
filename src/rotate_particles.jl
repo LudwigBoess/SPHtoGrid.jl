@@ -40,10 +40,10 @@ function rotate_3D(x::Array{<:Real}, alpha::Real, beta::Real, gamma::Real)
     β = deg2rad(beta)
     γ = deg2rad(gamma)
 
-    N = size(x,1)
-    ret = zeros(eltype(x[1,1]), N,3)
+    N = size(x,2)
+    ret = Array{eltype(x[1]),2}(undef, 3, N)
     @threads for i = 1:N
-        @inbounds ret[i,:] = rotate_3D_quantity(x[i,:], α, β, γ)
+        @inbounds ret[:,i] = rotate_3D_quantity(x[:,i], α, β, γ)
     end
 
     return ret
@@ -62,8 +62,8 @@ function rotate_3D!(x::Array{<:Real}, alpha::Real, beta::Real, gamma::Real)
     β = deg2rad(beta)
     γ = deg2rad(gamma)
 
-    @threads for i = 1:size(x,1)
-        @inbounds x[i,:] = rotate_3D_quantity(x[i,:], α, β, γ)
+    @threads for i = 1:size(x,2)
+        @inbounds x[:,i] = rotate_3D_quantity(x[:,i], α, β, γ)
     end
 
     return x
@@ -77,8 +77,8 @@ Rotates an array of 3D positions into the xz-plane.
 """
 function rotate_to_xz_plane!(x::Array{<:Real}) 
 
-    @threads for i = 1:size(x,1)
-        @inbounds x[i,:] = [ x[i,1], x[i,3], x[i,2] ]
+    @threads for i = 1:size(x,2)
+        @inbounds x[:,i] = [ x[1,i], x[3,i], x[2,i] ]
     end
     x
 end
@@ -90,8 +90,10 @@ Rotates an array of 3D positions into the xz-plane.
 """
 function rotate_to_xz_plane!(x::Array{<:Real}, x_in::Array{<:Real}) 
 
-    @threads for i = 1:size(x,1)
-        @inbounds x[i,:] = [ x_in[i,1], x_in[i,3], x_in[i,2] ]
+    @threads for i = 1:size(x,2)
+        x[1,i] = x_in[1,i]
+        x[2,i] = x_in[3,i]
+        x[3,i] = x_in[2,i]
     end
     x
 end
@@ -103,8 +105,8 @@ Rotates an array of 3D positions into the yz-plane.
 """
 function rotate_to_yz_plane!(x::Array{<:Real}) 
 
-    @threads for i = 1:size(x,1)
-        @inbounds x[i,:] = [ x[i,2], x[i,3], x[i,1] ]
+    @threads for i = 1:size(x,2)
+        @inbounds x[:,i] = [ x[2,i], x[3,i], x[1,i] ]
     end
     x
 end
@@ -116,8 +118,12 @@ Rotates an array of 3D positions into the yz-plane.
 """
 function rotate_to_yz_plane!(x::Array{<:Real}, x_in::Array{<:Real}) 
 
-    @threads for i = 1:size(x,1)
-        @inbounds x[i,:] = [ x_in[i,2], x_in[i,3], x_in[i,1] ]
+    @threads for i = 1:size(x,2)
+
+        x[1,i] = x_in[2,i]
+        x[2,i] = x_in[3,i]
+        x[3,i] = x_in[1,i]
+        
     end
     x
 end
@@ -180,7 +186,7 @@ projection_axis ∈ {1, 2, 3} => x, y, z axis.
 function project_along_axis(x::Array{<:Real}, projection_axis::Integer=3)
    
     # allocate new array
-    ret = zeros(eltype(x[1,1]), size(x,1),3)
+    ret = Array{eltype(x[1]),2}(undef, 3, size(x,2))
 
     # rotation to xy-plane -> nothing is done
     if projection_axis == 3
@@ -195,6 +201,6 @@ function project_along_axis(x::Array{<:Real}, projection_axis::Integer=3)
 
     # rotation to yz-plane
     if projection_axis == 1
-        return rotate_to_yz_plane!(x)
+        return rotate_to_yz_plane!(ret, x)
     end
 end
