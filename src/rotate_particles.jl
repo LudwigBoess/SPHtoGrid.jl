@@ -77,8 +77,10 @@ Rotates an array of 3D positions into the xz-plane.
 """
 function rotate_to_xz_plane!(x::Array{<:Real}) 
 
-    @threads for i = 1:size(x,1)
-        @inbounds x[i,:] = [ x[i,1], x[i,3], x[i,2] ]
+    @inbounds for i = 1:size(x,1)
+        pos3   = copy(x[i,2])
+        x[i,2] = x[i,3]
+        x[i,3] = pos3
     end
     x
 end
@@ -90,8 +92,10 @@ Rotates an array of 3D positions into the xz-plane.
 """
 function rotate_to_xz_plane!(x::Array{<:Real}, x_in::Array{<:Real}) 
 
-    @threads for i = 1:size(x,1)
-        @inbounds x[i,:] = [ x_in[i,1], x_in[i,3], x_in[i,2] ]
+    @inbounds for i = 1:size(x,1)
+        x[i,1] = x_in[i,1]
+        x[i,2] = x_in[i,3]
+        x[i,3] = x_in[i,2]
     end
     x
 end
@@ -103,8 +107,11 @@ Rotates an array of 3D positions into the yz-plane.
 """
 function rotate_to_yz_plane!(x::Array{<:Real}) 
 
-    @threads for i = 1:size(x,1)
-        @inbounds x[i,:] = [ x[i,2], x[i,3], x[i,1] ]
+    @inbounds for i = 1:size(x,1)
+        pos3   = copy(x[i,1])
+        x[i,1] = x[i,2]
+        x[i,2] = x[i,3]
+        x[i,3] = pos3
     end
     x
 end
@@ -116,8 +123,10 @@ Rotates an array of 3D positions into the yz-plane.
 """
 function rotate_to_yz_plane!(x::Array{<:Real}, x_in::Array{<:Real}) 
 
-    @threads for i = 1:size(x,1)
-        @inbounds x[i,:] = [ x_in[i,2], x_in[i,3], x_in[i,1] ]
+    @inbounds for i = 1:size(x,1)
+        x[i,1] = x_in[i,2]
+        x[i,2] = x_in[i,3]
+        x[i,3] = x_in[i,1]
     end
     x
 end
