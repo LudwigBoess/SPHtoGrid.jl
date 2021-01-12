@@ -523,10 +523,8 @@ function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real},
     N_distr = param.Npixels[1] * param.Npixels[2]
 
     image = zeros(N_distr, 2)
-    #w_image = zeros(N_distr)
 
     # store this here for performance increase
-
     halfXsize = param.halfsize[1]
     halfYsize = param.halfsize[2]
     halfZsize = param.halfsize[3]
