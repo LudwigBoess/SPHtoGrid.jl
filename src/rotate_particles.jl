@@ -165,8 +165,7 @@ function project_along_axis!(x::Array{<:Real}, x_in::Array{<:Real}, projection_a
    
     # rotation to xy-plane -> nothing is done
     if projection_axis == 3
-        x = x_in
-        return x
+        return x_in
     end
 
     # rotation to xz-plane
@@ -193,8 +192,7 @@ function project_along_axis(x::Array{<:Real}, projection_axis::Integer=3)
 
     # rotation to xy-plane -> nothing is done
     if projection_axis == 3
-        ret = x
-        return ret
+        return x
     end
 
     # rotation to xz-plane
@@ -204,6 +202,6 @@ function project_along_axis(x::Array{<:Real}, projection_axis::Integer=3)
 
     # rotation to yz-plane
     if projection_axis == 1
-        return rotate_to_yz_plane!(x)
+        return rotate_to_yz_plane!(ret, x)
     end
 end
