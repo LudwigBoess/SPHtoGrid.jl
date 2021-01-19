@@ -39,7 +39,7 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
 
     
     # store number of input particles
-    N_in = size(Bin_Quant,1)
+    N_in = size(Bin_Quant,2)
 
     # check if weights need to be applied
     if Weights == part_weight_one(N_in) || Weights == part_weight_physical(N_in, param)
