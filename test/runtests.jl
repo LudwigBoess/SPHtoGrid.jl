@@ -146,19 +146,19 @@ addprocs(2)
         @info "Data read-in."
 
         fi = joinpath(dirname(@__FILE__), "bin_q.txt")
-        bin_quantity = Float32.(readdlm(fi))
+        bin_quantity = Float32.(readdlm(fi))[:,1]
 
         fi = joinpath(dirname(@__FILE__), "x.txt")
         x = copy(transpose(Float32.(readdlm(fi))))
 
         fi = joinpath(dirname(@__FILE__), "rho.txt")
-        rho = Float32.(readdlm(fi))
+        rho = Float32.(readdlm(fi))[:,1]
 
         fi = joinpath(dirname(@__FILE__), "hsml.txt")
-        hsml = Float32.(readdlm(fi))
+        hsml = Float32.(readdlm(fi))[:,1]
 
         fi = joinpath(dirname(@__FILE__), "m.txt")
-        m = Float32.(readdlm(fi))
+        m = Float32.(readdlm(fi))[:,1]
 
         kernel = WendlandC6()
 
@@ -218,7 +218,7 @@ addprocs(2)
     @testset "TSC Mapping" begin
 
         fi = joinpath(dirname(@__FILE__), "x.txt")
-        x = Float32.(readdlm(fi))
+        x = Float32.(copy(transpose(readdlm(fi))))
 
         fi = joinpath(dirname(@__FILE__), "bin_q.txt")
         bin_quantity = Float32.(readdlm(fi))
@@ -248,19 +248,19 @@ addprocs(2)
        
         # map data
         fi = joinpath(dirname(@__FILE__), "bin_q.txt")
-        bin_quantity = Float32.(readdlm(fi))
+        bin_quantity = Float32.(readdlm(fi))[:,1]
 
         fi = joinpath(dirname(@__FILE__), "x.txt")
         x = copy(transpose(Float32.(readdlm(fi))))
 
         fi = joinpath(dirname(@__FILE__), "rho.txt")
-        rho = Float32.(readdlm(fi))
+        rho = Float32.(readdlm(fi))[:,1]
 
         fi = joinpath(dirname(@__FILE__), "hsml.txt")
-        hsml = Float32.(readdlm(fi))
+        hsml = Float32.(readdlm(fi))[:,1]
 
         fi = joinpath(dirname(@__FILE__), "m.txt")
-        m = Float32.(readdlm(fi))
+        m = Float32.(readdlm(fi))[:,1]
 
         kernel = WendlandC6()
 
