@@ -1,8 +1,6 @@
 """
-    function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, 
-                        M::Array{<:Real}, ρ::Array{<:Real}, 
-                        Bin_Quant::Array{<:Real},
-                        Weights::Array{<:Real}=ρ;
+    function sphMapping(Pos, HSML, M, ρ, Bin_Quant,
+                        Weights=ρ;
                         param::mappingParameters,
                         kernel::SPHKernel [,
                         show_progress::Bool=true,
@@ -14,7 +12,7 @@ Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 `param` and the kernel to be used in `kernel`.
 
 # Arguments
-- `Pos`: Array with particle positions.
+- `Pos`: Matrix (3xNpart) with particle positions.
 - `HSML`: Array with particle hsml.
 - `M`: Array with particle masses.
 - `ρ`: Array with particle densities.
@@ -26,10 +24,8 @@ Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 - `filter_particles::Bool=true`: Find the particles that are actually contained in the image.
 - `dimensions::Int=2`: Number of mapping dimensions (2 = to grid, 3 = to cube).
 """
-function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, 
-                    M::Array{<:Real}, ρ::Array{<:Real}, 
-                    Bin_Quant::Array{<:Real},
-                    Weights::Array{<:Real}=ρ;
+function sphMapping(Pos, HSML, M, ρ, Bin_Quant, 
+                    Weights=ρ;
                     param::mappingParameters,
                     kernel::SPHKernel,
                     show_progress::Bool=true,
@@ -39,7 +35,7 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
 
     
     # store number of input particles
-    N_in = size(Bin_Quant,2)
+    N_in = size(Bin_Quant,1)
 
     # check if weights need to be applied
     if Weights == part_weight_one(N_in) || Weights == part_weight_physical(N_in, param)
