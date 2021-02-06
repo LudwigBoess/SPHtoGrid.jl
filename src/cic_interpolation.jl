@@ -1,8 +1,6 @@
 """
-    function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, 
-                        M::Array{<:Real}, ρ::Array{<:Real}, 
-                        Bin_Quant::Array{<:Real},
-                        Weights::Array{<:Real}=ρ;
+    function sphMapping(Pos, HSML, M, ρ, Bin_Quant,
+                        Weights=ρ;
                         param::mappingParameters,
                         kernel::SPHKernel [,
                         show_progress::Bool=true,
@@ -14,7 +12,7 @@ Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 `param` and the kernel to be used in `kernel`.
 
 # Arguments
-- `Pos`: Array with particle positions.
+- `Pos`: Matrix (3xNpart) with particle positions.
 - `HSML`: Array with particle hsml.
 - `M`: Array with particle masses.
 - `ρ`: Array with particle densities.
@@ -26,10 +24,8 @@ Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 - `filter_particles::Bool=true`: Find the particles that are actually contained in the image.
 - `dimensions::Int=2`: Number of mapping dimensions (2 = to grid, 3 = to cube).
 """
-function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, 
-                    M::Array{<:Real}, ρ::Array{<:Real}, 
-                    Bin_Quant::Array{<:Real},
-                    Weights::Array{<:Real}=ρ;
+function sphMapping(Pos, HSML, M, ρ, Bin_Quant, 
+                    Weights=ρ;
                     param::mappingParameters,
                     kernel::SPHKernel,
                     show_progress::Bool=true,
@@ -86,7 +82,7 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
         end
 
         # allocate reduced arrays
-        x       = ustrip(Pos[p_in_image, :])
+        x       = ustrip(Pos[:,p_in_image])
         hsml    = ustrip(HSML[p_in_image])
         m       = ustrip(M[p_in_image])
         rho     = ustrip(ρ[p_in_image])
@@ -100,7 +96,7 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
         end
         
         # allocate reduced arrays
-        x       = Pos[p_in_image, :]
+        x       = Pos[:,p_in_image]
         hsml    = HSML[p_in_image]
         m       = M[p_in_image]
         rho     = ρ[p_in_image]
@@ -157,7 +153,7 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
 
             # start remote processes
             for (i, id) in enumerate(workers())
-                futures[i] = @spawnat id sphMapping_2D(x[batch[i],:], hsml[batch[i]],
+                futures[i] = @spawnat id sphMapping_2D(x[:,batch[i]], hsml[batch[i]],
                                                         m[batch[i]], rho[batch[i]],
                                                         bin_q[batch[i]], weights[batch[i]];
                                                         param=par, kernel=kernel,
@@ -208,7 +204,7 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real},
 
             # start remote processes
             for (i, id) in enumerate(workers())
-                futures[i] = @spawnat id sphMapping_3D(x[batch[i],:], hsml[batch[i]],
+                futures[i] = @spawnat id sphMapping_3D(x[:,batch[i]], hsml[batch[i]],
                                                     m[batch[i]], rho[batch[i]],
                                                     bin_q[batch[i]], weights[batch[i]];
                                                     param=par, kernel=kernel,

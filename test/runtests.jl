@@ -61,9 +61,9 @@ addprocs(2)
                                 x_size = 6.0, y_size = 6.0, z_size = 6.0,
                                 Npixels = 500)
 
-        x = zeros(2, 3)
-        x[1,:] = [  1.0,  1.0, 1.0]
-        x[2,:] = [ -3.0, -1.0, 1.0]
+        x = zeros(3, 2)
+        x[:,1] = [  1.0,  1.0, 1.0]
+        x[:,2] = [ -3.0, -1.0, 1.0]
 
         hsml = [0.5, 0.5]
 
@@ -80,16 +80,16 @@ addprocs(2)
                                 x_size = 6.0, y_size = 6.0, z_size = 6.0,
                                 Npixels = 500)
 
-        x = zeros(2, 3)
-        x[1,:] = [  1.0,  1.0, 1.0]
-        x[2,:] = [ -3.0, -1.0, 1.0]
+        x = zeros(3, 2)
+        x[:, 1] = [  1.0,  1.0, 1.0]
+        x[:, 2] = [ -3.0, -1.0, 1.0]
 
         hsml = [0.5, 0.5]
 
         x, par2 = SPHtoGrid.check_center_and_move_particles(x, par)
 
-        @test x[1, :] ≈ [ 0.0, 0.0, 0.0]
-        @test x[2, :] ≈ [ -4.0, -2.0, 0.0]
+        @test x[:, 1] ≈ [ 0.0, 0.0, 0.0]
+        @test x[:, 2] ≈ [ -4.0, -2.0, 0.0]
 
         @test par.center ≈ [ 1.0, 1.0, 1.0 ]
         @test par2.center ≈ [ 0.0, 0.0, 0.0 ]
@@ -104,17 +104,18 @@ addprocs(2)
         @test x_out ≈ x_in
 
         # matrix no rotation
-        x_in = rand(10,3)
-        x_out = rotate_3D(x_in, 0.0, 0.0, 0.0)
-        @test x_out ≈ x_in
+        x_rand = rand(3, 10)
+        x_out = rotate_3D(x_rand, 0.0, 0.0, 0.0)
+        @test x_out ≈ x_rand
 
         # inplace
         rotate_3D!(x_out, 0.0, 0.0, 0.0)
-        @test x_out ≈ x_in
+        @test x_out ≈ x_rand
 
         # project along axis
-        x_in = [ 1.0 1.0 0.0
-                 1.0 1.0 0.0 ]
+        x_in = [1.0 1.0
+                1.0 1.0
+                0.0 0.0 ] 
 
         # along z-axis should not change anything
         x_out = project_along_axis(x_in, 3)
@@ -124,14 +125,18 @@ addprocs(2)
         # along y-axis
         x_out = project_along_axis(x_in, 2)
 
-        @test x_out ≈ [ 1.0 0.0 1.0
-                        1.0 0.0 1.0 ]
+        # @test x_out ≈ copy(transpose([ 1.0 0.0 1.0
+        #                                 1.0 0.0 1.0 ]))
+
+        @test x_out ≈ [ 1.0 1.0
+                        0.0 0.0
+                        1.0 1.0 ] 
 
         # along x-axis
         x_out = project_along_axis(x_in, 2)
 
-        @test x_out ≈ [ 1.0 0.0 1.0
-                        1.0 0.0 1.0 ]
+        @test x_out ≈ copy(transpose([ 1.0 0.0 1.0
+                                        1.0 0.0 1.0 ]))
     end
 
     @testset "SPH Mapping" begin
@@ -141,19 +146,19 @@ addprocs(2)
         @info "Data read-in."
 
         fi = joinpath(dirname(@__FILE__), "bin_q.txt")
-        bin_quantity = Float32.(readdlm(fi))
+        bin_quantity = Float32.(readdlm(fi))[:,1]
 
         fi = joinpath(dirname(@__FILE__), "x.txt")
-        x = Float32.(readdlm(fi))
+        x = copy(transpose(Float32.(readdlm(fi))))
 
         fi = joinpath(dirname(@__FILE__), "rho.txt")
-        rho = Float32.(readdlm(fi))
+        rho = Float32.(readdlm(fi))[:,1]
 
         fi = joinpath(dirname(@__FILE__), "hsml.txt")
-        hsml = Float32.(readdlm(fi))
+        hsml = Float32.(readdlm(fi))[:,1]
 
         fi = joinpath(dirname(@__FILE__), "m.txt")
-        m = Float32.(readdlm(fi))
+        m = Float32.(readdlm(fi))[:,1]
 
         kernel = WendlandC6()
 
@@ -213,7 +218,7 @@ addprocs(2)
     @testset "TSC Mapping" begin
 
         fi = joinpath(dirname(@__FILE__), "x.txt")
-        x = Float32.(readdlm(fi))
+        x = Float32.(copy(transpose(readdlm(fi))))
 
         fi = joinpath(dirname(@__FILE__), "bin_q.txt")
         bin_quantity = Float32.(readdlm(fi))
@@ -243,19 +248,19 @@ addprocs(2)
        
         # map data
         fi = joinpath(dirname(@__FILE__), "bin_q.txt")
-        bin_quantity = Float32.(readdlm(fi))
+        bin_quantity = Float32.(readdlm(fi))[:,1]
 
         fi = joinpath(dirname(@__FILE__), "x.txt")
-        x = Float32.(readdlm(fi))
+        x = copy(transpose(Float32.(readdlm(fi))))
 
         fi = joinpath(dirname(@__FILE__), "rho.txt")
-        rho = Float32.(readdlm(fi))
+        rho = Float32.(readdlm(fi))[:,1]
 
         fi = joinpath(dirname(@__FILE__), "hsml.txt")
-        hsml = Float32.(readdlm(fi))
+        hsml = Float32.(readdlm(fi))[:,1]
 
         fi = joinpath(dirname(@__FILE__), "m.txt")
-        m = Float32.(readdlm(fi))
+        m = Float32.(readdlm(fi))[:,1]
 
         kernel = WendlandC6()
 

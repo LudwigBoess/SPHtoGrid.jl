@@ -77,7 +77,7 @@ function sphMapping(Pos::Array{<:Real}, Bin_Quant::Array{<:Real};
 
         if filter_particles
             # allocate reduced arrays
-            x       = ustrip(Pos[p_in_image, :])
+            x       = ustrip(Pos[:,p_in_image])
             bin_q   = ustrip(Bin_Quant[p_in_image])
         else
             x       = ustrip(Pos)
@@ -92,7 +92,7 @@ function sphMapping(Pos::Array{<:Real}, Bin_Quant::Array{<:Real};
         
         if filter_particles
             # allocate reduced arrays
-            x       = Pos[p_in_image, :]
+            x       = Pos[:,p_in_image]
             bin_q   = Bin_Quant[p_in_image]
         else
             x       = Pos
@@ -148,7 +148,7 @@ function sphMapping(Pos::Array{<:Real}, Bin_Quant::Array{<:Real};
 
         # start remote processes
         for (i, id) in enumerate(workers())
-            futures[i] = @spawnat id TSCInterpolation(bin_q[batch[i],:], pos_tsc[batch[i]],
+            futures[i] = @spawnat id TSCInterpolation(bin_q[batch[i]], pos_tsc[batch[i],:],
                                                       param.Npixels, 
                                                       average=true)
         end

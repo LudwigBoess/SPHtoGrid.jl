@@ -50,10 +50,8 @@ par = mappingParameters(center=[x0, y0, z0],
 For "Cloud in a Cell" (CIC) interpolation use the function `sphMapping` with these input values:
 
 ```julia
-function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, 
-                    M::Array{<:Real}, ρ::Array{<:Real}, 
-                    Bin_Quant::Array{<:Real},
-                    Weights::Array{<:Real}=ρ;
+function sphMapping(Pos, HSML, M, ρ, Bin_Quant,
+                    Weights=ρ;
                     param::mappingParameters,
                     kernel::SPHKernel [,
                     show_progress::Bool=true,
