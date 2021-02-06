@@ -51,9 +51,9 @@ uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 version = "1.0.0"
 
 [[DataAPI]]
-git-tree-sha1 = "8ab70b4de35bb3b8cc19654f6b893cf5164f8ee8"
+git-tree-sha1 = "6d64b28d291cb94a0d84e6e41081fb081e7f717f"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
-version = "1.5.1"
+version = "1.5.0"
 
 [[DataValueInterfaces]]
 git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
@@ -260,9 +260,9 @@ uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[TriangularShapedCloudInterpolation]]
 deps = ["Documenter", "DocumenterTools", "Test"]
-git-tree-sha1 = "aa4d587649f2b9f6974a2d14022df5e298820796"
+git-tree-sha1 = "20c7b7b392a136ee10be73d0ccd0c6ad3e9795fd"
 uuid = "51f55a63-7ec5-4b6d-a5a9-9bbf03ec1f62"
-version = "0.2.0"
+version = "0.1.0"
 
 [[UUIDs]]
 deps = ["Random", "SHA"]
