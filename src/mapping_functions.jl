@@ -33,8 +33,8 @@ Checks if a particle is in the image frame.
     end
 end
 
-@inline function check_in_image(pos::Array{<:Real}, hsml::Real,
-                                halfsize::Array{<:Real})
+@inline function check_in_image(pos::Array{T}, hsml::T,
+                                halfsize::Array{Float64}) where T
 
     if (( pos[1] + hsml ) > halfsize[1] ||  ( pos[1] - hsml ) < -halfsize[1] ||
         ( pos[2] + hsml ) > halfsize[2] ||  ( pos[2] - hsml ) < -halfsize[2] ||
@@ -56,36 +56,25 @@ end
 
 Performs a periodic mapping of the particle position.
 """
-@inline function find_position_periodic( pos::Array{<:Real}, k::Integer, boxsize::Real)
+@inline function find_position_periodic( pos::Array{T}, k::Integer, boxsize::Float64) where T
+    
+    # re-define here to avoid type-instability
+    box   = eltype(pos[1])(boxsize)
     
     x = (k & 0x1) == 0 ? pos[1] : (pos[1] > 0 ? 
-			pos[1] - boxsize : pos[1] + boxsize)
+			pos[1] - box : pos[1] + box)
 	
 	y = (k & 0x2) == 0 ? pos[2] : (pos[2] > 0 ? 
-			pos[2] - boxsize : pos[2] + boxsize)
+			pos[2] - box : pos[2] + box)
 
 	z = (k & 0x4) == 0 ? pos[3] : (pos[3] > 0 ? 
-            pos[3] - boxsize : pos[3] + boxsize)
-            
-    return x, y, z
-end
-
-@inline function find_position_periodic( x::Real, y::Real, z::Real, k::Integer, boxsize::Real)
-    
-    x = (k & 0x1) == 0 ? x : (x > 0 ? 
-			x - boxsize : x + boxsize)
-	
-	y = (k & 0x2) == 0 ? y : ( y > 0 ? 
-			y - boxsize : y + boxsize)
-
-	z = (k & 0x4) == 0 ? z : (z > 0 ? 
-            z - boxsize : z + boxsize)
+            pos[3] - box : pos[3] + box)
             
     return x, y, z
 end
 
 
-@inline function add_subtr_box(pos::Real, boxsize::Real)
+@inline function add_subtr_box(pos::T, boxsize::T) where T
     if pos > 0.0
         return pos - boxsize
     else
@@ -93,13 +82,16 @@ end
     end
 end
 
-@inline function find_position_periodic!( _pos::Array{<:Real}, pos::Array{<:Real}, k::Integer, boxsize::Real)
+@inline function find_position_periodic!( _pos::Array{T}, pos::Array{T}, k::Integer, boxsize::Float64) where T
     
-    _pos[1] = (k & 0x1) == 0 ? pos[1] : add_subtr_box(pos[1], boxsize)
-	
-	_pos[2] = (k & 0x2) == 0 ? pos[2] : add_subtr_box(pos[2], boxsize)
+    # re-define here to avoid type-instability
+    box   = eltype(pos[1])(boxsize)
 
-	_pos[3] = (k & 0x4) == 0 ? pos[3] : add_subtr_box(pos[3], boxsize)
+    _pos[1] = (k & 0x1) == 0 ? pos[1] : add_subtr_box(pos[1], box)
+	
+	_pos[2] = (k & 0x2) == 0 ? pos[2] : add_subtr_box(pos[2], box)
+
+	_pos[3] = (k & 0x4) == 0 ? pos[3] : add_subtr_box(pos[3], box)
 
     return _pos
 end
@@ -110,7 +102,7 @@ end
 
 Computes the distance in 2D to the pixel center in units of the kernel support.
 """
-@inline function get_d_hsml_2D(dx::Real, dy::Real, hsml_inv::Real)
+@inline function get_d_hsml_2D(dx::T, dy::T, hsml_inv::T) where T
     @fastmath sqrt( dx*dx + dy*dy ) * hsml_inv
 end
 
@@ -120,8 +112,8 @@ end
 
 Computes the distance in 3D to the pixel center in units of the kernel support.
 """
-@inline function get_d_hsml_3D(dx::Real, dy::Real, dz::Real,
-                               hsml_inv::Real)
+@inline function get_d_hsml_3D(dx::T, dy::T, dz::T,
+                               hsml_inv::T) where T
     @fastmath sqrt( dx*dx + dy*dy + dz*dz ) * hsml_inv
 end
 
@@ -143,11 +135,11 @@ end
 
 Calculates `x, y, z` position in units of pixels and performs periodic mapping, if required.
 """
-@inline @fastmath function get_xyz( pos::Vector{<:Real}, hsml::Real, k::Integer,
-                                   len2pix::Real, x_pixels::Integer, y_pixels::Integer, z_pixels::Integer,
-                                   boxsize::Real, periodic::Bool,
-                                   halfXsize::Real, halfYsize::Real, halfZsize::Real,
-                                   Ndim::Integer)
+@inline @fastmath function get_xyz( pos::Vector{T}, hsml::T, k::Integer,
+                                   len2pix::Float64, x_pixels::Int64, y_pixels::Int64, z_pixels::Int64,
+                                   boxsize::Float64, periodic::Bool,
+                                   halfXsize::Float64, halfYsize::Float64, halfZsize::Float64,
+                                   Ndim::Integer) where T
     
     if periodic
         x, y, z = find_position_periodic(pos, k, boxsize)
@@ -169,16 +161,16 @@ Calculates `x, y, z` position in units of pixels and performs periodic mapping, 
         z = pos[3]
     end
 
-    x *= len2pix
-    y *= len2pix
-    x += 0.5 * x_pixels  
-    y += 0.5 * y_pixels
+    x *= T(len2pix)
+    y *= T(len2pix)
+    x += T(0.5 * x_pixels)  
+    y += T(0.5 * y_pixels)
 
     if Ndim == 2
         return x, y, false
     elseif Ndim == 3
-        z *= len2pix
-        z += 0.5 * z_pixels
+        z *= T(len2pix)
+        z += T(0.5 * z_pixels)
         return x, y, z, false
     end
 end
@@ -217,8 +209,8 @@ end
 
 Calculates the minimum and maximum pixel to which a particle contributes.
 """
-@inline @fastmath function get_ijk_min_max(x::Real, hsml::Real,
-                                           x_pixels::Integer)
+@inline @fastmath function get_ijk_min_max(x::T, hsml::T,
+                                           x_pixels::Int64) where T
 
     iMin = max(floor(Integer, x - hsml), 0)
     iMax = min(floor(Integer, x + hsml) + 1, x_pixels-1)
@@ -231,8 +223,8 @@ end
 
 Calculates the index of a flattened 2D image array.
 """
-@inline @fastmath function calculate_index_2D(i::Integer, j::Integer, x_pixels::Integer)
-    return floor(Integer, i * x_pixels + j ) + 1
+@inline @fastmath function calculate_index_2D(i::T, j::T, x_pixels::T) where T
+    return floor(T, i * x_pixels + j ) + 1
 end
 
 """
@@ -240,9 +232,9 @@ end
 
 Calculates the index of a flattened 3D image array.
 """
-@inline @fastmath function calculate_index_3D(  i::Integer, j::Integer, k::Integer,
-                                                x_pixels::Integer, y_pixels::Integer)
-    return floor(Integer, i * x_pixels + j * y_pixels + k) + 1
+@inline @fastmath function calculate_index_3D(  i::T, j::T, k::T,
+                                                x_pixels::T, y_pixels::T) where T
+    return floor(T, i * x_pixels + j * y_pixels + k) + 1
 end
 
 
@@ -252,16 +244,16 @@ end
 
 
 @inline @fastmath function calc_kernel_and_weights(  is_undersampled::Bool,
-                    n_distr_pix::Integer, distr_weight::Real, distr_area::Real,
-                    dx::Real, dy::Real, x_dist::Real, y_dist::Real, 
-                    hsml_inv::Real, kernel::SPHKernel)
+                    n_distr_pix::Integer, distr_weight::Float64, distr_area::Float64,
+                    dx::T, dy::T, x_dist::T, y_dist::T, 
+                    hsml_inv::T, kernel::SPHKernel) where T<:Real
 
     dxdy = dx * dy
     distr_area += dxdy
 
     if is_undersampled
 
-        wk = dxdy
+        wk = Float64(dxdy)
         distr_weight += dxdy
         n_distr_pix  += 1
 
@@ -271,12 +263,12 @@ end
 
         if u <= 1.0
 
-            wk = kernel_value_2D(kernel, u, hsml_inv)
-            wk *= dxdy
+            wk = Float64(kernel_value_2D(kernel, u, hsml_inv))
+            wk *= Float64(dxdy)
             distr_weight += wk
             n_distr_pix += 1
         else
-            wk = 0.0
+            wk = Float64(0.0)
         end # u < 1.0
 
     end # is_undersampled
@@ -284,10 +276,10 @@ end
     return wk, distr_weight, distr_area, n_distr_pix
 end
 
-@inline @fastmath function  get_x_dx(x::Real, hsml::Real, i::Integer)
+@inline @fastmath function get_x_dx(x::T, hsml::T, i::Integer) where T
 
     dx = get_dxyz(x, hsml, i)
-    x_dist = x - i - 0.5
+    x_dist = T(x - i - 0.5)
 
     return x_dist, dx
 end
@@ -302,7 +294,7 @@ end
 
 Calculates the kernel- and geometric weights of the pixels a particle contributes to.
 """
-@inline @fastmath function calculate_weights_2D(  wk::Array{<:Real,1}, 
+@inline @fastmath function calculate_weights_2D(  wk::Vector{Float64}, 
                                                 iMin::Integer, iMax::Integer, 
                                                 jMin::Integer, jMax::Integer,
                                                 x::Real, y::Real, hsml::Real, hsml_inv::Real,
@@ -315,9 +307,9 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
         is_undersampled = true
     end
 
-    distr_weight = 0.0
-    distr_area   = 0.0
-    n_distr_pix  = 0
+    distr_weight::Float64 = 0.0
+    distr_area::Float64   = 0.0
+    n_distr_pix           = 0
 
 
     @inbounds for i = iMin:iMax
@@ -349,14 +341,14 @@ end
                                                 
 Calculates the kernel- and geometric weights of the pixels a particle contributes to.
 """
-@inline @fastmath function calculate_weights_3D(  wk::Array{<:Real,1}, 
+@inline @fastmath function calculate_weights_3D(  wk::Vector{Float64}, 
                                                 iMin::Integer, iMax::Integer, 
                                                 jMin::Integer, jMax::Integer,
                                                 kMin::Integer, kMax::Integer,
-                                                x::Real, y::Real, z::Real, 
-                                                hsml::Real, hsml_inv::Real,
+                                                x::T, y::T, z::T, 
+                                                hsml::T, hsml_inv::T,
                                                 kernel::SPHKernel,
-                                                x_pixels::Integer, y_pixels::Integer )
+                                                x_pixels::Integer, y_pixels::Integer ) where T
 
     is_undersampled = false
 
@@ -364,50 +356,46 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
         is_undersampled = true
     end
 
-    distr_weight = 0.0
-    distr_volume = 0.0
+    distr_weight::Float64 = 0.0
+    distr_volume::Float64 = 0.0
     n_distr_pix  = 0
 
 
     @inbounds for i = iMin:iMax
-        dx = get_dxyz(x, hsml, i)
-        x_dist = x - i - 0.5
+        x_dist, dx = get_x_dx(x, hsml, i)
 
         @inbounds for j = jMin:jMax
-            dy = get_dxyz(y, hsml, j)
-            y_dist = y - j - 0.5
+            y_dist, dy = get_x_dx(y, hsml, j)
 
             @inbounds for k = kMin:kMax
-                dz = get_dxyz(z, hsml, k)
+                z_dist, dz = get_x_dx(z, hsml, k)
 
                 idx = calculate_index_3D(i, j, k, x_pixels, y_pixels)
 
-                dxdydz = dx * dy * dz
-                distr_volume += dxdydz
+                dxdydz        = dx * dy * dz
+                distr_volume += Float64(dxdydz)
 
                 if is_undersampled
 
-                    wk[idx] = dxdydz
-                    distr_weight += dxdydz
+                    wk[idx] = Float64(dxdydz)
+                    distr_weight += Float64(dxdydz)
                     n_distr_pix  += 1
 
                     continue
 
                 else # is_undersampled
 
-                    z_dist = z - k - 0.5
-
                     u = get_d_hsml_3D(x_dist, y_dist, z_dist, hsml_inv)
 
                     if u <= 1.0
 
-                        wk[idx] = kernel_value_3D(kernel, u, hsml_inv)
-                        wk[idx] *= dxdydz
+                        wk[idx] =  Float64(kernel_value_3D(kernel, u, hsml_inv))
+                        wk[idx] *= Float64(dxdydz)
                         distr_weight += wk[idx]
                         n_distr_pix += 1
                     
                     else
-                        wk[idx] = 0.0
+                        wk[idx] = Float64(0.0)
                         continue
                     end # u < 1.0
 
@@ -427,9 +415,9 @@ end
 
 Applies the different contributions to the image and the weight image.
 """
-@inline @fastmath function update_image( image::Real, w_image::Real, 
-                                         wk::Real, bin_q::Real, 
-                                         geometry_norm::Real )
+@inline @fastmath function update_image( image::Float64, w_image::Float64, 
+                                         wk::Float64, bin_q::T, 
+                                         geometry_norm::Float64 ) where T<:Real
 
     if wk > 0.0
         pix_weight = geometry_norm * wk
@@ -454,9 +442,9 @@ end
 end
 
 @inline @fastmath function update_image!( idx::Integer, 
-                                          image::Array{<:Real}, 
-                                          wk::Array{<:Real}, bin_q::Real, 
-                                          geometry_norm::Real )
+                                          image::Array{Float64}, 
+                                          wk::Array{Float64}, bin_q::T, 
+                                          geometry_norm::Float64 ) where T
 
     if wk[idx] > 0.0
         pix_weight = geometry_norm * wk[idx]
@@ -474,25 +462,26 @@ end
 """
 
 
-@inline @fastmath function get_quantities_2D(pos::Array{<:Real}, weight::Real, hsml::Real, 
-                                          rho::Real, m::Real, len2pix::Real)
-        hsml *= len2pix
-        hsml_inv = 1.0/hsml
+@inline @fastmath function get_quantities_2D(pos::Array{T}, weight::T, hsml::T, 
+                                          rho::T, m::T, len2pix::Float64) where T
+        
+    hsml *= T(len2pix)
+    hsml_inv = T(1.0)/hsml
+    area  = π * hsml^2
 
-        area  = π * hsml^2
-        rho /= len2pix^3
-        dz  = m / rho / area
+    rho *= T(1.0/len2pix*len2pix*len2pix)
+    dz  = m / rho / area
 
     return pos, weight, hsml, hsml_inv, area, m, rho, dz
 end
 
-@inline @fastmath function get_quantities_3D(pos::Array{<:Real}, weight::Real, hsml::Real, 
-                                          rho::Real, m::Real, len2pix::Real)
-        hsml *= len2pix
-        hsml_inv = 1.0/hsml
+@inline @fastmath function get_quantities_3D(pos::Array{T}, weight::T, hsml::T, 
+                                          rho::T, m::T, len2pix::Float64) where T
+        hsml *= T(len2pix)
+        hsml_inv = T(1.0)/hsml
 
-        volume  = 4π/3 * hsml^3
-        rho /= len2pix^3
+        volume  = T(4π/3) * hsml^3
+        rho /= T(len2pix)^3
         dz  = m / rho / volume
 
     return pos, weight, hsml, hsml_inv, volume, m, rho, dz
@@ -512,17 +501,17 @@ end
 
 Underlying function to map SPH data to a 2D grid.
 """
-function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real}, 
-                        M::Array{<:Real}, Rho::Array{<:Real}, 
-                        Bin_Q::Array{<:Real}, Weights::Array{<:Real};
+function sphMapping_2D( Pos::Array{T}, HSML::Array{T}, 
+                        M::Array{T}, Rho::Array{T}, 
+                        Bin_Q::Array{T}, Weights::Array{T};
                         param::mappingParameters, kernel::SPHKernel,
-                        show_progress::Bool=false )
+                        show_progress::Bool=false ) where T
 
-    N = length(M)  # number of particles
+    N = size(M,1)  # number of particles
     
     N_distr = param.Npixels[1] * param.Npixels[2]
 
-    image = zeros(N_distr, 2)
+    image = zeros(Float64, N_distr, 2)
 
     # store this here for performance increase
     halfXsize = param.halfsize[1]
@@ -539,7 +528,7 @@ function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real},
     N_distr = param.Npixels[2] * param.Npixels[1]
 
     # allocate arrays for weights
-    wk = zeros(N_distr)
+    wk = zeros(Float64, N_distr)
 
     # allocate array for positions
     #pos = Vector{eltype(Pos[1,1])}(undef, 3)
@@ -553,7 +542,7 @@ function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real},
     # loop over all particles
     @inbounds for p = 1:N
 
-        bin_q = Bin_Q[p,1]
+        bin_q = Bin_Q[p]
 
         if bin_q == 0.0
             continue
@@ -588,9 +577,9 @@ function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real},
                 continue
             end
 
-            weight_per_pix = n_distr_pix / distr_weight
-            kernel_norm = area / n_distr_pix
-            area_norm = kernel_norm * weight_per_pix * weight * dz
+            weight_per_pix  = n_distr_pix / distr_weight
+            kernel_norm     = area / n_distr_pix
+            area_norm       = Float64(kernel_norm * weight_per_pix * weight * dz)
 
             @fastmath @inbounds for i = iMin:iMax, j = jMin:jMax
                 idx = calculate_index_2D(i, j, param.Npixels[1])
@@ -613,7 +602,7 @@ function sphMapping_2D( Pos::Array{<:Real}, HSML::Array{<:Real},
         end
     end # p
 
-    return image#, w_image
+    return image
 
 end # function 
 
@@ -627,18 +616,18 @@ end # function
 
 Underlying function to map SPH data to a 3D grid.
 """
-function sphMapping_3D( Pos::Array{<:Real}, HSML::Array{<:Real}, 
-                        M::Array{<:Real}, Rho::Array{<:Real}, 
-                        Bin_Q::Array{<:Real}, Weights::Array{<:Real};
+function sphMapping_3D( Pos::Array{T}, HSML::Array{T}, 
+                        M::Array{T}, Rho::Array{T}, 
+                        Bin_Q::Array{T}, Weights::Array{T};
                         param::mappingParameters, kernel::SPHKernel,
-                        show_progress::Bool=false )
+                        show_progress::Bool=false ) where T
 
     N = size(M,1)  # number of particles
 
     # max number of pixels over which the particle can be distributed
     N_distr = param.Npixels[1] * param.Npixels[2] * param.Npixels[3]
 
-    image = zeros(N_distr,2)
+    image = zeros(Float64, N_distr,2)
 
     halfXsize = param.halfsize[1]
     halfYsize = param.halfsize[2]
@@ -651,7 +640,7 @@ function sphMapping_3D( Pos::Array{<:Real}, HSML::Array{<:Real},
     end
 
     # allocate arrays for weights
-    wk = zeros(N_distr)
+    wk = zeros(Float64, N_distr)
 
     # allocate array for positions
     #pos = Vector{eltype(Pos[1,1])}(undef, 3)
@@ -665,7 +654,7 @@ function sphMapping_3D( Pos::Array{<:Real}, HSML::Array{<:Real},
     # loop over all particles
     @inbounds for p = 1:N
 
-        bin_q = Bin_Q[p,1]
+        bin_q = Bin_Q[p]
 
         if bin_q == 0.0
             continue
