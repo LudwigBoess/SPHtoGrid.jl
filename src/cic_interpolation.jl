@@ -1,6 +1,7 @@
 """
-    function sphMapping(Pos, HSML, M, ρ, Bin_Quant,
-                        Weights=ρ;
+    function sphMapping(Pos::Array{T}, HSML::Array{T}, M::Array{T}, 
+                        ρ::Array{T}, Bin_Quant::Array{T}, 
+                        Weights::Array{T}=ρ;
                         param::mappingParameters,
                         kernel::SPHKernel [,
                         show_progress::Bool=true,
@@ -24,14 +25,15 @@ Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 - `filter_particles::Bool=true`: Find the particles that are actually contained in the image.
 - `dimensions::Int=2`: Number of mapping dimensions (2 = to grid, 3 = to cube).
 """
-function sphMapping(Pos, HSML, M, ρ, Bin_Quant, 
-                    Weights=ρ;
+function sphMapping(Pos::Array{T}, HSML::Array{T}, M::Array{T}, 
+                    ρ::Array{T}, Bin_Quant::Array{T}, 
+                    Weights::Array{T}=ρ;
                     param::mappingParameters,
                     kernel::SPHKernel,
                     show_progress::Bool=true,
                     parallel::Bool=false,
                     filter_particles::Bool=true,
-                    dimensions::Int=2)
+                    dimensions::Int=2) where T
 
     
     # store number of input particles
@@ -74,7 +76,7 @@ function sphMapping(Pos, HSML, M, ρ, Bin_Quant,
     end
 
     # if this is not a float it has units, which need to be stripped
-    if !(typeof(Bin_Quant[1,1]) <: AbstractFloat)
+    if !(typeof(Bin_Quant[1]) <: AbstractFloat)
 
         if show_progress
             @info "Stripping units..."
@@ -186,7 +188,7 @@ function sphMapping(Pos, HSML, M, ρ, Bin_Quant,
                 @info "  elapsed: $(output_time(t1,t2)) s"
             end
 
-            if !reduce_image 
+            if !reduce_image
                 image[:,2] .= 1.0
             end
                                 

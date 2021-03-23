@@ -3,7 +3,7 @@
 
 Mapping only works if all coordinates are positive. This function shifts the particles accordingly.
 """
-function check_center_and_move_particles(x::Array{<:Real}, par::mappingParameters)
+function check_center_and_move_particles(x::Array{T}, par::mappingParameters) where T
 
     # explicitly copy to its own variable to avoid memory overwrite
     cen  = copy(par.center)
@@ -29,13 +29,13 @@ end
 
 Checks if a particle is contained in the image and returns an array of `Bool`.
 """
-function filter_particles_in_image(pos::Array{<:Real}, hsml::Array{<:Real}, param::mappingParameters)
+function filter_particles_in_image(pos::Array{T}, hsml::Array{T}, param::mappingParameters) where T
 
     N = size(hsml,1)
 
     p_in_image = falses(N)
 
-    _pos = zeros(3)
+    _pos = Vector{eltype(pos[1])}(undef, 3)
 
     if param.periodic
         k_start = 0
