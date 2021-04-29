@@ -213,7 +213,7 @@ Calculates the minimum and maximum pixel to which a particle contributes.
                                            x_pixels::Int64) where T
 
     iMin = max(floor(Integer, x - hsml), 0)
-    iMax = min(floor(Integer, x + hsml) + 1, x_pixels-1)
+    iMax = min(floor(Integer, x + hsml), x_pixels-1)
 
     return iMin, iMax
 end
