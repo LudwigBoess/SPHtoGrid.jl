@@ -112,9 +112,13 @@ struct mappingParameters
 
         pixelArea = pixelSideLength^2
 
-        Npix = [ floor(x_size/pixelSideLength), 
-                 floor(y_size/pixelSideLength),
-                 floor(z_size/pixelSideLength) ]
+        # Npix = [ floor(Int64, x_size/pixelSideLength), 
+        #          floor(Int64, y_size/pixelSideLength),
+        #          floor(Int64, z_size/pixelSideLength) ]
+
+        Npix = [ Npixels, 
+                 Npixels,
+                 Npixels ]
 
         periodic = false 
 

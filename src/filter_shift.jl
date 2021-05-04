@@ -20,7 +20,9 @@ function check_center_and_move_particles(x::Array{T}, par::mappingParameters) wh
     ylim .-= cen[2]
     zlim .-= cen[3]
 
-    return x, mappingParameters(center=[0.0, 0.0, 0.0], x_lim=xlim, y_lim=ylim, z_lim=zlim, Npixels=maximum(par.Npixels), boxsize=par.boxsize)
+    return x, mappingParameters(center=[0.0, 0.0, 0.0], x_lim=xlim, y_lim=ylim, z_lim=zlim, #pixelSideLength=par.pixelSideLength, 
+                                Npixels=maximum(par.Npixels), 
+                                boxsize=par.boxsize)
 end
 
 
