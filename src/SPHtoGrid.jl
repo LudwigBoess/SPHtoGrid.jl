@@ -51,8 +51,10 @@ module SPHtoGrid
            part_weight_physical, 
            part_weight_emission,
            part_weight_XrayBand,
+           part_weight_spectroscopic,
            # effect functions
-           density_2D, 
+           density_2D,
+           comptonY,
            kinetic_SZ,
            thermal_SZ,
            x_ray_emission,
