@@ -131,7 +131,7 @@ end
 """
     analytic_synchrotron_emission( rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
                                    T_K::Array{<:Real}, Mach::Array{<:Real};
-                                   xH::Real=0.76, dsa_model::Integer=1, ν0::Real=1.4e9,
+                                   xH::Real=0.76, dsa_model::Integer=1, ν0::Real=1.44e9,
                                    integrate_pitch_angle::Bool=true )
 
 Computes the analytic synchrotron emission with the simplified approach described in Longair Eq. 8.128.
@@ -145,7 +145,7 @@ Computes the analytic synchrotron emission with the simplified approach describe
 # Keyword Arguments
 - `xH::Float64 = 0.76`:               Hydrogen fraction of the simulation, if run without chemical model.
 - `dsa_model::Integer=1`:             Diffuse-Shock-Acceleration model. Takes values `0...4`, see next section.
-- `ν0::Real=1.4e9`:                   Observation frequency in ``Hz``.
+- `ν0::Real=1.44e9`:                   Observation frequency in ``Hz``.
 - `integrate_pitch_angle::Bool=true`: Integrates over the pitch angle as in Longair Eq. 8.87.
 
 # DSA models
@@ -158,7 +158,7 @@ Computes the analytic synchrotron emission with the simplified approach describe
 """
 function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
                                        T_K::Array{<:Real}, Mach::Array{<:Real};
-                                       xH::Real=0.76, dsa_model::Integer=1, ν0::Real=1.4e9,
+                                       xH::Real=0.76, dsa_model::Integer=1, ν0::Real=1.44e9,
                                        integrate_pitch_angle::Bool=true)
 
     Npart = length(T_K)

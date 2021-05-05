@@ -310,16 +310,16 @@ addprocs(2)
                         boxsize = 6.0)
 
         weight = part_weight_physical(1, par)
-        @test weight[1] == par.pixelSideLength
+        @test weight[1] ≈ par.pixelSideLength * 3.085678e21
 
         weight = part_weight_emission([0.5, 0.5], [0.5, 0.5])
         @test weight[1] ≈ 0.1767766952966369
 
-        # weight = part_weight_spectroscopic([0.5, 0.5], [0.5, 0.5])
-        # @test weight[1] ≈ 0.42044820762685725
+        weight = part_weight_spectroscopic([0.5, 0.5], [0.5, 0.5])
+        @test weight[1] ≈ 0.4204482076268573
 
-        # weight = part_weight_XrayBand([0.5, 0.5], 0.5, 1.5)
-        # @test weight[1] ≈ 0.0
+        weight = part_weight_XrayBand([0.5, 0.5], 0.5, 1.5)
+        @test weight[1] ≈ 0.0
 
 
     end
@@ -339,7 +339,7 @@ addprocs(2)
        
         @test x_ray_emission(1.0, 1.0e9) ≈ 2.8580049510920225e-23
 
-        @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0])[1] ≈ 6.519225967570028e-25
+        @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0])[1] ≈ 6.424386277144697e-25
 
         @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0])[1] == 0.0
 

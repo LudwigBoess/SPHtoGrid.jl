@@ -16,37 +16,37 @@ end
 
 Physical weighting function.
 """
-function part_weight_physical(N::Integer, par::mappingParameters)
-    return ones(N) .* par.pixelSideLength
+function part_weight_physical(N::Integer, par::mappingParameters, x_cgs::Real=3.085678e21)
+    return ones(N) .* par.pixelSideLength .* x_cgs
 end
 
 """
-    part_weight_emission(rho::Array{<:Real}, T::Array{<:Real})
+    part_weight_emission(rho::Array{<:Real}, T_K::Array{<:Real})
 
-Emission weighted mapping. Takes density and temperature and computes weights.
+Emission weighted mapping. Takes density in internal untis and temperature in K and computes weights.
 """
-function part_weight_emission(rho::Array{<:Real}, T::Array{<:Real})
-    return @. rho^2 * √(T)
+function part_weight_emission(rho::Array{<:Real}, T_K::Array{<:Real})
+    return @. rho^2 * √(T_K)
 end
 
 
 """
-    part_weight_spectroscopic(rho::Array{<:Real}, T::Array{<:Real})
+    part_weight_spectroscopic(rho::Array{<:Real}, T_K::Array{<:Real})
 
 Spectroscopic weighted mapping from Mazotta+ 04. Takes density and temperature and computes weights.
 """
-function part_weight_spectroscopic(rho::Array{<:Real}, T::Array{<:Real})
-    return @. rho^2 * T^(0.75 - 1.5)
+function part_weight_spectroscopic(rho::Array{<:Real}, T_K::Array{<:Real})
+    return @. rho^2 * T_K^(0.75 - 1.5)
 end
 
 """
-    part_weight_XrayBand(T::Array{<:Real}, Emin::Real, Emax::Real)
+    part_weight_XrayBand(T_K::Array{<:Real}, Emin::Real, Emax::Real)
 
 Computes Xray weighted emission of a defined energy band. Emin and Emax are energies in eV.
 """
-function part_weight_XrayBand(T::Array{<:Real}, Emin::Real=5.0e4, Emax::Real=1.0e10)
+function part_weight_XrayBand(T_K::Array{<:Real}, Emin::Real=5.0e4, Emax::Real=1.0e10)
     # convert Kelvin to eV
-    T_eV = T .* K2eV
+    T_eV = T_K .* cgs2eV
 
     @. exp( -Emin / ( kB * T_eV )) - exp( -Emax / ( kB * T_eV ))
 end

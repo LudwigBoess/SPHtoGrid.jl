@@ -29,18 +29,18 @@ The units in this case are of course ``g/cm^2``.
 To compute the contribution of each particle to the total (thermal) X-ray emission you can use
 
 ```julia
-x_ray_emission( n_cm3::Real, T_eV::Real; 
+x_ray_emission( n_cm3::Real, T_K::Real; 
                 Emin::Real=5.e4, Emax::Real=1.e10, 
                 xH::Real=0.76)
 ```
-where `n_cm3` is the particle density in ``1/cm^3``, `T_eV` is the temperature in electron volts. The optional input arguments `Emin` and `Emax` give the minimum and maximum energy range of the observational instrument, while `xH` gives the hydrogen fraction of the simulation.
+where `n_cm3` is the particle density in ``1/cm^3``, `T_K` is the temperature in Kelvin. The optional input arguments `Emin` and `Emax` give the minimum and maximum energy range of the observational instrument, while `xH` gives the hydrogen fraction of the simulation.
 
 ### Weights
 
 The correct weight function in this case is
 
 ```julia
-weights = part_weight_physical(length(bin_q), par)
+weights = part_weight_physical(size(bin_q,1), par, unit_lenght_in_cm)
 ```
 
 ### Units
@@ -54,7 +54,7 @@ This returns a map in the units ``erg/cm^2/s/Hz``.
 To compute the contribution of each particle to the thermal SZ-effect you can use
 
 ```julia
-thermal_SZ( n_cm3::Real, T::Real, 
+thermal_SZ( n_cm3::Real, T_K::Real, 
             z::Real=0.0, ν::Real=1.44e9; 
             DI_over_I::Bool=false )
 ```
@@ -77,7 +77,7 @@ where `n_cm3` is the particle density in ``1/cm^3``, `vel_y_cgs` is the velocity
 Independent of what version of the SZ effect you want to map you need to use the physical weight function
 
 ```julia
-weights = part_weight_physical(length(bin_q), par)
+weights = part_weight_physical(size(bin_q,1), par, unit_lenght_in_cm)
 ```
 
 ### Units
@@ -107,7 +107,7 @@ The keyword argument `xH` gives the hydrogen fraction of the simulation, if the 
 The correct weight function is
 
 ```julia
-weights = part_weight_physical(length(bin_q), par)
+weights = part_weight_physical(size(bin_q,1), par, unit_lenght_in_cm)
 ```
 
 ### Units
