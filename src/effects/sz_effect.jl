@@ -64,13 +64,13 @@ function tSzPrefac(ν::Real, z::Real, DI_over_I::Bool)
 end
 
 """
-    thermal_SZ(n_cm3::Real, T::Real, z::Real=0.0, ν::Real=1.44e9)
+    thermal_SZ(n_cm3::Real, T_K::Real, z::Real=0.0, ν::Real=1.44e9)
 
-Computes the thermal Sunyaev-Zel'dovich effect for electron density `n_cm3` and temperature `T` in Kelvin at redshift `z` and observer frequency `ν`.
+Computes the thermal Sunyaev-Zel'dovich effect for electron density `n_cm3` and temperature `T_K` in Kelvin at redshift `z` and observer frequency `ν`.
 """
-function thermal_SZ(n_cm3::Real, T::Real, 
+function thermal_SZ(n_cm3::Real, T_K::Real, 
                     z::Real=0.0, ν::Real=1.44e9; 
                     DI_over_I::Bool=false)
 
-    return tSzPrefac(ν, z, DI_over_I) * comptonY(n_cm3, T, z)
+    return tSzPrefac(ν, z, DI_over_I) * comptonY(n_cm3, T_K, z)
 end
