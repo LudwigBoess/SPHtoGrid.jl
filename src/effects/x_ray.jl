@@ -15,7 +15,6 @@ function x_ray_emission(n_cm3::Real, T_K::Real;
                         xH::Real=0.76)
 
     prefac = 4.0 * 2.42e-24 / (1 + xH)
-    k_B    = 1.38066e-16
     T_eV   = T_K * cgs2eV
 
     return prefac * sqrt( k_B * T_eV * 1.e-3 ) * n_cm3^2 *
