@@ -6,6 +6,7 @@
                         kernel::SPHKernel [,
                         show_progress::Bool=true,
                         parallel::Bool=false,
+                        reduce_image::Bool=true,
                         filter_particles::Bool=true,
                         dimensions::Int=2])
 
@@ -22,6 +23,7 @@ Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 - `kernel::SPHKernel`: Kernel object to be used.
 - `show_progress::Bool=true`: Show progress bar.
 - `parallel::Bool=true`: Run on multiple processors.
+- `reduce_image::Bool=true`: If weights need to be applied or not. Set to `false` for [`part_weight_one`](@ref) and [`part_weight_physical`](@ref).
 - `filter_particles::Bool=true`: Find the particles that are actually contained in the image.
 - `dimensions::Int=2`: Number of mapping dimensions (2 = to grid, 3 = to cube).
 """
@@ -32,19 +34,13 @@ function sphMapping(Pos::Array{T}, HSML::Array{T}, M::Array{T},
                     kernel::SPHKernel,
                     show_progress::Bool=true,
                     parallel::Bool=false,
+                    reduce_image::Bool=true,
                     filter_particles::Bool=true,
                     dimensions::Int=2) where T
 
     
     # store number of input particles
     N_in = size(Bin_Quant,1)
-
-    # check if weights need to be applied
-    if Weights == part_weight_one(N_in) || Weights == part_weight_physical(N_in, param)
-        reduce_image = false
-    else
-        reduce_image = true
-    end
 
     # First check if all particles are centered around 0 and shift them if they are not
     if show_progress
