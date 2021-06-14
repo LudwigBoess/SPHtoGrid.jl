@@ -79,3 +79,51 @@ function write_smac2_par(x, y, z,
         )
     end
 end
+
+
+
+
+"""
+    read_smac2_info(filename::String)
+
+Returns the image info in a `mappingParameters` struct.
+"""
+function read_smac2_info(filename::String)
+
+    f = FITS(filename)
+
+    center = [read_key(f[1], 23)[2], 
+              read_key(f[1], 24)[2], 
+              read_key(f[1], 25)[2] ]
+
+    xy_size = read_key(f[1], 27)[2]
+    z_size  = read_key(f[1], 28)[2]
+    Npixels = read_key(f[1], 29)[2]
+
+    close(f)
+
+    return mappingParameters(center=center, 
+									x_size=xy_size,
+									y_size=xy_size,
+									z_size=z_size,
+									Npixels=Npixels)
+
+end
+
+
+"""
+    read_smac2_image(filename::String)
+
+Returns the image of a Smac2 FITS file.
+"""
+function read_smac2_image(filename::String, num_image::Integer=1)
+
+    f = FITS(filename)
+
+    image = read(f[1])[:,:,num_image]
+
+    close(f)
+
+    return image
+
+end
