@@ -40,6 +40,8 @@ module SPHtoGrid
            get_map_grid_3D,
            read_smac1_binary_info,
            read_smac1_binary_image,
+           read_smac2_image,
+           read_smac2_info,
            write_smac1_par,
            write_smac2_par,
            # rotate particles

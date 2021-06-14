@@ -18,7 +18,7 @@ struct Smac1ImageInfo
     zcm::Float32                # z coordinate of image center
     z_slice_kpc::Float32        # depth of the image in kpc
     boxsize_kpc::Float32        # xy-size of the image in kpc
-    boxsize_pix::Float32        # xy-size of the image in pixels
+    boxsize_pix::Int32        # xy-size of the image in pixels
     pixsize_kpc::Float32        # size of one pixel in kpc
     xlim::Array{Float64,1}      # x limits of image
     ylim::Array{Float64,1}      # y limits of image
@@ -28,7 +28,7 @@ struct Smac1ImageInfo
     function Smac1ImageInfo(snap::Int32, z::Float32, m_vir::Float32, r_vir::Float32,
                        xcm::Float32, ycm::Float32, zcm::Float32,
                        z_slice_kpc::Float32,
-                       boxsize_kpc::Float32, boxsize_pix::Float32, pixsize_kpc::Float32,
+                       boxsize_kpc::Float32, boxsize_pix::Int32, pixsize_kpc::Float32,
                        units::String)
 
         xlim = [xcm - boxsize_kpc/2.0, xcm + boxsize_kpc/2.0]
@@ -95,7 +95,7 @@ function read_smac1_binary_info(filename::String)
         seek(f, position(f) + 8)
     boxsize_kpc = read(f, Float32)
         seek(f, position(f) + 8)
-    boxsize_pix = read(f, Float32)
+    boxsize_pix = read(f, Int32)
         seek(f, position(f) + 8)
     pixsize_kpc = read(f, Float32)
         seek(f, position(f) + 4)

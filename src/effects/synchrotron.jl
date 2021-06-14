@@ -31,7 +31,7 @@ end
 
 Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1
 """
-function KR07_acc(M::Float64)
+function KR07_acc(M::Real)
     if M <= 2.0
         return 1.96e-3*(M^2 - 1.)             # eq. A3
     else
