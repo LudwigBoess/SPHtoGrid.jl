@@ -339,7 +339,7 @@ addprocs(2)
        
         @test x_ray_emission(1.0, 1.0e9) ≈ 2.8580049510920225e-23
 
-        @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0])[1] ≈ 6.424386277144697e-25
+        @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0])[1] ≈ 6.424386277144697e-27
 
         @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0])[1] == 0.0
 
