@@ -349,7 +349,7 @@ addprocs(2)
 
     @testset "DSA models" begin
         # KR07
-        @test SPHtoGrid.KR07_acc(5.0) ≈ 0.25185919999999995
+        @test SPHtoGrid.KR07_acc(5.0) ≈ 0.25216639999999996
         # KR13
         @test SPHtoGrid.KR13_acc( 5.0) ≈ 0.09999999999999998
         @test SPHtoGrid.KR13_acc(10.0) ≈ 0.19631644350722818
