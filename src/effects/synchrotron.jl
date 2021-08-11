@@ -153,8 +153,10 @@ Computes the analytic synchrotron emission with the simplified approach describe
 # Keyword Arguments
 - `xH::Float64 = 0.76`:               Hydrogen fraction of the simulation, if run without chemical model.
 - `dsa_model::Integer=1`:             Diffuse-Shock-Acceleration model. Takes values `0...4`, see next section.
-- `ν0::Real=1.44e9`:                   Observation frequency in ``Hz``.
+- `ν0::Real=1.44e9`:                  Observation frequency in ``Hz``.
+- `Xcre::Real=0.01`:                  Ratio of CR proton to electron energy density.
 - `integrate_pitch_angle::Bool=true`: Integrates over the pitch angle as in Longair Eq. 8.87.
+- `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz]`` to ``mJy``.
 
 # DSA models
 - `0`: [`KR07_acc`](@ref). Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1.
@@ -195,8 +197,6 @@ function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Re
         error("Invalid DSA model selection!")
     end
 
-    #nufac = (3q_e)/(2π * m_e^3 * c_light^2 * c_light^2 * ν0)
-
     nufac = (3q_e)/(p3(m_e) * c_light * c_light * c_light * c_light * c_light * 2π * ν0)
 
 
@@ -227,7 +227,7 @@ function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Re
             # Longair eq 8.128
             S_ν[i] = prefac * n0 * 
                      nufac^( 0.5 * ( s - 1.0 ) ) * B^( 0.5 * ( s + 1.0 ) ) *
-                     a_p 
+                     a_p
         else
             S_ν[i] = 0.0
         end
