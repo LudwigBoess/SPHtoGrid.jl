@@ -32,10 +32,12 @@ end
 Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1
 """
 function KR07_acc(M::Real)
-    if M <= 2.0
+    if M < 1.5
+        return 0.0
+    elseif M <= 2.0
         return 1.96e-3*(M^2 - 1.)             # eq. A3
     else
-        return kr_fitting_function(M, 5.46, -9.78, 4.17, -0.337, 0.57)
+        return kr_fitting_function(M, 5.46, -9.78, 4.17, -0.334, 0.57)
     end
 end
 
@@ -114,7 +116,13 @@ end
 Spectral index given by standard Diffuse-Shock-Acceleration (DSA).
 """
 function dsa_spectral_index(M::Real)
-    return 2.0 * ( M^2 + 1.0 ) / ( M^2 - 1 )
+    
+    # diverges for Mach smaller 1.01
+    if M <= 1.01
+        return maxintfloat(Float64)
+    else
+        return 2.0 * ( M^2 + 1.0 ) / ( M^2 - 1 )
+    end
 end
 
 """
@@ -145,8 +153,10 @@ Computes the analytic synchrotron emission with the simplified approach describe
 # Keyword Arguments
 - `xH::Float64 = 0.76`:               Hydrogen fraction of the simulation, if run without chemical model.
 - `dsa_model::Integer=1`:             Diffuse-Shock-Acceleration model. Takes values `0...4`, see next section.
-- `ν0::Real=1.44e9`:                   Observation frequency in ``Hz``.
+- `ν0::Real=1.44e9`:                  Observation frequency in ``Hz``.
+- `Xcre::Real=0.01`:                  Ratio of CR proton to electron energy density.
 - `integrate_pitch_angle::Bool=true`: Integrates over the pitch angle as in Longair Eq. 8.87.
+- `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz]`` to ``mJy``.
 
 # DSA models
 - `0`: [`KR07_acc`](@ref). Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1.
@@ -159,11 +169,13 @@ Computes the analytic synchrotron emission with the simplified approach describe
 function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
                                        T_K::Array{<:Real}, Mach::Array{<:Real};
                                        xH::Real=0.76, dsa_model::Integer=1, ν0::Real=1.44e9,
-                                       integrate_pitch_angle::Bool=true)
+                                       Xcre::Real=0.01,
+                                       integrate_pitch_angle::Bool=true,
+                                       convert_to_mJy::Bool=false)
 
     Npart = length(T_K)
 
-    S_ν = zeros(Npart)
+    S_ν = Vector{Float64}(undef, Npart)
 
     if length(B_cgs[1,:]) == 1
         B_1dim = true
@@ -187,32 +199,42 @@ function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Re
 
     nufac = (3q_e)/(p3(m_e) * c_light * c_light * c_light * c_light * c_light * 2π * ν0)
 
+
     @showprogress for i = 1:Npart
         if B_1dim
             B = B_cgs[i]
         else
-            B  = sqrt( B_cgs[i,1]^2 + B_cgs[i,2]^2 + B_cgs[i,3]^2)
+            B  = sqrt( B_cgs[1,i]^2 + B_cgs[2,i]^2 + B_cgs[3,i]^2)
         end
-        n0 = cre_spec_norm_particle(Mach[i], acc_function) * EpsNtherm(rho_cgs[i], T_K[i], xH=xH)
+        n0 = Xcre * cre_spec_norm_particle(Mach[i], acc_function) * EpsNtherm(rho_cgs[i], T_K[i], xH=xH)
         s  = dsa_spectral_index(Mach[i])
 
         if n0 > 0.0
-            # Longair eq 8.128
-            prefac = sqrt( 3.0 )*p3(q_e)/(m_e * p2(c_light)*(s + 1.0)) * 
-                    gamma(s / 4.0 + 19.0 / 12.0) * gamma(s / 4.0 - 1.0 / 12.0) *
-                    nufac^( 0.5 * ( s - 1.0 ) )
-    
+
+            # Longair eq. 8.129
+            a_p = gamma(s / 4.0 + 19.0 / 12.0) * gamma(s / 4.0 - 1.0 / 12.0)
 
             if integrate_pitch_angle
                 # Longair eq 8.87
-                prefac *= 0.5 * sqrt(π) * gamma(s / 4.0 + 5.0 / 4.0 ) / 
+                a_p *= 0.5 * sqrt(π) * gamma(s / 4.0 + 5.0 / 4.0 ) / 
                                         gamma(s / 4.0 + 7.0 / 4.0 )
             end
 
-            S_ν[i] = prefac * n0 * B^( 0.5 * ( s + 1.0 ) )
+            # Longair eq 8.128 prefactor
+            prefac = √(3)*q_e^3/(m_e * p2(c_light) * (s + 1.0))
+            #prefac = √(3)*q_e^3/(m_e * c_light)
+
+            # Longair eq 8.128
+            S_ν[i] = prefac * n0 * 
+                     nufac^( 0.5 * ( s - 1.0 ) ) * B^( 0.5 * ( s + 1.0 ) ) *
+                     a_p
         else
             S_ν[i] = 0.0
         end
+    end
+
+    if convert_to_mJy
+        S_ν .*= ν0 * 1.e26
     end
 
     return S_ν
