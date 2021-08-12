@@ -63,14 +63,14 @@ addprocs(2)
 
         x = zeros(3, 2)
         x[:,1] = [  1.0,  1.0, 1.0]
-        x[:,2] = [ -3.0, -1.0, 1.0]
+        x[:,2] = [ -5.0, -1.0, 1.0]
 
         hsml = [0.5, 0.5]
 
         p_in_image = filter_particles_in_image(x, hsml, par)
 
         @test p_in_image[1] == true
-        #@test p_in_image[2] == false
+        @test p_in_image[2] == false
 
     end
 

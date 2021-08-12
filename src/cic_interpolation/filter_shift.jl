@@ -37,8 +37,6 @@ function filter_particles_in_image(pos::Array{T}, hsml::Array{T}, param::mapping
 
     p_in_image = falses(N)
 
-    _pos = Vector{eltype(pos[1])}(undef, 3)
-
     if param.periodic
         k_start = 0
     else
@@ -52,12 +50,12 @@ function filter_particles_in_image(pos::Array{T}, hsml::Array{T}, param::mapping
         @inbounds for k_periodic = k_start:7
 
             if param.periodic
-                find_position_periodic!(_pos, pos[:,p], k_periodic, param.boxsize)
+                x, y, z = find_position_periodic(pos[:,p], k_periodic, param.boxsize)
             else
-                _pos = pos[:,p]
+                x, y, z = pos[:,p]
             end
 
-            in_image = check_in_image(_pos, -hsml[p], param.halfsize)
+            in_image = particle_in_image(x, y, z, hsml[p], param.halfsize)
             
             if in_image
                 break

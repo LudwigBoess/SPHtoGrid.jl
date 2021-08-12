@@ -1,14 +1,14 @@
 """
-    function sphMapping(Pos::Array{T}, HSML::Array{T}, M::Array{T}, 
-                        ρ::Array{T}, Bin_Quant::Array{T}, 
-                        Weights::Array{T}=ρ;
-                        param::mappingParameters,
-                        kernel::SPHKernel [,
-                        show_progress::Bool=true,
-                        parallel::Bool=false,
-                        reduce_image::Bool=true,
-                        filter_particles::Bool=true,
-                        dimensions::Int=2])
+    sphMapping( Pos, HSML, M, 
+                Rho, Bin_Quant, 
+                Weights=Rho;
+                param::mappingParameters,
+                kernel::SPHKernel,
+                show_progress::Bool=true,
+                parallel::Bool=false,
+                reduce_image::Bool=true,
+                filter_particles::Bool=true,
+                dimensions::Int=2)
 
 Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 `param` and the kernel to be used in `kernel`.
@@ -17,7 +17,7 @@ Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 - `Pos`: Matrix (3xNpart) with particle positions.
 - `HSML`: Array with particle hsml.
 - `M`: Array with particle masses.
-- `ρ`: Array with particle densities.
+- `Rho`: Array with particle densities.
 - `Bin_Quant`: Array with particle quantity to be mapped.
 - `Weights`: Array with weights. Defaults to density-weighted.
 - `kernel::SPHKernel`: Kernel object to be used.
@@ -27,16 +27,16 @@ Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 - `filter_particles::Bool=true`: Find the particles that are actually contained in the image.
 - `dimensions::Int=2`: Number of mapping dimensions (2 = to grid, 3 = to cube).
 """
-function sphMapping(Pos::Array{T}, HSML::Array{T}, M::Array{T}, 
-                    ρ::Array{T}, Bin_Quant::Array{T}, 
-                    Weights::Array{T}=ρ;
+function sphMapping(Pos, HSML, M, 
+                    Rho, Bin_Quant, 
+                    Weights=Rho;
                     param::mappingParameters,
                     kernel::SPHKernel,
                     show_progress::Bool=true,
                     parallel::Bool=false,
                     reduce_image::Bool=true,
                     filter_particles::Bool=true,
-                    dimensions::Int=2) where T
+                    dimensions::Int=2)
 
     
     # store number of input particles
@@ -80,12 +80,12 @@ function sphMapping(Pos::Array{T}, HSML::Array{T}, M::Array{T},
         end
 
         # allocate reduced arrays
-        x       = ustrip(Pos[:,p_in_image])
-        hsml    = ustrip(HSML[p_in_image])
-        m       = ustrip(M[p_in_image])
-        rho     = ustrip(ρ[p_in_image])
-        bin_q   = ustrip(Bin_Quant[p_in_image])
-        weights = ustrip(Weights[p_in_image])
+        x       = ustrip.(Pos[:,p_in_image])
+        hsml    = ustrip.(HSML[p_in_image])
+        m       = ustrip.(M[p_in_image])
+        rho     = ustrip.(Rho[p_in_image])
+        bin_q   = ustrip.(Bin_Quant[p_in_image])
+        weights = ustrip.(Weights[p_in_image])
 
     else
         if show_progress
@@ -97,7 +97,7 @@ function sphMapping(Pos::Array{T}, HSML::Array{T}, M::Array{T},
         x       = Pos[:,p_in_image]
         hsml    = HSML[p_in_image]
         m       = M[p_in_image]
-        rho     = ρ[p_in_image]
+        rho     = Rho[p_in_image]
         bin_q   = Bin_Quant[p_in_image]
         weights = Weights[p_in_image]
     end

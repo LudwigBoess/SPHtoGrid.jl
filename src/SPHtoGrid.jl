@@ -4,35 +4,45 @@ module SPHtoGrid
     using SPHKernels
     using Unitful
     using Printf
+    using ProgressMeter
 
     function output_time(t1, t2)
         return @sprintf("%0.3e", Float64((t2-t1))*1.e-9)
     end
     
-    include("parameters.jl")
-    include("filter_shift.jl")
-    include("domain_decomp.jl")
-    include("reduce_image.jl")
-    include("reconstruct_grid.jl")
-    include("mapping_functions.jl")
-    include("smac1_utility.jl")
-    include("smac2_utility.jl")
-    include("rotate_particles.jl")
-    include("cic_interpolation.jl")
-    include("tsc_interpolation.jl")
-    include("weight_functions.jl")
+    # shared functionality
+    include("shared/parameters.jl")
+    include("shared/reconstruct_grid.jl")
+    include("shared/periodic_mapping.jl")
+    include("shared/rotate_particles.jl")
+    include("shared/io.jl")
+    
+    # multi-core functionality 
+    include("parallel/domain_decomp.jl")
+
+    # functions for smac
+    include("smac/smac1_utility.jl")
+    include("smac/smac2_utility.jl")
+    
+    # tsc interpolation
+    include("tsc_interpolation/tsc_interpolation.jl")
+    
+    # cic interpolation 
+    include("cic_interpolation/filter_shift.jl")
+    include("cic_interpolation/reduce_image.jl")
+    include("cic_interpolation/cic_shared.jl")
+    include("cic_interpolation/cic_2D.jl")
+    include("cic_interpolation/cic_3D.jl")
+    include("cic_interpolation/weight_functions.jl")
+    include("cic_interpolation/cic_interpolation.jl")
+
     # effect functions
     include("effects/constants.jl")
     include("effects/density.jl")
     include("effects/synchrotron.jl")
     include("effects/sz_effect.jl")
     include("effects/x_ray.jl")
-    #read/write images
-    include("io.jl")
-    
-    
-
-
+ 
     export mappingParameters,                         # parameters for SPH mapping
            sphMapping,                                # main function for mapping 
            filter_particles_in_image,                 # helper function to preselect particles
@@ -64,8 +74,6 @@ module SPHtoGrid
            # IO
            read_fits_image,
            write_fits_image
-
-           
 
 
 end # module
