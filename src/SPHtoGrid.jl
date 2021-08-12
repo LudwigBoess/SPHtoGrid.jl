@@ -4,6 +4,7 @@ module SPHtoGrid
     using SPHKernels
     using Unitful
     using Printf
+    using ProgressMeter
 
     function output_time(t1, t2)
         return @sprintf("%0.3e", Float64((t2-t1))*1.e-9)
@@ -12,6 +13,7 @@ module SPHtoGrid
     # shared functionality
     include("shared/parameters.jl")
     include("shared/reconstruct_grid.jl")
+    include("shared/periodic_mapping.jl")
     include("shared/rotate_particles.jl")
     include("shared/io.jl")
     
@@ -28,7 +30,9 @@ module SPHtoGrid
     # cic interpolation 
     include("cic_interpolation/filter_shift.jl")
     include("cic_interpolation/reduce_image.jl")
-    include("cic_interpolation/mapping_functions.jl")
+    include("cic_interpolation/cic_shared.jl")
+    include("cic_interpolation/cic_2D.jl")
+    include("cic_interpolation/cic_3D.jl")
     include("cic_interpolation/weight_functions.jl")
     include("cic_interpolation/cic_interpolation.jl")
 
@@ -70,8 +74,6 @@ module SPHtoGrid
            # IO
            read_fits_image,
            write_fits_image
-
-           
 
 
 end # module
