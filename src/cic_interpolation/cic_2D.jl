@@ -71,7 +71,7 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
                 # check if inside the kernel
                 if u <= 1.0
                     # evaluate kernel
-                    wk[idx]       = 𝒲₃(kernel, u, hsml_inv)
+                    wk[idx]       = 𝒲₂(kernel, u, hsml_inv)
                     wk[idx]      *= dxdy
                     distr_weight += wk[idx]
                     n_distr_pix  += 1
@@ -124,6 +124,7 @@ function sphMapping_2D( Pos, HSML,
 
     N = size(M,1)  # number of particles
     
+    # max number of pixels over which the particle can be distributed
     N_distr = param.Npixels[1] * param.Npixels[2]
 
     image = zeros(Float64, N_distr, 2)
@@ -134,12 +135,8 @@ function sphMapping_2D( Pos, HSML,
         k_start = 7
     end
 
-    # max number of pixels over which the particle can be distributed
-    N_distr = param.Npixels[2] * param.Npixels[1]
-
     # allocate arrays for weights
     wk = zeros(Float64, N_distr)
-
 
     if show_progress
         P = Progress(N)
@@ -193,7 +190,6 @@ function sphMapping_2D( Pos, HSML,
             end # i, j 
 
         end # k
-
 
          # update for ProgressMeter
         if show_progress
