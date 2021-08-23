@@ -200,7 +200,7 @@ function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Re
     nufac = (3q_e)/(p3(m_e) * c_light * c_light * c_light * c_light * c_light * 2π * ν0)
 
 
-    @showprogress for i = 1:Npart
+    @inbounds for i = 1:Npart
         if B_1dim
             B = B_cgs[i]
         else

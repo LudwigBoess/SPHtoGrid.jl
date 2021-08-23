@@ -14,7 +14,7 @@ end
 """
     part_weight_physical(N::Integer, par::mappingParameters)
 
-Physical weighting function.
+Physical weighting function in units of [cm/pix].
 """
 function part_weight_physical(N::Integer, par::mappingParameters, x_cgs::Real=3.085678e21)
     return ones(N) .* par.pixelSideLength .* x_cgs

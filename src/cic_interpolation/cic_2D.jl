@@ -188,7 +188,6 @@ function sphMapping_2D( Pos, HSML,
                                                            wk[idx], bin_q, area_norm)
                 
             end # i, j 
-
         end # k
 
          # update for ProgressMeter

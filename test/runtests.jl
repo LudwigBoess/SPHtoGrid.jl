@@ -326,7 +326,7 @@ addprocs(2)
 
     @testset "Effect functions" begin
 
-        @test density_2D(1.0, 1.0) ≈ 2.088976598481755
+        @test density_2D(1.0, 1.0) ≈ 6.769911178294544e-22
 
         @test SPHtoGrid.Tcmb(0.0)  ≈ 2.728
         @test SPHtoGrid.Tcmb(10.0) ≈ 30.008000000000003
