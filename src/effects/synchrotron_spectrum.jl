@@ -20,6 +20,17 @@ See Donnert+16, MNRAS 462, 2014–2032 (2016), Eq. 19.
 ν_over_ν_crit(p::Real, B::Real, ν::Real, sinθ::Real=1.0) = ν / ( C_crit * B * sinθ * p^2 )
 
 """
+    get_rel_energy_density(M::Real, eff_function::Function)
+
+Compute the relative energy density compared to the thermal energy density.
+"""
+function get_rel_energy_density(M::Real, eff_function::Function)
+    η = eff_function(M)
+    return η/(1.0 - η)
+
+end
+
+"""
     dsa_spectral_index_momentum(M::Real)
 
 Compute the spectral index from DSA for a distribution in momentum space.
@@ -43,7 +54,7 @@ spectrum(p::Real, p_min::Real, n0::Real, s::Real) = p < p_min ? 0.0 : n0 * (p/p_
 
 Pitch angle integration in Donnert+16, Eq. 17.
 """
-function integrate_θ(x_in::Real, θ_steps::Integer=128)
+function integrate_θ(x_in::Real, θ_steps::Integer=64)
 
     dθ = 0.5π / θ_steps
     K = 0.0
@@ -60,7 +71,7 @@ end
 
 Pitch angle integration in Donnert+16, Eq. 17 using Simpson's rule.
 """
-function integrate_θ_simpson(x_in::Real, θ_steps::Integer=100)
+function integrate_θ_simpson(x_in::Real, θ_steps::Integer=50)
 
     dθ = 0.5π / θ_steps
     #θ = LinRange(0.0, 0.5π, θ_steps)
@@ -89,6 +100,36 @@ function integrate_θ_simpson(x_in::Real, θ_steps::Integer=100)
     return K
 end
 
+
+"""
+    get_F( p::Real, p_inj::Real, ϵ_cr0::Real, s::Real, B_cgs::Real, ν0::Real)
+
+Helper function to get synchrotron emission at momentum `p`.
+"""
+function get_F( p::Real, p_inj::Real, ϵ_cr0::Real, s::Real, B_cgs::Real, ν0::Real, integrate_pitch_angle::Bool)
+
+    # energy density at momentum p
+    N_E = spectrum(p, p_inj, ϵ_cr0, s)
+    # x from Eq. 19 (without sinθ -> for integration)
+    x   = ν_over_ν_crit(p, B_cgs, ν0)
+
+    if integrate_pitch_angle
+        K = integrate_θ_simpson(x)
+    else
+        K = synchrotron_kernel(x)
+    end
+
+    # integral Donnert+16, Eq. 17 evaluated at momenum p
+    return N_E * K 
+
+end
+
+"""
+    get_p_mid(p_low::Real, p_up::Real)
+
+Helper function to compute the momentum in the middle of the bin.
+"""
+get_p_mid(p_low::Real, p_up::Real) = 10.0^( 0.5 * ( log10(p_low) + log10(p_up) ) )
 
 """
     analytic_synchrotron_emission( rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
@@ -128,8 +169,9 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
                                        Emin::Real=5.0e4,
                                        Emax::Real=1.e10,
                                        p_inj::Real=0.1, # in [me*c]
+                                       integrate_pitch_angle::Bool=true,
                                        convert_to_mJy::Bool=false,
-                                       N_sample_bins::Integer=128)
+                                       N_sample_bins::Integer=256)
 
     if ( B_cgs == 0 || Mach < 1 )
         return 0
@@ -149,7 +191,7 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
         error("Invalid DSA model selection!")
     end
 
-    # # in dimensionless momentum!
+    # in dimensionless momentum!
     p_inj = 0.1 
     p_min = Emin * eV2cgs / ( m_e * c_light^2 )
     p_max = Emax * eV2cgs / ( m_e * c_light^2 )
@@ -160,33 +202,31 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
     # include magnetic field into this
     j_ν_prefac *= B_cgs
 
-    # get spectral index 
-    #s  = dsa_spectral_index(Mach)
+    # if run without pitch angle integration
+    # sinθ = 1.0 -> integral factor π/2
+    if !integrate_pitch_angle
+        j_ν_prefac *= 0.5π
+    end
+
+    # get spectral index s ∈ ]-∞, 4.0[
     s  = dsa_spectral_index_momentum(Mach)
 
-    # compute norm CR energy spectrum (in [erg/cm^3])
-    # uses p_inj = 0.1 * m_e * c_light
-    n0 = Xcre * cre_spec_norm_particle(Mach, acc_function) * EpsNtherm(rho_cgs, T_K, xH=xH)
+    # energy density of thermal gas [erg/cm^3]
+    ϵ_th = EpsNtherm(rho_cgs, T_K, xH=xH)
 
-    println("ϵ_th_dw = $(EpsNtherm(rho_cgs, T_K, xH=xH))")
-    println("")
-    println("n0 = $n0")
-    
-    
-    # Smac2:
-    #n0 = Xcre * ( s - 2 ) * (Emin * eV2cgs)^(s - 2) * EpsNtherm(rho_cgs, T_K, xH=xH)
+    # CR Energy density of whole powerlaw
+    ϵ_cr0 = Xcre * get_rel_energy_density(Mach, acc_function) * ϵ_th
+    # compensate for injection momentum
+    ϵ_cr0 *= (s - 2) / (p_inj^( 2 - s ) )
 
     # width of momentum bins
-    #di    = log(p_max/p_min) / (N_sample_bins-1)
     di    = log10(p_max/p_min) / (N_sample_bins-1)
 
     # momentum bins
-    #p     = @. p_min * exp( di * 0:N_sample_bins-1)
     p     = @. p_min * 10.0^( di * 0:N_sample_bins-1)
 
     # width of momentum bins
     dp = zeros(N_sample_bins)
-    #dp[1] = p[1] - p_min * exp(-1di)
     dp[1] = p[1] - p_min * 10.0^(-1di)
     @inbounds for i = 2:N_sample_bins
         dp[i] = p[i] - p[i-1]
@@ -195,9 +235,11 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
     # storage array for integrand of Eq. 17
     F        = Vector{Float64}(undef, N_sample_bins)
     F_mid    = Vector{Float64}(undef, N_sample_bins)
-    F[1]     = synchrotron_kernel(ν_over_ν_crit(p[1], B_cgs, ν0))
-    F_mid[1] = synchrotron_kernel(0.5 * ( ν_over_ν_crit(p[1], B_cgs, ν0) + 
-                                          ν_over_ν_crit(p[2], B_cgs, ν0) ))
+
+    
+    F[1]     = get_F(p[1], p_inj, ϵ_cr0, s, B_cgs, ν0, integrate_pitch_angle)
+    # not needed
+    F_mid[1] = 0.0
 
     # store total synchrotron emissivity
     jν = 0.0
@@ -205,31 +247,19 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
     # Simpson rule
     @inbounds for i = 2:N_sample_bins
 
-        # beginning of bin
-        # energy density at momentum p
-        N_E = spectrum(p[i], p_inj, n0, s)
-        # x from Eq. 19 (without sinθ -> for integration)
-        x   = ν_over_ν_crit(p[i], B_cgs, ν0)
-        K   = integrate_θ_simpson(x)
+        # end of bin
+        F[i]     = get_F(p[i], p_inj, ϵ_cr0, s, B_cgs, ν0, integrate_pitch_angle)
 
-        # p-Integrand of Eq. 17
-        F[i] = N_E * K 
-
-        # middle of bin 
-        x_mid = 0.5 * ( x[i-1] + x[i] )
-        p_mid = 0.5 * ( p[i-1] + p[i] )
-
-        N_E_mid  = spectrum(p_mid, p_inj, n0, s)
-        K_mid    = integrate_θ_simpson(x_mid)
-
-        F_mid[i] = N_E_mid * K_mid
+        # middle of bin
+        p_mid    = get_p_mid(p[i-1], p[i])
+        F_mid[i] = get_F(p_mid, p_inj, ϵ_cr0, s, B_cgs, ν0, integrate_pitch_angle)
 
         # Simpson rule: https://en.wikipedia.org/wiki/Simpson%27s_rule
         jν += dp[i] / 6.0 * ( F[i] + F[i-1] + 4F_mid[i] )
 
     end
 
-    return j_ν_prefac * jν
+    return j_ν_prefac * jν 
 
 end
 
@@ -275,6 +305,12 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
     # include magnetic field into this
     j_ν_prefac *= B_cgs
 
+    # if run without pitch angle integration
+    # sinθ = 1.0 -> integral factor π/2
+    if !integrate_pitch_angle
+        j_ν_prefac *= 0.5π
+    end
+
     # width of momentum bins
     dp = zeros(N_sample_bins)
     dp[1] = p[1] - p[1] * exp(-1di)
@@ -287,8 +323,9 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
     F        = Vector{Float64}(undef, N_sample_bins)
     F_mid    = Vector{Float64}(undef, N_sample_bins)
     F[1]     = synchrotron_kernel(ν_over_ν_crit(p[1], B_cgs, ν0))
-    F_mid[1] = synchrotron_kernel(0.5 * ( ν_over_ν_crit(p[1], B_cgs, ν0) + 
-                                          ν_over_ν_crit(p[2], B_cgs, ν0) ))
+    
+    # not needed
+    F_mid[1] = 0.0
 
     # store total synchrotron emissivity
     jν = 0.0
@@ -296,22 +333,31 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
     # Simpson rule
     @inbounds for i = 2:N_bins
 
-        # beginning of bin
+        # end of bin
         
         # x from Eq. 19
         x   = ν_over_ν_crit(p[i], B_cgs, ν0)
         # pitch-angle integral
-        K   = integrate_θ_simpson(x)
+        if integrate_pitch_angle
+            K = integrate_θ_simpson(x)
+        else
+            K = synchrotron_kernel(x)
+        end
 
         # energy density at momentum p * integrated synchrotron kernel
         F[i] = n_p[i] * K 
 
         # middle of bin 
-        N_E_mid  = 0.5 * ( n_p[i-1] + n_p[i]  )
+        N_E_mid  = get_p_mid( n_p[i-1],  n_p[i] )
 
-        p_mid = 0.5 * ( p[i-1] + p[i] )
+        p_mid = get_p_mid( p[i-1], p[i] )
         x     = ν_over_ν_crit(p_mid, B_cgs, ν0)
-        K_mid = integrate_θ_simpson(x)
+
+        if integrate_pitch_angle
+            K_mid = integrate_θ_simpson(x)
+        else
+            K_mid = synchrotron_kernel(x)
+        end
 
         F_mid[i] = N_E_mid * K_mid
 
