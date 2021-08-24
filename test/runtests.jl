@@ -326,25 +326,43 @@ addprocs(2)
 
     @testset "Effect functions" begin
 
-        @test density_2D(1.0, 1.0) ≈ 6.769911178294544e-22
+        @testset "Density" begin
+            @test density_2D(1.0, 1.0) ≈ 6.769911178294544e-22
+        end
 
-        @test SPHtoGrid.Tcmb(0.0)  ≈ 2.728
-        @test SPHtoGrid.Tcmb(10.0) ≈ 30.008000000000003
+        @testset "SZ-effect" begin
+            @test SPHtoGrid.Tcmb(0.0)  ≈ 2.728
+            @test SPHtoGrid.Tcmb(10.0) ≈ 30.008000000000003
 
-        @test kinetic_SZ(1.0, 1.0) ≈ -2.2190366589946296e-35
+            @test kinetic_SZ(1.0, 1.0) ≈ -2.2190366589946296e-35
 
-        @test thermal_SZ(1.0, 1.0) ≈ 3.876935843260665e-34
+            @test thermal_SZ(1.0, 1.0) ≈ 3.876935843260665e-34
+        end
 
-        @test x_ray_emission(1.0, 1.0e8) ≈ 4.87726213161308e-26
-       
-        @test x_ray_emission(1.0, 1.0e9) ≈ 2.8580049510920225e-23
+        @testset "X-Ray" begin
+            @test x_ray_emission(1.0, 1.0e8) ≈ 4.87726213161308e-26
+        
+            @test x_ray_emission(1.0, 1.0e9) ≈ 2.8580049510920225e-23
+        end
 
-        @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0])[1] ≈ 6.424386277144697e-27
+        @testset "Synchrotron" begin
 
-        @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0])[1] == 0.0
+            @testset "Analytic" begin 
+                @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0])[1] ≈ 6.424386277144697e-27
 
-        @test_throws ErrorException("Invalid DSA model selection!") analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0], dsa_model=10)
+                @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0])[1] == 0.0
 
+                @test_throws ErrorException("Invalid DSA model selection!") analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0], dsa_model=10)
+            end
+
+            @testset "Spectrum" begin 
+
+                acc_function = SPHtoGrid.KR13_acc
+                ϵ_th = SPHtoGrid.EpsNtherm(1.52606e-30, 4.75088e+08, xH=0.76)
+                ϵ_cr0 = 0.01 * SPHtoGrid.get_rel_energy_density(10.0, acc_function) * ϵ_th
+                @test ϵ_cr0 / ϵ_th ≈ 0.00244270822665505
+            end
+        end
     end
 
     @testset "DSA models" begin
