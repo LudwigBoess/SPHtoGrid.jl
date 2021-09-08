@@ -125,11 +125,11 @@ function get_F( p::Real, p_inj::Real, ϵ_cr0::Real, s::Real, B_cgs::Real, ν0::R
 end
 
 """
-    get_p_mid(p_low::Real, p_up::Real)
+    get_log_mid(p_low::Real, p_up::Real)
 
 Helper function to compute the momentum in the middle of the bin.
 """
-get_p_mid(p_low::Real, p_up::Real) = 10.0^( 0.5 * ( log10(p_low) + log10(p_up) ) )
+get_log_mid(p_low::Real, p_up::Real) = 10.0^( 0.5 * ( log10(p_low) + log10(p_up) ) )
 
 """
     analytic_synchrotron_emission( rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
@@ -151,7 +151,7 @@ Computes the synchrotron emission for a powerlaw spectrum as described in Donner
 - `ν0::Real=1.44e9`:                  Observation frequency in ``Hz``.
 - `Xcre::Real=0.01`:                  Ratio of CR proton to electron energy density.
 - `integrate_pitch_angle::Bool=true`: Explicitly integrates over the pitch angle. IF `false` assumes ``sin(θ) = 1``.
-- `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz*s]`` to ``mJy``.
+- `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz/s]`` to ``mJy/cm``.
 
 # DSA models
 - `0`: [`KR07_acc`](@ref). Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1.
@@ -171,9 +171,9 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
                                        p_inj::Real=0.1, # in [me*c]
                                        integrate_pitch_angle::Bool=true,
                                        convert_to_mJy::Bool=false,
-                                       N_sample_bins::Integer=256)
+                                       N_sample_bins::Integer=128)
 
-    if ( B_cgs == 0 || Mach < 1 )
+    if ( B_cgs == 0 || Mach < 2 )
         return 0
     end
 
@@ -251,7 +251,7 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
         F[i]     = get_F(p[i], p_inj, ϵ_cr0, s, B_cgs, ν0, integrate_pitch_angle)
 
         # middle of bin
-        p_mid    = get_p_mid(p[i-1], p[i])
+        p_mid    = get_log_mid(p[i-1], p[i])
         F_mid[i] = get_F(p_mid, p_inj, ϵ_cr0, s, B_cgs, ν0, integrate_pitch_angle)
 
         # Simpson rule: https://en.wikipedia.org/wiki/Simpson%27s_rule
@@ -274,7 +274,7 @@ end
                                    integrate_pitch_angle::Bool=false,
                                    convert_to_mJy::Bool=false)
 
-Computes the synchrotron emission (in ``[erg/cm^3/Hz*s]``) for a CR spectrum as described in Donnert+16, MNRAS 462, 2014–2032 (2016), Eq. 17.
+Computes the synchrotron emission (in ``[erg/cm^3/Hz/s]``) for a CR spectrum as described in Donnert+16, MNRAS 462, 2014–2032 (2016), Eq. 17.
 
 # Arguments
 - `n_p::Vector{<:Real}`: Energy density in ``erg/cm^3`` for momenta `p`.
@@ -284,7 +284,7 @@ Computes the synchrotron emission (in ``[erg/cm^3/Hz*s]``) for a CR spectrum as 
 # Keyword Arguments
 - `ν0::Real=1.44e9`:                  Observation frequency in ``Hz``.
 - `integrate_pitch_angle::Bool=false`: Explicitly integrates over the pitch angle. IF `false` assumes ``sin(θ) = 1``.
-- `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz*s]`` to ``mJy/cm``.
+- `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz/s]`` to ``mJy/cm``.
 
 """
 function spectral_synchrotron_emission(n_p::Vector{<:Real}, 
@@ -294,12 +294,20 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
                                        integrate_pitch_angle::Bool=false,
                                        convert_to_mJy::Bool=false)
 
-    if B_cgs == 0
+    if ( B_cgs == 0 ) || sum(n_p) == 0
         return 0
     end
 
-    n_p[ isinf.(n_p) ] .= 0.0
-    n_p[ isnan.(n_p) ] .= 0.0
+    # set Inf and NaN to zero to avoid issues
+    # n_p[ isinf.(n_p) ] .= 0
+    # n_p[ isnan.(n_p) ] .= 0
+
+    # if there are Infs or NaNs present we get a wrong result, so skip this particle
+    # ToDo: Check if there is a better way to fix this! 
+    if (length(findall( isnan.(n_p) )) > 0) ||
+       (length(findall( isinf.(n_p) )) > 0)
+        return 0
+    end
 
     # get the number of momentums for which the energy density is defined
     Nbins = length(p)
@@ -343,9 +351,9 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
         F[i] = n_p[i] * K 
 
         # middle of bin 
-        N_E_mid  = get_p_mid( n_p[i+1],  n_p[i] )
+        N_E_mid  = get_log_mid( n_p[i+1],  n_p[i] )
 
-        p_mid = get_p_mid( p[i+1], p[i] )
+        p_mid = get_log_mid( p[i+1], p[i] )
         x     = ν_over_ν_crit(p_mid, B_cgs, ν0)
 
         if integrate_pitch_angle
