@@ -348,7 +348,7 @@ addprocs(2)
         @testset "Synchrotron" begin
 
             @testset "Analytic" begin 
-                @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0])[1] ≈ 6.424386277144697e-27
+                @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0])[1] ≈ 6.424386277144697e-25
 
                 @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0])[1] == 0.0
 
