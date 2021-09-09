@@ -350,6 +350,8 @@ addprocs(2)
             @testset "Analytic" begin 
                 @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0])[1] ≈ 6.424386277144697e-25
 
+                @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0], convert_to_mJy=true)[1] ≈ 6.424386277144697e1
+
                 @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0])[1] == 0.0
 
                 @test_throws ErrorException("Invalid DSA model selection!") analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0], dsa_model=10)
@@ -357,10 +359,59 @@ addprocs(2)
 
             @testset "Spectrum" begin 
 
-                acc_function = SPHtoGrid.KR13_acc
-                ϵ_th = SPHtoGrid.EpsNtherm(1.52606e-30, 4.75088e+08, xH=0.76)
-                ϵ_cr0 = 0.01 * SPHtoGrid.get_rel_energy_density(10.0, acc_function) * ϵ_th
-                @test ϵ_cr0 / ϵ_th ≈ 0.00244270822665505
+                # test thermal energy density - redundant!
+                # acc_function = SPHtoGrid.KR13_acc
+                # ϵ_th = SPHtoGrid.EpsNtherm(1.52606e-30, 4.75088e+08, xH=0.76)
+                # ϵ_cr0 = 0.01 * SPHtoGrid.get_rel_energy_density(10.0, acc_function) * ϵ_th
+                # @test ϵ_cr0 / ϵ_th ≈ 0.00244270822665505
+
+                # with pitch angle integration
+                j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model=2, 
+                                                integrate_pitch_angle=true)
+
+                @test j_ν ≈ 1.8636731988390696e-55
+
+                # without pitch angle integration
+                j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model=2, 
+                                                integrate_pitch_angle=false)
+
+                @test j_ν ≈ 4.449603338412435e-55
+
+                # conversion to mJy/cm
+                j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model=2, 
+                                                integrate_pitch_angle=false,
+                                                convert_to_mJy=true)
+
+                @test j_ν ≈ 4.449603338412435e-29
+
+                # test for pre-defined spectrum
+                Nbins = 128
+                q0   = 4.166666666666667
+
+                # define spectrum
+                bounds = 10.0.^LinRange(-1.0, 6.0, Nbins+1)
+                norm = Vector{Float64}(undef, Nbins)
+                # reference from previous tes
+                norm[1] = 2.3141104241756675e-30
+                for Nbin = 2:Nbins-1
+                    norm[Nbin] = norm[Nbin-1] * (bounds[Nbin]/bounds[Nbin-1])^(-q0) 
+                end
+
+                j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6, 
+                                                    integrate_pitch_angle=true)
+
+                @test j_ν ≈ 1.6530988606617404e-55
+
+                j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6, 
+                                                    integrate_pitch_angle=false)
+
+                @test j_ν ≈ 4.2742001929052135e-55
+
+                j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6, 
+                                                    integrate_pitch_angle=false,
+                                                    convert_to_mJy=true)
+
+                @test j_ν ≈ 4.2742001929052134e-29
             end
         end
     end
