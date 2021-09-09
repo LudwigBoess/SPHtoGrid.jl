@@ -39,7 +39,7 @@ module SPHtoGrid
     # effect functions
     include("effects/constants.jl")
     include("effects/density.jl")
-    include("effects/synchrotron.jl")
+    include("effects/synchrotron_analytic.jl")
     include("effects/synchrotron_spectrum.jl")
     include("effects/sz_effect.jl")
     include("effects/x_ray.jl")
