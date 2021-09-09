@@ -20,17 +20,6 @@ See Donnert+16, MNRAS 462, 2014–2032 (2016), Eq. 19.
 ν_over_ν_crit(p::Real, B::Real, ν::Real, sinθ::Real=1.0) = ν / ( C_crit * B * sinθ * p^2 )
 
 """
-    get_rel_energy_density(M::Real, eff_function::Function)
-
-Compute the relative energy density compared to the thermal energy density.
-"""
-function get_rel_energy_density(M::Real, eff_function::Function)
-    η = eff_function(M)
-    return η/(1.0 - η)
-
-end
-
-"""
     dsa_spectral_index_momentum(M::Real)
 
 Compute the spectral index from DSA for a distribution in momentum space.
@@ -44,7 +33,7 @@ end
 """
     spectrum(p::Real, p_min::Real, n0::Real, s::Real)
 
-Energy density `n` for a given momentum `p` interpolated from `n0` at minimum momentum `p_min`.
+Number density `n` for a given momentum `p` interpolated from `n0` at minimum momentum `p_min`.
 """
 spectrum(p::Real, p_min::Real, n0::Real, s::Real) = p < p_min ? 0.0 : n0 * (p/p_min)^(-s)
 
@@ -346,7 +335,7 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
     F        = Vector{Float64}(undef, Nbins)
     F_mid    = Vector{Float64}(undef, Nbins-1)
 
-    @inbounds for i = 1:Nbins-1
+    @inbounds for i = 1:Nbins-2
 
         # beginning of bin
         
