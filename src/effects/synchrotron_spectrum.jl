@@ -129,13 +129,20 @@ end
 
 Helper function to compute the momentum in the middle of the bin.
 """
-get_log_mid(p_low::Real, p_up::Real) = 10.0^( 0.5 * ( log10(p_low) + log10(p_up) ) )
+get_log_mid(q_low::Real, q_up::Real) = 10.0^( 0.5 * ( log10(q_low) + log10(q_up) ) )
 
 """
-    analytic_synchrotron_emission( rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
-                                   T_K::Array{<:Real}, Mach::Array{<:Real};
-                                   xH::Real=0.76, dsa_model::Integer=1, ν0::Real=1.44e9,
-                                   integrate_pitch_angle::Bool=true )
+    spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
+                                  T_K::Real, Mach::Real;
+                                  xH::Real=0.76, dsa_model::Integer=1, 
+                                  ν0::Real=1.44e9,
+                                  K_ep::Real=0.01,
+                                  Emin::Real=5.0e4,
+                                  Emax::Real=1.e10,
+                                  p_inj::Real=0.1, # in [me*c]
+                                  integrate_pitch_angle::Bool=true,
+                                  convert_to_mJy::Bool=false,
+                                  N_sample_bins::Integer=128)
 
 Computes the synchrotron emission for a powerlaw spectrum as described in Donnert+16, MNRAS 462, 2014–2032 (2016).
 
@@ -149,7 +156,7 @@ Computes the synchrotron emission for a powerlaw spectrum as described in Donner
 - `xH::Float64 = 0.76`:               Hydrogen fraction of the simulation, if run without chemical model.
 - `dsa_model::Integer=1`:             Diffuse-Shock-Acceleration model. Takes values `0...4`, see next section.
 - `ν0::Real=1.44e9`:                  Observation frequency in ``Hz``.
-- `Xcre::Real=0.01`:                  Ratio of CR proton to electron energy density.
+- `K_ep::Real=0.01`:                  Ratio of CR proton to electron energy density.
 - `integrate_pitch_angle::Bool=true`: Explicitly integrates over the pitch angle. IF `false` assumes ``sin(θ) = 1``.
 - `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz/s]`` to ``mJy/cm``.
 
@@ -162,10 +169,10 @@ Computes the synchrotron emission for a powerlaw spectrum as described in Donner
 
 """
 function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
-                                       T_K::Real, Mach::Real, t::Real=0.0;
+                                       T_K::Real, Mach::Real;
                                        xH::Real=0.76, dsa_model::Integer=1, 
                                        ν0::Real=1.44e9,
-                                       Xcre::Real=0.01,
+                                       K_ep::Real=0.01,
                                        Emin::Real=5.0e4,
                                        Emax::Real=1.e10,
                                        p_inj::Real=0.1, # in [me*c]
@@ -214,10 +221,14 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
     # energy density of thermal gas [erg/cm^3]
     ϵ_th = EpsNtherm(rho_cgs, T_K, xH=xH)
 
-    # CR Energy density of whole powerlaw
-    ϵ_cr0 = Xcre * get_rel_energy_density(Mach, acc_function) * ϵ_th
-    # compensate for injection momentum
-    ϵ_cr0 *= (s - 2) / (p_inj^( 2 - s ) )
+    # # CR Energy density of whole powerlaw
+    # ϵ_cr0 = K_ep * get_rel_energy_density(Mach, acc_function) * ϵ_th
+    # # compensate for injection momentum
+    # ϵ_cr0 *= (s - 2) / (p_inj^( 2 - s ) )
+
+    # this gives the same result as the analytic solution
+    ϵ_cr0 = cre_spec_norm_particle(Mach, acc_function) * ϵ_th 
+
 
     # width of momentum bins
     di    = log10(p_max/p_min) / (N_sample_bins-1)
@@ -277,13 +288,13 @@ end
 Computes the synchrotron emission (in ``[erg/cm^3/Hz/s]``) for a CR spectrum as described in Donnert+16, MNRAS 462, 2014–2032 (2016), Eq. 17.
 
 # Arguments
-- `n_p::Vector{<:Real}`: Energy density in ``erg/cm^3`` for momenta `p`.
-- `p::Vector{<:Real}`:   Momenta `p` for energy densities.
-- `B_cgs::Real`:         Magnetic field strength (absolute value).
+- `n_p::Vector{<:Real}`: Number density in ``1/cm^3`` for momenta `p`.
+- `p::Vector{<:Real}`:   Momenta `p` for number densities.
+- `B_cgs::Real`:         Magnetic field strength (absolute value) in Gauss.
 
 # Keyword Arguments
 - `ν0::Real=1.44e9`:                  Observation frequency in ``Hz``.
-- `integrate_pitch_angle::Bool=false`: Explicitly integrates over the pitch angle. IF `false` assumes ``sin(θ) = 1``.
+- `integrate_pitch_angle::Bool=false`: Explicitly integrates over the pitch angle. If `false` assumes ``sin(θ) = 1``.
 - `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz/s]`` to ``mJy/cm``.
 
 """
@@ -298,14 +309,11 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
         return 0
     end
 
-    # set Inf and NaN to zero to avoid issues
-    # n_p[ isinf.(n_p) ] .= 0
-    # n_p[ isnan.(n_p) ] .= 0
-
     # if there are Infs or NaNs present we get a wrong result, so skip this particle
     # ToDo: Check if there is a better way to fix this! 
     if (length(findall( isnan.(n_p) )) > 0) ||
-       (length(findall( isinf.(n_p) )) > 0)
+       (length(findall( isinf.(n_p) )) > 0) ||
+       (length(findall(   n_p .< 0  )) > 0)
         return 0
     end
 
@@ -351,9 +359,9 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
         F[i] = n_p[i] * K 
 
         # middle of bin 
-        N_E_mid  = get_log_mid( n_p[i+1],  n_p[i] )
+        N_E_mid  = get_log_mid( n_p[i],  n_p[i+1] )
 
-        p_mid = get_log_mid( p[i+1], p[i] )
+        p_mid = get_log_mid( p[i], p[i+1] )
         x     = ν_over_ν_crit(p_mid, B_cgs, ν0)
 
         if integrate_pitch_angle
@@ -380,9 +388,13 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
 
     # store total synchrotron emissivity
     jν = 0.0
-    @inbounds for i = 1:Nbins-1
+    @inbounds for i = 1:Nbins-2
         # Simpson rule: https://en.wikipedia.org/wiki/Simpson%27s_rule
         jν += dp[i] / 6.0 * ( F[i] + F[i+1] + 4F_mid[i] )
+    end
+
+    if convert_to_mJy
+        jν *= mJy_factor
     end
 
     return jν * j_ν_prefac
