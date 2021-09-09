@@ -240,7 +240,7 @@ function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Re
     end
 
     if convert_to_mJy
-        J_ν .*= 1.e26
+        J_ν .*= mJy_factor
     end
 
     return J_ν

@@ -270,6 +270,10 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
 
     end
 
+    if convert_to_mJy
+        j_ν_prefac *= mJy_factor
+    end
+
     return j_ν_prefac * jν 
 
 end
@@ -394,9 +398,9 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
     end
 
     if convert_to_mJy
-        jν *= mJy_factor
+        j_ν_prefac *= mJy_factor
     end
 
-    return jν * j_ν_prefac
+    return j_ν_prefac * jν
 
 end 
