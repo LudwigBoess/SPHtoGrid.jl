@@ -68,6 +68,7 @@ k = Cubic()
 k = Quintic()
 k = WendlandC4()
 k = WendlandC6()
+k = WendlandC8()
 ```
 
 Please see the SPHKernels [docs](https://ludwigboess.github.io/SPHKernels.jl/stable/) for more details.
