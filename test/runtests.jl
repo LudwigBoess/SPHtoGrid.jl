@@ -411,11 +411,11 @@ addprocs(2)
 
                     @test j_ν ≈ 4.2742001929052135e-55
 
-                    # j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6, 
-                    #                                     integrate_pitch_angle=false,
-                    #                                     convert_to_mJy=true)
+                    j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6, 
+                                                        integrate_pitch_angle=false,
+                                                        convert_to_mJy=true)
 
-                    # @test j_ν ≈ 4.2742001929052134e-29
+                    @test j_ν ≈ 4.2742001929052134e-29
                 end
             end
         end
