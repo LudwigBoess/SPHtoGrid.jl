@@ -94,17 +94,67 @@ You can calculate the analytic synchrotron emission of a particle as described i
 ```julia
 analytic_synchrotron_emission( rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
                                T_K::Array{<:Real}, Mach::Array{<:Real};
-                               xH::Real=0.76, dsa_model::Integer=1, ν0::Real=1.4e9,
-                               integrate_pitch_angle::Bool=true )
+                               xH::Real=0.76, dsa_model::Integer=1, ν0::Real=1.44e9,
+                               K_ep::Real=0.01,
+                               integrate_pitch_angle::Bool=true,
+                               convert_to_mJy::Bool=false )
 ```
 
 where `rho_cgs` is the density in ``g/cm^3``, `B_cgs` is the magnetic field in Gauss, `T_K` is the temperature in Kelvin and `Mach` is the shock Mach number.
+This returns an `Array` with the synchrotron emission per particle in units ``erg/cm^3/Hz/s``.
 The keyword argument `xH` gives the hydrogen fraction of the simulation, if the simulation was run without a chemical model. This has to be extended to work with a chemical model as well.
 `dsa_model` defines the Diffuse-Shock-Acceleration model which should be used. It takes the values `0...4`. These refer to [`KR07_acc`](@ref), [`KR13_acc`](@ref), [`Ryu19_acc`](@ref), [`CS14_acc`](@ref) and [`P16_acc`](@ref) respectively.
+`ν0` is the reference frequency for the synchrotron emission. Please note that this needs to be blue-shifted in the case of cosmological simulations.
+`K_ep` is the ratio between electron and proton acceleration.
+You can integrate over all angles between velocity and magnetic field vector by setting `integrate_pitch_angle=true`.
+If you want to get the result in ``mJy/cm`` instead of ``erg/cm^3/Hz/s``.
+
+### Synchrotron Emission by explicitly integrating the Spectrum
+
+You can also calculate the synchrotron emission following [Donnert et. al. (2016)](https://academic.oup.com/mnras/article/462/2/2014/2589941), Eq. 17.
+
+```julia
+spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
+                              T_K::Real, Mach::Real;
+                              xH::Real=0.76, dsa_model::Integer=1, 
+                              ν0::Real=1.44e9,
+                              K_ep::Real=0.01,
+                              Emin::Real=5.0e4,
+                              Emax::Real=1.e10,
+                              p_inj::Real=0.1, # in [me*c]
+                              integrate_pitch_angle::Bool=true,
+                              convert_to_mJy::Bool=false,
+                              N_sample_bins::Integer=128)
+
+```
+
+Similar to before `rho_cgs` is the density in ``g/cm^3``, `B_cgs` is the magnetic field in Gauss, `T_K` is the temperature in Kelvin and `Mach` is the shock Mach number.
+This returns the synchrotron emission per particle in units ``erg/cm^3/Hz/s``, based on the number density of CRs in relation to the thermal gas. This relation is defined by the `dsa_model` and `K_ep`.
+
+The keyword argument have the same meaning as in [`analytic_synchrotron_emission`](@ref) with the addition of:
+`Emin` and `Emax` which give the energy range over which you wish to integrate.
+`p_inj` defines the momentum at which the Maxwell-Boltzmann distrubution transitions to a power-law.
+`N_sample_bins` gives the number of bins used for the integration of the spectrum.
+
+
+### Synchrotron Emission from a pre-defined spectrum
+
+If you want to calculate the synchrotron emission of a spectrum that you get from e.g. an external Fokker-Planck solver you can use [`spectral_synchrotron_emission`](@ref):
+
+```julia
+spectral_synchrotron_emission( n_p::Vector{<:Real}, 
+                               p::Vector{<:Real},
+                               B_cgs::Real;
+                               ν0::Real=1.44e9,
+                               integrate_pitch_angle::Bool=false,
+                               convert_to_mJy::Bool=false )
+```
+
+where `n_p` is the number density in ``1/cm`` at the momenta `p` and `B_cgs` is again the absolute value of the magnetic field in Gauss.
 
 ### Weights
 
-The correct weight function is
+The correct weight function for all these functions is
 
 ```julia
 weights = part_weight_physical(size(bin_q,1), par, unit_lenght_in_cm)
@@ -112,4 +162,12 @@ weights = part_weight_physical(size(bin_q,1), par, unit_lenght_in_cm)
 
 ### Units
 
-This gives a map in the units ``erg*s/cm^2``.
+This gives a map in the units ``erg/cm^2/Hz/s`` which is equal to ``10^{26} mJy``.
+To compute the total synchrotron emission of the image use:
+```julia
+# total radio emission of the image
+J_ν = (par.Npixels[1] * par.pixelSideLength)^2 / par.Npixels[1]^2 * sum(image)
+
+# convert to mJy if not done in the mapping
+J_ν *= 1.e26
+```

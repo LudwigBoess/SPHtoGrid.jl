@@ -32,7 +32,7 @@ end
 Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1
 """
 function KR07_acc(M::Real)
-    if M < 1.5
+    if M < 2.0
         return 0.0
     elseif M <= 2.0
         return 1.96e-3*(M^2 - 1.)             # eq. A3
@@ -143,6 +143,7 @@ end
                                    integrate_pitch_angle::Bool=true )
 
 Computes the analytic synchrotron emission with the simplified approach described in Longair Eq. 8.128.
+Returns J_ν in units [erg/cm^3/Hz/s].
 
 # Arguments
 - `rho_cgs::Array{<:Real}`: Density in ``g/cm^3``.
@@ -154,9 +155,9 @@ Computes the analytic synchrotron emission with the simplified approach describe
 - `xH::Float64 = 0.76`:               Hydrogen fraction of the simulation, if run without chemical model.
 - `dsa_model::Integer=1`:             Diffuse-Shock-Acceleration model. Takes values `0...4`, see next section.
 - `ν0::Real=1.44e9`:                  Observation frequency in ``Hz``.
-- `Xcre::Real=0.01`:                  Ratio of CR proton to electron energy density.
+- `K_ep::Real=0.01`:                  Ratio of CR proton to electron energy density.
 - `integrate_pitch_angle::Bool=true`: Integrates over the pitch angle as in Longair Eq. 8.87.
-- `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz]`` to ``mJy``.
+- `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz/s]`` to ``mJy/cm``.
 
 # DSA models
 - `0`: [`KR07_acc`](@ref). Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1.
@@ -169,13 +170,17 @@ Computes the analytic synchrotron emission with the simplified approach describe
 function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
                                        T_K::Array{<:Real}, Mach::Array{<:Real};
                                        xH::Real=0.76, dsa_model::Integer=1, ν0::Real=1.44e9,
-                                       Xcre::Real=0.01,
+                                       K_ep::Real=0.01,
                                        integrate_pitch_angle::Bool=true,
                                        convert_to_mJy::Bool=false)
 
     Npart = length(T_K)
 
-    S_ν = Vector{Float64}(undef, Npart)
+    # default ratio for electron to protons from Donnert+16.
+    K_ep_default = 0.01
+
+    # allocate storage array
+    J_ν = Vector{Float64}(undef, Npart)
 
     if length(B_cgs[1,:]) == 1
         B_1dim = true
@@ -183,6 +188,7 @@ function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Re
         B_1dim = false
     end
 
+    # select DSA model
     if dsa_model == 0
         acc_function = KR07_acc
     elseif dsa_model == 1
@@ -197,16 +203,17 @@ function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Re
         error("Invalid DSA model selection!")
     end
 
+    # bracket of Longair eq. 8128
     nufac = (3q_e)/(p3(m_e) * c_light * c_light * c_light * c_light * c_light * 2π * ν0)
 
 
-    @showprogress for i = 1:Npart
+    @inbounds for i = 1:Npart
         if B_1dim
             B = B_cgs[i]
         else
             B  = sqrt( B_cgs[1,i]^2 + B_cgs[2,i]^2 + B_cgs[3,i]^2)
         end
-        n0 = Xcre * cre_spec_norm_particle(Mach[i], acc_function) * EpsNtherm(rho_cgs[i], T_K[i], xH=xH)
+        n0 = K_ep / K_ep_default * cre_spec_norm_particle(Mach[i], acc_function) * EpsNtherm(rho_cgs[i], T_K[i], xH=xH)
         s  = dsa_spectral_index(Mach[i])
 
         if n0 > 0.0
@@ -222,20 +229,19 @@ function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Re
 
             # Longair eq 8.128 prefactor
             prefac = √(3)*q_e^3/(m_e * p2(c_light) * (s + 1.0))
-            #prefac = √(3)*q_e^3/(m_e * c_light)
 
             # Longair eq 8.128
-            S_ν[i] = prefac * n0 * 
+            J_ν[i] = prefac * n0 * 
                      nufac^( 0.5 * ( s - 1.0 ) ) * B^( 0.5 * ( s + 1.0 ) ) *
                      a_p
         else
-            S_ν[i] = 0.0
+            J_ν[i] = 0.0
         end
     end
 
     if convert_to_mJy
-        S_ν .*= ν0 * 1.e26
+        J_ν .*= mJy_factor
     end
 
-    return S_ν
+    return J_ν
 end

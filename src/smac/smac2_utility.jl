@@ -9,13 +9,14 @@ function write_smac2_par(x, y, z,
                          xy_size, z_depth, xy_pix::Integer,
                          input_file, output_file, path,
                          effect_module::Integer=0, effect_flag::Integer=0,
+                         ν_obs::Real=1.44e9, cosmology::Integer=0,
                          CR_pmin::Real=10.0, CR_pmax::Real=1.e7)
 
     open(path * "smac2.par", "w") do f
         write(f,
         """%% PSmac Parameter File %%
 
-        Cosmology 0         % set to 0 for non-cosmological sims.  Cosmo.h = 1
+        Cosmology $cosmology         % set to 0 for non-cosmological sims.  Cosmo.h = 1
 
         %% Image Properties, comoving %%
 
@@ -57,7 +58,7 @@ function write_smac2_par(x, y, z,
         E_min 5e4             % Energy Range [eV]: Xray, Gamma, Synchro
         E_max 1e10
 
-        Freq 1.4e9          % Frequency [Hz]: Sz,Synchro
+        Freq $ν_obs          % Frequency [Hz]: Sz,Synchro
 
         a_cr 2.375          % CR spectral index
         X_cr 0.01           % CR Normalisation rel. thermal

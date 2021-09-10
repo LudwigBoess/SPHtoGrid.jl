@@ -47,7 +47,7 @@ par = mappingParameters(center=[x0, y0, z0],
 
 # CIC
 
-For "Cloud in a Cell" (CIC) interpolation use the function `sphMapping` with these input values:
+For "Counts in Cell" (CIC) interpolation use the function `sphMapping` with these input values:
 
 ```julia
 function sphMapping(Pos, HSML, M, ρ, Bin_Quant,
@@ -76,6 +76,7 @@ k = Cubic()
 k = Quintic()
 k = WendlandC4()
 k = WendlandC6()
+k = WendlandC8()
 ```
 
 Please see the SPHKernels [docs](https://ludwigboess.github.io/SPHKernels.jl/stable/) for more details.
@@ -122,6 +123,16 @@ You can either use your own weight functions or use one of the built-in ones:
 [`part_weight_spectroscopic`](@ref) gives spectroscopic weighting, see Mazotta+ 04.
 
 [`part_weight_XrayBand`](@ref) weights the particle due to its Xray emission in the defined energy band.
+
+## Units
+
+As you have to handle unit conversion yourself please note that internally the image contains two components: 
+`image` is the mapped pixel value and `wimage` is just the geometry weighting of the particle which will be applied if `reduce_image=true` in [`sphMapping`](@ref).
+
+This means that the resulting images have the units:
+
+`` image = [Bin_Quant] * [Weights] * [pix^2] ``
+`` wimage = [Weights] * [pix^2] ``
 
 
 # TSC

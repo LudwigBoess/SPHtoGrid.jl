@@ -39,7 +39,8 @@ module SPHtoGrid
     # effect functions
     include("effects/constants.jl")
     include("effects/density.jl")
-    include("effects/synchrotron.jl")
+    include("effects/synchrotron_analytic.jl")
+    include("effects/synchrotron_spectrum.jl")
     include("effects/sz_effect.jl")
     include("effects/x_ray.jl")
  
@@ -71,6 +72,7 @@ module SPHtoGrid
            thermal_SZ,
            x_ray_emission,
            analytic_synchrotron_emission,
+           spectral_synchrotron_emission,
            # IO
            read_fits_image,
            write_fits_image
