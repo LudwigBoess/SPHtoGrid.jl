@@ -311,7 +311,7 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
     end
 
     # get the number of momentums for which the energy density is defined
-    Nbins = length(p)
+    Nbins = length(n_p)
 
     # prefactor to Eq. 17
     j_ν_prefac = q_e * √(3) / (m_e * c_light^2)
@@ -326,8 +326,8 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
     end
 
     # width of momentum bins
-    dp = Vector{Float64}(undef, Nbins-1)
-    @inbounds for i = 1:Nbins-1
+    dp = Vector{Float64}(undef, Nbins)
+    @inbounds for i = 1:Nbins
         dp[i] = p[i+1] - p[i]
     end
 
@@ -335,7 +335,7 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
     F        = Vector{Float64}(undef, Nbins)
     F_mid    = Vector{Float64}(undef, Nbins-1)
 
-    @inbounds for i = 1:Nbins-2
+    @inbounds for i = 1:Nbins-1
 
         # beginning of bin
         
@@ -381,7 +381,7 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
 
     # store total synchrotron emissivity
     jν = 0.0
-    @inbounds for i = 1:Nbins-2
+    @inbounds for i = 1:Nbins-1
         # Simpson rule: https://en.wikipedia.org/wiki/Simpson%27s_rule
         jν += dp[i] / 6.0 * ( F[i] + F[i+1] + 4F_mid[i] )
     end
