@@ -122,11 +122,12 @@ function write_smac1_par(path, use_keys, out_dir, snap_base, snap_file, image_pr
                          halo_id, snap_start, snap_end, file_format, kernel,
                          xy_size, z_size, out_effect, out_subeffect,
                          cr_bins, cr_pmin, cr_pmax, cr_subsamples,
-                         projection, x0, y0, z0, Npixels=1024)
+                         projection, x0, y0, z0, Npixels=1024, ν_ref=1.44e9)
 
     open(path * "smac1.par", "w") do f
         write(f,
-        """#=============================================================
+        """
+        #=============================================================
         # Input file
         #=============================================================
 
@@ -196,7 +197,7 @@ function write_smac1_par(path, use_keys, out_dir, snap_base, snap_file, image_pr
         #**** Input for Radio Maps
         #XCRP_TABLE_PATH gives the change of XCRP over radius.
         ECRP_MIN = 1e9
-        FRQ_Pnu = 1.4e9
+        FRQ_Pnu = $ν_ref
         XCRP = 0.01
         XCRP_TABLE_PATH = ~/
         B_TABLE_PATH = ~/
