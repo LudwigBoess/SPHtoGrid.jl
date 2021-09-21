@@ -210,14 +210,17 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
     # energy density of thermal gas [erg/cm^3]
     ϵ_th = EpsNtherm(rho_cgs, T_K, xH=xH)
 
+    # ! this gives the same result as the analytic solution by Longair
+    # Normalisation of powerlaw from thermal energy density and CR acceleration efficiency
+    # as in Donnert+16, Eq. 60. Uses p_inj = 0.1 me c
+    ϵ_cr0 = cre_spec_norm_particle(Mach, acc_function) * ϵ_th
+
+    # ! This gives the same result as in Smac2
     # # CR Energy density of whole powerlaw
     # ϵ_cr0 = K_ep * get_rel_energy_density(Mach, acc_function) * ϵ_th
     # # compensate for injection momentum
     # ϵ_cr0 *= (s - 2) / (p_inj^( 2 - s ) )
     # ! This gives the same result as in Smac2
-
-    # this gives the same result as the analytic solution
-    ϵ_cr0 = cre_spec_norm_particle(Mach, acc_function) * ϵ_th 
 
 
     # width of momentum bins
