@@ -214,6 +214,7 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
     # ϵ_cr0 = K_ep * get_rel_energy_density(Mach, acc_function) * ϵ_th
     # # compensate for injection momentum
     # ϵ_cr0 *= (s - 2) / (p_inj^( 2 - s ) )
+    # ! This gives the same result as in Smac2
 
     # this gives the same result as the analytic solution
     ϵ_cr0 = cre_spec_norm_particle(Mach, acc_function) * ϵ_th 
@@ -302,6 +303,9 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
         return 0
     end
 
+    # avoid error for n_p = -0.0
+    n_p[ n_p .== -0.0 ] .= 0.0
+    
     # if there are Infs or NaNs present we get a wrong result, so skip this particle
     # ToDo: Check if there is a better way to fix this! 
     if (length(findall( isnan.(n_p) )) > 0) ||
