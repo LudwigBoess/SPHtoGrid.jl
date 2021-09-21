@@ -64,7 +64,7 @@ function calculate_synchrotron_power(image_file::String,
     θ₂_kpc = arcmin_to_kpc(c, θ₂, z) |> ustrip
 
     # Surface brightness is Intensity * Beam area
-    S_obs        = I_obs * ( π * θ₁_kpc * θ₂_kpc )
+    S_obs        = I_obs * ( π * 0.5θ₁_kpc * 0.5θ₂_kpc )
     
     # convert surface brightness in mJy to synchrotron power in W/Hz
     # P(ν) = S(ν) * 4π * dL^2
