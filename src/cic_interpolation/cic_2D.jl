@@ -71,7 +71,7 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
                 # check if inside the kernel
                 if u <= 1.0
                     # evaluate kernel
-                    wk[idx]       = 𝒲₂(kernel, u, hsml_inv)
+                    wk[idx]       = 𝒲(kernel, u, hsml_inv)
                     wk[idx]      *= dxdy
                     distr_weight += wk[idx]
                     n_distr_pix  += 1

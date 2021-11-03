@@ -68,7 +68,7 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
 
                     if u <= 1.0
 
-                        wk[idx]       =  𝒲₃(kernel, u, hsml_inv)
+                        wk[idx]       =  𝒲(kernel, u, hsml_inv)
                         wk[idx]      *= dxdydz
                         distr_weight += wk[idx]
                         n_distr_pix  += 1
