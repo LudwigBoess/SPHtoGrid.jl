@@ -25,7 +25,7 @@ end
                                     iMin::Integer, iMax::Integer, 
                                     jMin::Integer, jMax::Integer,
                                     x::Real, y::Real, hsml::Real, hsml_inv::Real,
-                                    kernel::SPHKernel,
+                                    kernel::AbstractSPHKernel,
                                     x_pixels::Integer )
 
 Calculates the kernel- and geometric weights of the pixels a particle contributes to.
@@ -34,7 +34,7 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
                                       iMin::Integer, iMax::Integer, 
                                       jMin::Integer, jMax::Integer,
                                       x::Real, y::Real, hsml::Real, hsml_inv::Real,
-                                      kernel::SPHKernel,
+                                      kernel::AbstractSPHKernel,
                                       x_pixels::Integer )
 
     is_undersampled = false
@@ -111,7 +111,7 @@ end
    sphMapping_2D( Pos, HSML, 
                   M, Rho, 
                   Bin_Q, Weights;
-                  param::mappingParameters, kernel::SPHKernel,
+                  param::mappingParameters, kernel::AbstractSPHKernel,
                   show_progress::Bool=false )
 
 Underlying function to map SPH data to a 2D grid.
@@ -119,7 +119,7 @@ Underlying function to map SPH data to a 2D grid.
 function sphMapping_2D( Pos, HSML, 
                         M, Rho, 
                         Bin_Q, Weights;
-                        param::mappingParameters, kernel::SPHKernel,
+                        param::mappingParameters, kernel::AbstractSPHKernel,
                         show_progress::Bool=false )
 
     N = size(M,1)  # number of particles

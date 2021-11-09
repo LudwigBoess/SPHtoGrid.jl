@@ -18,7 +18,7 @@ end
                                     kMin::Integer, kMax::Integer,
                                     x::Real, y::Real, z::Real, 
                                     hsml::Real, hsml_inv::Real,
-                                    kernel::SPHKernel,
+                                    kernel::AbstractSPHKernel,
                                     x_pixels::Integer, y_pixels::Integer )
                                                 
 Calculates the kernel- and geometric weights of the pixels a particle contributes to.
@@ -29,7 +29,7 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
                                     kMin::Integer, kMax::Integer,
                                     x::T, y::T, z::T, 
                                     hsml::T, hsml_inv::T,
-                                    kernel::SPHKernel,
+                                    kernel::AbstractSPHKernel,
                                     x_pixels::Integer, y_pixels::Integer ) where T
 
     is_undersampled = false
@@ -119,7 +119,7 @@ end
    sphMapping_3D( Pos::Array{<:Real}, HSML::Array{<:Real}, 
                   M::Array{<:Real}, Rho::Array{<:Real}, 
                   Bin_Q::Array{<:Real}, Weights::Array{<:Real}=ones(length(Rho));
-                  param::mappingParameters, kernel::SPHKernel,
+                  param::mappingParameters, kernel::AbstractSPHKernel,
                   show_progress::Bool=false )
 
 Underlying function to map SPH data to a 3D grid.
@@ -127,7 +127,7 @@ Underlying function to map SPH data to a 3D grid.
 function sphMapping_3D( Pos::Array{T}, HSML::Array{T}, 
                         M::Array{T}, Rho::Array{T}, 
                         Bin_Q::Array{T}, Weights::Array{T};
-                        param::mappingParameters, kernel::SPHKernel,
+                        param::mappingParameters, kernel::AbstractSPHKernel,
                         show_progress::Bool=false ) where T
 
     N = size(M,1)  # number of particles
