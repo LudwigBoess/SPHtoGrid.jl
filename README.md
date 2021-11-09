@@ -12,7 +12,7 @@ You can map SPH data to a grid using the function `sphMapping`:
 function sphMapping(Pos, HSML, M, ρ, Bin_Quant,
                     Weights=ρ;
                     param::mappingParameters,
-                    kernel::SPHKernel [,
+                    kernel::AbstractSPHKernel [,
                     show_progress::Bool=true,
                     parallel::Bool=false,
                     filter_particles::Bool=true,
