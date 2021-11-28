@@ -395,7 +395,7 @@ addprocs(2)
                     # define spectrum
                     bounds = 10.0.^LinRange(-1.0, 6.0, Nbins+1)
                     norm = Vector{Float64}(undef, Nbins)
-                    # reference from previous tes
+                    # reference from previous test
                     norm[1] = 2.3141104241756675e-30
                     for Nbin = 2:Nbins-1
                         norm[Nbin] = norm[Nbin-1] * (bounds[Nbin]/bounds[Nbin-1])^(-q0) 
@@ -419,21 +419,5 @@ addprocs(2)
                 end
             end
         end
-    end
-
-    @testset "DSA models" begin
-        # KR07
-        @test SPHtoGrid.KR07_acc(5.0) ≈ 0.25216639999999996
-        # KR13
-        @test SPHtoGrid.KR13_acc( 5.0) ≈ 0.09999999999999998
-        @test SPHtoGrid.KR13_acc(10.0) ≈ 0.19631644350722818
-        @test SPHtoGrid.KR13_acc(25.0) ≈ 0.21152
-        # Ryu+19
-        @test SPHtoGrid.Ryu19_acc( 5.0) ≈ 0.017286554080677037
-        @test SPHtoGrid.Ryu19_acc(55.0) ≈ 0.0348
-        # CS14
-        @test SPHtoGrid.CS14_acc(5.0) ≈ 0.04999999999999999
-        # Pfrommer+16
-        @test SPHtoGrid.P16_acc(5.0) == 0.5
     end
 end

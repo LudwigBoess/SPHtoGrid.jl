@@ -158,39 +158,40 @@ Computes the synchrotron emission for a powerlaw spectrum as described in Donner
 
 """
 function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
-                                       T_K::Real, Mach::Real;
-                                       xH::Real=0.76, dsa_model::Integer=1, 
-                                       ν0::Real=1.44e9,
-                                       K_ep::Real=0.01,
-                                       Emin::Real=5.0e4,
-                                       Emax::Real=1.e10,
-                                       p_inj::Real=0.1, # in [me*c]
-                                       integrate_pitch_angle::Bool=true,
-                                       convert_to_mJy::Bool=false,
-                                       N_sample_bins::Integer=128)
+    T_K::Real, Mach::Real;
+    xH::Real = 0.76, dsa_model::Integer = 1,
+    ν0::Real = 1.44e9,
+    K_ep::Real = 0.01,
+    Emin::Real = 5.0e4,
+    Emax::Real = 1.e10,
+    p_inj::Real = 0.1, # in [me*c]
+    integrate_pitch_angle::Bool = true,
+    convert_to_mJy::Bool = false,
+    N_sample_bins::Integer = 128)
 
-    if ( B_cgs == 0 || Mach < 2 )
+    if (B_cgs == 0 || Mach < 2)
         return 0
     end
 
+    # select DSA model
     if dsa_model == 0
-        acc_function = KR07_acc
+        η_model = Kang07()
     elseif dsa_model == 1
-        acc_function = KR13_acc
+        η_model = KR13()
     elseif dsa_model == 2
-        acc_function = Ryu19_acc
+        η_model = Ryu19()
     elseif dsa_model == 3
-        acc_function = CS14_acc
+        η_model = CS14()
     elseif dsa_model == 4
-        acc_function = P16_acc
+        η_model = P16()
     else
         error("Invalid DSA model selection!")
     end
 
     # in dimensionless momentum!
-    p_inj = 0.1 
-    p_min = Emin * eV2cgs / ( m_e * c_light^2 )
-    p_max = Emax * eV2cgs / ( m_e * c_light^2 )
+    p_inj = 0.1
+    p_min = Emin * eV2cgs / (m_e * c_light^2)
+    p_max = Emax * eV2cgs / (m_e * c_light^2)
 
     # prefactor to Eq. 17
     j_ν_prefac = q_e * √(3) / (m_e * c_light^2)
@@ -205,10 +206,10 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
     end
 
     # get spectral index s ∈ ]-∞, 4.0[
-    s  = dsa_spectral_index_momentum(Mach)
+    s = dsa_spectral_index_momentum(Mach)
 
     # energy density of thermal gas [erg/cm^3]
-    ϵ_th = EpsNtherm(rho_cgs, T_K, xH=xH)
+    ϵ_th = EpsNtherm(rho_cgs, T_K, xH = xH)
 
     # # CR Energy density of whole powerlaw
     # ϵ_cr0 = K_ep * get_rel_energy_density(Mach, acc_function) * ϵ_th
@@ -217,14 +218,13 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
     # ! This gives the same result as in Smac2
 
     # this gives the same result as the analytic solution
-    ϵ_cr0 = cre_spec_norm_particle(Mach, acc_function) * ϵ_th 
-
+    ϵ_cr0 = cre_spec_norm_particle(η_model, Mach) * ϵ_th
 
     # width of momentum bins
-    di    = log10(p_max/p_min) / (N_sample_bins-1)
+    di = log10(p_max / p_min) / (N_sample_bins - 1)
 
     # momentum bins
-    p     = @. p_min * 10.0^( di * 0:N_sample_bins-1)
+    p = @. p_min * 10.0^(di*0:N_sample_bins-1)
 
     # width of momentum bins
     dp = zeros(N_sample_bins)
@@ -234,11 +234,11 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
     end
 
     # storage array for integrand of Eq. 17
-    F        = Vector{Float64}(undef, N_sample_bins)
-    F_mid    = Vector{Float64}(undef, N_sample_bins)
+    F = Vector{Float64}(undef, N_sample_bins)
+    F_mid = Vector{Float64}(undef, N_sample_bins)
 
-    
-    F[1]     = get_F(p[1], p_inj, ϵ_cr0, s, B_cgs, ν0, integrate_pitch_angle)
+
+    F[1] = get_F(p[1], p_inj, ϵ_cr0, s, B_cgs, ν0, integrate_pitch_angle)
     # not needed
     F_mid[1] = 0.0
 
@@ -249,14 +249,14 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
     @inbounds for i = 2:N_sample_bins
 
         # end of bin
-        F[i]     = get_F(p[i], p_inj, ϵ_cr0, s, B_cgs, ν0, integrate_pitch_angle)
+        F[i] = get_F(p[i], p_inj, ϵ_cr0, s, B_cgs, ν0, integrate_pitch_angle)
 
         # middle of bin
-        p_mid    = get_log_mid(p[i-1], p[i])
+        p_mid = get_log_mid(p[i-1], p[i])
         F_mid[i] = get_F(p_mid, p_inj, ϵ_cr0, s, B_cgs, ν0, integrate_pitch_angle)
 
         # Simpson rule: https://en.wikipedia.org/wiki/Simpson%27s_rule
-        jν += dp[i] / 6.0 * ( F[i] + F[i-1] + 4F_mid[i] )
+        jν += dp[i] / 6.0 * (F[i] + F[i-1] + 4F_mid[i])
 
     end
 
@@ -264,7 +264,7 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
         j_ν_prefac *= mJy_factor
     end
 
-    return j_ν_prefac * jν 
+    return j_ν_prefac * jν
 
 end
 

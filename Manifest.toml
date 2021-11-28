@@ -48,6 +48,14 @@ git-tree-sha1 = "f74e9d5388b8620b4cee35d4c5a618dd4dc547f4"
 uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 version = "1.3.0"
 
+[[DSAModels]]
+deps = ["Test"]
+git-tree-sha1 = "bfd3c9e413702249f798fd81c8fcb2e60116d2d0"
+repo-rev = "main"
+repo-url = "https://github.com/LudwigBoess/DSAModels.jl"
+uuid = "c94b82ce-bc6a-4c64-9fc0-cb2d7d683713"
+version = "0.1.0"
+
 [[DataAPI]]
 git-tree-sha1 = "ee400abb2298bd13bfc3df1c412ed228061a2385"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
@@ -108,10 +116,10 @@ uuid = "708ec375-b3d6-5a57-a7ce-8257bf98657a"
 version = "0.8.0"
 
 [[Gumbo_jll]]
-deps = ["Libdl", "Pkg"]
-git-tree-sha1 = "86111f5523d7c42da0edd85ef7999c663881ac1e"
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "89baea4583316379413109fe88c290b19c990f86"
 uuid = "528830af-5a63-567c-a44a-034ed33b8444"
-version = "0.10.1+1"
+version = "0.10.1+2"
 
 [[IOCapture]]
 deps = ["Logging"]
