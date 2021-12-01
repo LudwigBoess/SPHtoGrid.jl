@@ -10,7 +10,6 @@ function check_center_and_move_particles(x::Array{T}, par::mappingParameters) wh
     xlim = copy(par.x_lim)
     ylim = copy(par.y_lim)
     zlim = copy(par.z_lim)
-    shift = 0.0
     
     @inbounds for i = 1:size(x,2), dim = 1:3
         x[dim, i] -= cen[dim]

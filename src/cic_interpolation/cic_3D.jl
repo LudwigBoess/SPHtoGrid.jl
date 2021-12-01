@@ -92,7 +92,7 @@ end
 Calculates the index of a flattened 3D image array.
 """
 function calculate_index(  i::T, j::T, k::T, x_pixels::T, y_pixels::T) where T
-    return floor(T, i * x_pixels + j * y_pixels + k) + 1
+    return floor(T, i * x_pixels * y_pixels + j * y_pixels + k) + 1
 end
 
 """
@@ -116,7 +116,7 @@ end
 
 
 """
-   sphMapping_3D( Pos::Array{<:Real}, HSML::Array{<:Real}, 
+   cic_mapping_3D( Pos::Array{<:Real}, HSML::Array{<:Real}, 
                   M::Array{<:Real}, Rho::Array{<:Real}, 
                   Bin_Q::Array{<:Real}, Weights::Array{<:Real}=ones(length(Rho));
                   param::mappingParameters, kernel::AbstractSPHKernel,
@@ -124,9 +124,9 @@ end
 
 Underlying function to map SPH data to a 3D grid.
 """
-function sphMapping_3D( Pos::Array{T}, HSML::Array{T}, 
-                        M::Array{T}, Rho::Array{T}, 
-                        Bin_Q::Array{T}, Weights::Array{T};
+function cic_mapping_3D( Pos, HSML, 
+                        M, Rho, 
+                        Bin_Q, Weights;
                         param::mappingParameters, kernel::AbstractSPHKernel,
                         show_progress::Bool=false ) where T
 

@@ -108,7 +108,7 @@ end
 
 
 """
-   sphMapping_2D( Pos, HSML, 
+   cic_mapping_2D( Pos, HSML, 
                   M, Rho, 
                   Bin_Q, Weights;
                   param::mappingParameters, kernel::AbstractSPHKernel,
@@ -116,7 +116,7 @@ end
 
 Underlying function to map SPH data to a 2D grid.
 """
-function sphMapping_2D( Pos, HSML, 
+function cic_mapping_2D( Pos, HSML, 
                         M, Rho, 
                         Bin_Q, Weights;
                         param::mappingParameters, kernel::AbstractSPHKernel,

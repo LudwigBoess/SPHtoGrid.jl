@@ -121,7 +121,7 @@ function sphMapping(Pos, HSML, M,
 
         if !parallel
 
-            image = sphMapping_2D(x, hsml, m, rho, bin_q, weights;
+            image = cic_mapping_2D(x, hsml, m, rho, bin_q, weights;
                                 param=par, kernel=kernel,
                                 show_progress=show_progress)
 
@@ -151,7 +151,7 @@ function sphMapping(Pos, HSML, M,
 
             # start remote processes
             for (i, id) in enumerate(workers())
-                futures[i] = @spawnat id sphMapping_2D(x[:,batch[i]], hsml[batch[i]],
+                futures[i] = @spawnat id cic_mapping_2D(x[:,batch[i]], hsml[batch[i]],
                                                         m[batch[i]], rho[batch[i]],
                                                         bin_q[batch[i]], weights[batch[i]];
                                                         param=par, kernel=kernel,
@@ -175,7 +175,7 @@ function sphMapping(Pos, HSML, M,
 
     elseif (dimensions == 3 )
         if !parallel
-            image = sphMapping_3D(x, hsml, m, rho, bin_q, weights;
+            image = cic_mapping_3D(x, hsml, m, rho, bin_q, weights;
                                 param=par, kernel=kernel,
                                 show_progress=show_progress)
 
@@ -202,7 +202,7 @@ function sphMapping(Pos, HSML, M,
 
             # start remote processes
             for (i, id) in enumerate(workers())
-                futures[i] = @spawnat id sphMapping_3D(x[:,batch[i]], hsml[batch[i]],
+                futures[i] = @spawnat id cic_mapping_3D(x[:,batch[i]], hsml[batch[i]],
                                                     m[batch[i]], rho[batch[i]],
                                                     bin_q[batch[i]], weights[batch[i]];
                                                     param=par, kernel=kernel,

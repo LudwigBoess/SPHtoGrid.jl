@@ -39,6 +39,13 @@ include("cic_interpolation/cic_3D.jl")
 include("cic_interpolation/weight_functions.jl")
 include("cic_interpolation/cic_interpolation.jl")
 
+# splash interpolation
+include("splash_interpolation/reduce_image.jl")
+include("splash_interpolation/splash_shared.jl")
+include("splash_interpolation/splash_2D.jl")
+include("splash_interpolation/splash_3D.jl")
+include("splash_interpolation/splash_interpolation.jl")
+
 # effect functions
 include("effects/constants.jl")
 include("effects/density.jl")

@@ -5,7 +5,7 @@
 
 Unflattens an image array to a 2D array of pixels.
 """
-@inline @fastmath function reduce_image_2D( image::Array{<:Real},
+@inline function reduce_image_2D( image::Matrix{<:Real},
                                             x_pixels::Int64, y_pixels::Int64)
 
 
@@ -27,7 +27,7 @@ end
 
 Unflattens an image array to a 3D array of pixels.
 """
-@inline @fastmath function reduce_image_3D( image::Array{<:Real},
+@inline @fastmath function reduce_image_3D( image::Matrix{<:Real},
                                             x_pixels::Int64, y_pixels::Int64, z_pixels::Int64)
 
 

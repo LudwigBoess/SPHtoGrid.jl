@@ -66,9 +66,11 @@ function get_xyz( pos, hsml, k::Integer,
     # convert from code units to pixels
     x *= par.len2pix
     y *= par.len2pix
+    z *= par.len2pix
 
     x += 0.5 * par.Npixels[1]
     y += 0.5 * par.Npixels[2]
+    z += 0.5 * par.Npixels[3]
     
     return x, y, z, false
 
