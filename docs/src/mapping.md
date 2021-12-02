@@ -13,6 +13,11 @@ You can map SPH data to a grid using the function [`sphMapping`](@ref), which co
 # Define parameters for mapping
 
 To map the data you need to define the mapping parameters via the [`mappingParameters`](@ref) object.
+
+```@docs
+mappingParameters
+```
+
 One way to set this up is by defining the limits of the map as
 
 ```julia

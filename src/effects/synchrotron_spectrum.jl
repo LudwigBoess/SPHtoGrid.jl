@@ -148,6 +148,7 @@ Computes the synchrotron emission for a powerlaw spectrum as described in Donner
 - `K_ep::Real=0.01`:                  Ratio of CR proton to electron energy density.
 - `integrate_pitch_angle::Bool=true`: Explicitly integrates over the pitch angle. IF `false` assumes ``sin(θ) = 1``.
 - `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz/s]`` to ``mJy/cm``.
+- `N_sample_bins::Integer=128`:       Number of bins to sample the distribution function
 
 # DSA models
 - `0`: [`KR07_acc`](@ref). Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1.
