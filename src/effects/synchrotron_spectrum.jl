@@ -151,11 +151,11 @@ Computes the synchrotron emission for a powerlaw spectrum as described in Donner
 - `N_sample_bins::Integer=128`:       Number of bins to sample the distribution function
 
 # DSA models
-- `0`: [`KR07_acc`](@ref). Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1.
-- `1`: [`KR13_acc`](@ref). Efficiency model from Kang&Ryu 2013, doi:10.1088/0004-637X/764/1/95 .
-- `2`: [`Ryu19_acc`](@ref). Efficiency model from Ryu et al. 2019, https://arxiv.org/abs/1905.04476 .
-- `3`: [`CS14_acc`](@ref). Efficiency model from Caprioli&Spitkovsky 2015, doi: 10.1088/0004-637x/783/2/91 .
-- `4`: [`P16_acc`](@ref). Constant efficiency as in Pfrommer+ 2016, doi: 10.1093/mnras/stw2941 .
+- `0`: Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1.
+- `1`: Efficiency model from Kang&Ryu 2013, doi:10.1088/0004-637X/764/1/95 .
+- `2`: Efficiency model from Ryu et al. 2019, https://arxiv.org/abs/1905.04476 .
+- `3`: Efficiency model from Caprioli&Spitkovsky 2015, doi: 10.1088/0004-637x/783/2/91 .
+- `4`: Constant efficiency as in Pfrommer+ 2016, doi: 10.1093/mnras/stw2941 .
 
 """
 function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
