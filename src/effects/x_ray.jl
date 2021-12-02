@@ -9,6 +9,8 @@ X-Ray emission of a particle with number density `n_cm3` in ``1/cm^3`` and tempe
 
 # Returns
 X-Ray surface brightness contribution in units of [erg/cm^2/s/Hz].
+
+# Weights
 """
 function x_ray_emission(n_cm3::Real, T_K::Real; 
                         Emin::Real=5.e4, Emax::Real=1.e10, 
