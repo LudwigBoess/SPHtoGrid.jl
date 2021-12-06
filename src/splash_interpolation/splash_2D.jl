@@ -8,7 +8,7 @@
 
 Calculates the kernel- and geometric weights of the pixels a particle contributes to.
 """
-@fastmath function calculate_weights_splash( wk::Vector{Float64}, 
+function calculate_weights_splash( wk::Vector{Float64}, 
                                       iMin::Integer, iMax::Integer, 
                                       jMin::Integer, jMax::Integer,
                                       x::Real, y::Real, hsml::Real, hsml_inv::Real,
