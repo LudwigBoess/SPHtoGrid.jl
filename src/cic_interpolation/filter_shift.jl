@@ -3,7 +3,7 @@
 
 Mapping only works if all coordinates are positive. This function shifts the particles accordingly.
 """
-function check_center_and_move_particles(x::Array{T}, par::mappingParameters) where T
+function check_center_and_move_particles(x::Matrix{T}, par::mappingParameters) where T
 
     # explicitly copy to its own variable to avoid memory overwrite
     cen  = copy(par.center)
