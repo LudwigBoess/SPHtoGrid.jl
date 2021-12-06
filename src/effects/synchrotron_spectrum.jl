@@ -109,8 +109,7 @@ function get_F( p::Real, p_inj::Real, ϵ_cr0::Real, s::Real, B_cgs::Real, ν0::R
     end
 
     # integral Donnert+16, Eq. 17 evaluated at momenum p
-    return N_E * K 
-
+    return 4π/c_light * p^2 * N_E * K
 end
 
 """
@@ -162,10 +161,8 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
     T_K::Real, Mach::Real;
     xH::Real = 0.76, dsa_model::Integer = 1,
     ν0::Real = 1.44e9,
-    K_ep::Real = 0.01,
-    Emin::Real = 5.0e4,
-    Emax::Real = 1.e10,
-    p_inj::Real = 0.1, # in [me*c]
+    Emin::Real = 5.0e4, Emax::Real = 1.e10,
+    K_ep::Real = 0.01, p_inj::Real = 0.1, # in [me*c]
     integrate_pitch_angle::Bool = true,
     convert_to_mJy::Bool = false,
     N_sample_bins::Integer = 128)
@@ -209,17 +206,22 @@ function spectral_synchrotron_emission(rho_cgs::Real, B_cgs::Real,
     # get spectral index s ∈ ]-∞, 4.0[
     s = dsa_spectral_index_momentum(Mach)
 
+    # get spectral index s ∈ ]-∞, 2.0[
+    # s = dsa_spectral_index(Mach)
+
     # energy density of thermal gas [erg/cm^3]
     ϵ_th = EpsNtherm(rho_cgs, T_K, xH = xH)
 
     # # CR Energy density of whole powerlaw
-    # ϵ_cr0 = K_ep * get_rel_energy_density(Mach, acc_function) * ϵ_th
-    # # compensate for injection momentum
-    # ϵ_cr0 *= (s - 2) / (p_inj^( 2 - s ) )
-    # ! This gives the same result as in Smac2
+    # ϵ_cr0 = cre_spec_norm_particle(η_model, Mach) * ϵ_th
+    # # # compensate for injection momentum
+    # ϵ_cr0 *= (s - 4) / (p_inj^(4 - s))
+    # # ! This gives the same result as in Smac2
 
     # this gives the same result as the analytic solution
     ϵ_cr0 = cre_spec_norm_particle(η_model, Mach) * ϵ_th
+    #ϵ_cr0 = K_ep * η_Ms(η_model, Mach, 0.0) * ϵ_th
+    #ϵ_cr0 /= K_ep
 
     # width of momentum bins
     di = log10(p_max / p_min) / (N_sample_bins - 1)
@@ -273,7 +275,7 @@ end
 
 
 """
-    spectral_synchrotron_emission( n_p::Vector{<:Real}, 
+    spectral_synchrotron_emission( f_p::Vector{<:Real}, 
                                    p::Vector{<:Real},
                                    B_cgs::Real;
                                    ν0::Real=1.44e9
@@ -283,7 +285,7 @@ end
 Computes the synchrotron emission (in ``[erg/cm^3/Hz/s]``) for a CR spectrum as described in Donnert+16, MNRAS 462, 2014–2032 (2016), Eq. 17.
 
 # Arguments
-- `n_p::Vector{<:Real}`: Number density in ``1/cm^3`` for momenta `p`.
+- `f_p::Vector{<:Real}`: Spectral norm in units ``erg*s/cm^4`` for momenta `p`.
 - `p::Vector{<:Real}`:   Momenta `p` for number densities.
 - `B_cgs::Real`:         Magnetic field strength (absolute value) in Gauss.
 
@@ -293,30 +295,30 @@ Computes the synchrotron emission (in ``[erg/cm^3/Hz/s]``) for a CR spectrum as 
 - `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz/s]`` to ``mJy/cm``.
 
 """
-function spectral_synchrotron_emission(n_p::Vector{<:Real}, 
+function spectral_synchrotron_emission(f_p::Vector{<:Real}, 
                                        p::Vector{<:Real},
                                        B_cgs::Real;
                                        ν0::Real=1.44e9,
                                        integrate_pitch_angle::Bool=false,
                                        convert_to_mJy::Bool=false)
 
-    if ( B_cgs == 0 ) || sum(n_p) == 0
+    if ( B_cgs == 0 ) || sum(f_p) == 0
         return 0
     end
 
-    # avoid error for n_p = -0.0
-    n_p[ n_p .== -0.0 ] .= 0.0
+    # avoid error for f_p = -0.0
+    f_p[ f_p .== -0.0 ] .= 0.0
     
     # if there are Infs or NaNs present we get a wrong result, so skip this particle
     # ToDo: Check if there is a better way to fix this! 
-    if (length(findall( isnan.(n_p) )) > 0) ||
-       (length(findall( isinf.(n_p) )) > 0) ||
-       (length(findall(   n_p .< 0  )) > 0)
+    if (length(findall( isnan.(f_p) )) > 0) ||
+       (length(findall( isinf.(f_p) )) > 0) ||
+       (length(findall(   f_p .< 0  )) > 0)
         return 0
     end
 
     # get the number of momentums for which the energy density is defined
-    Nbins = length(n_p)
+    Nbins = length(f_p)
 
     # prefactor to Eq. 17
     j_ν_prefac = q_e * √(3) / (m_e * c_light^2)
@@ -341,35 +343,35 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
     F_mid    = Vector{Float64}(undef, Nbins-1)
 
     @inbounds for i = 1:Nbins-1
-
+    
         # beginning of bin
-        
+    
         # x from Eq. 19
-        x   = ν_over_ν_crit(p[i], B_cgs, ν0)
+        x = ν_over_ν_crit(p[i], B_cgs, ν0)
         # pitch-angle integral
         if integrate_pitch_angle
             K = integrate_θ_simpson(x)
         else
             K = synchrotron_kernel(x)
         end
-
+    
         # energy density at momentum p * integrated synchrotron kernel
-        F[i] = n_p[i] * K 
-
+        F[i] = f_p_prefac * p[i]^2 * f_p[i] * K
+    
         # middle of bin 
-        N_E_mid  = get_log_mid( n_p[i],  n_p[i+1] )
-
-        p_mid = get_log_mid( p[i], p[i+1] )
-        x     = ν_over_ν_crit(p_mid, B_cgs, ν0)
-
+        f_p_mid = get_log_mid(f_p[i], f_p[i+1])
+    
+        p_mid = get_log_mid(p[i], p[i+1])
+        x = ν_over_ν_crit(p_mid, B_cgs, ν0)
+    
         if integrate_pitch_angle
             K_mid = integrate_θ_simpson(x)
         else
             K_mid = synchrotron_kernel(x)
         end
-
-        F_mid[i] = N_E_mid * K_mid
-
+    
+        F_mid[i] = f_p_prefac * p_mid^2 * f_p_mid * K_mid
+    
     end
 
     # last bin seperate
@@ -382,7 +384,7 @@ function spectral_synchrotron_emission(n_p::Vector{<:Real},
     end
 
     # energy density at momentum p * integrated synchrotron kernel
-    F[end] = n_p[end] * K 
+    F[end] = f_p[end] * K 
 
     # store total synchrotron emissivity
     jν = 0.0
