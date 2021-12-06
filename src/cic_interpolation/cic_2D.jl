@@ -1,23 +1,3 @@
-"""
-    get_d_hsml( dx::Real, dy::Real,
-                   hsml_inv::Real )
-
-Computes the distance in 2D to the pixel center in units of the kernel support.
-"""
-@inline function get_d_hsml(dx::T, dy::T, hsml_inv::T) where T
-    √( dx*dx + dy*dy ) * hsml_inv
-end
-
-
-
-"""
-    function calculate_index(i::Integer, j::Integer, x_pixels::Integer)
-
-Calculates the index of a flattened 2D image array.
-"""
-function calculate_index(i::T, j::T, x_pixels::T) where T
-    return floor(T, i * x_pixels + j ) + 1
-end
 
 
 """
@@ -39,7 +19,7 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
 
     is_undersampled = false
 
-    if hsml <= 1.0
+    if hsml <= 1
         is_undersampled = true
     end
 
@@ -69,7 +49,7 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
                 u = get_d_hsml(x_dist, y_dist, hsml_inv)
 
                 # check if inside the kernel
-                if u <= 1.0
+                if u <= 1
                     # evaluate kernel
                     wk[idx]       = 𝒲(kernel, u, hsml_inv)
                     wk[idx]      *= dxdy

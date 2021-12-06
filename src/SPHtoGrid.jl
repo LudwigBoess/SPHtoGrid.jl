@@ -16,6 +16,8 @@ end
 # shared functionality
 include("shared/parameters.jl")
 include("shared/reconstruct_grid.jl")
+include("shared/indices.jl")
+include("shared/distances.jl")
 include("shared/periodic_mapping.jl")
 include("shared/rotate_particles.jl")
 include("shared/io.jl")
