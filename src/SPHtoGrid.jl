@@ -41,6 +41,9 @@ include("cic_interpolation/cic_3D.jl")
 include("cic_interpolation/weight_functions.jl")
 include("cic_interpolation/cic_interpolation.jl")
 
+# smac1 interpolation
+include("smac1_interpolation/smac1_2D.jl")
+
 # splash interpolation
 include("splash_interpolation/reduce_image.jl")
 include("splash_interpolation/splash_shared.jl")
