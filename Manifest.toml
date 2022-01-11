@@ -1,5 +1,6 @@
 # This file is machine-generated - editing it directly is not advised
 
+
 julia_version = "1.7.1"
 manifest_format = "2.0"
 
@@ -56,6 +57,16 @@ deps = ["LinearAlgebra"]
 git-tree-sha1 = "f74e9d5388b8620b4cee35d4c5a618dd4dc547f4"
 uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 version = "1.3.0"
+
+
+[[deps.DSAModels]]
+deps = ["Test"]
+git-tree-sha1 = "a4700fae5faf0bab5445c844f1bff3cfc4cdc921"
+repo-rev = "main"
+repo-url = "https://github.com/LudwigBoess/DSAModels.jl"
+uuid = "c94b82ce-bc6a-4c64-9fc0-cb2d7d683713"
+version = "0.1.0"
+
 
 [[deps.DataAPI]]
 git-tree-sha1 = "cc70b17275652eb47bc9e5f81635981f13cea5c8"
@@ -296,6 +307,7 @@ deps = ["ChainRulesCore", "IrrationalConstants", "LogExpFunctions", "OpenLibm_jl
 git-tree-sha1 = "e08890d19787ec25029113e88c34ec20cac1c91e"
 uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
 version = "2.0.0"
+
 
 [[deps.Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]

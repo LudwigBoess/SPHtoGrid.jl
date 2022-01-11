@@ -3,14 +3,13 @@
 
 Mapping only works if all coordinates are positive. This function shifts the particles accordingly.
 """
-function check_center_and_move_particles(x::Array{T}, par::mappingParameters) where T
+function check_center_and_move_particles(x::Matrix{T}, par::mappingParameters) where T
 
     # explicitly copy to its own variable to avoid memory overwrite
     cen  = copy(par.center)
     xlim = copy(par.x_lim)
     ylim = copy(par.y_lim)
     zlim = copy(par.z_lim)
-    shift = 0.0
     
     @inbounds for i = 1:size(x,2), dim = 1:3
         x[dim, i] -= cen[dim]

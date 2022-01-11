@@ -1,113 +1,11 @@
-using SpecialFunctions
-using LinearAlgebra
-using ProgressMeter
-
 """
-    Helper functions
-"""
-# power functions
-@inline p2(x) = x*x
-@inline p3(x) = x*x*x
-
-"""
-    kr_fitting_function(x::Real, 
-                             a0::Real, a1::Real, a2::Real, a3::Real, a4::Real)
-
-Helper function to use the fitting function from KR07.
-"""
-@inline function kr_fitting_function(x::Real, 
-                             a0::Real, a1::Real, a2::Real, a3::Real, a4::Real)
-    mm = x - 1.0
-
-	return ( a0 + a1*mm + a2*p2(mm) + a3*p3(mm) + a4*p2(p2(mm)) ) / p2(p2(x))
-end
-
-"""
-    Efficiency functions
-"""
-
-"""
-    KR07_acc(M::Float64)
-
-Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1
-"""
-function KR07_acc(M::Real)
-    if M < 2.0
-        return 0.0
-    elseif M <= 2.0
-        return 1.96e-3*(M^2 - 1.)             # eq. A3
-    else
-        return kr_fitting_function(M, 5.46, -9.78, 4.17, -0.334, 0.57)
-    end
-end
-
-"""
-    KR13_acc(M::Real)
-
-Efficiency model from Kang&Ryu 2013, doi:10.1088/0004-637X/764/1/95
-"""
-function KR13_acc(M::Real)
-
-    if M < 2.0
-        return 0.0
-    elseif 2.0 <= M <= 5.0
-        return -0.0005950569221922047 + 1.880258286365841e-5 * M^5.334076006529829 
-    elseif 5.0 < M <= 15.0
-        return kr_fitting_function(M, -2.8696966498579606, 9.667563166507879,
-                                  -8.877138312318019, 1.938386688261113, 0.1806112438315771)
-    else
-        return 0.21152
-    end
-end
-
-"""
-    Ryu19_acc(M::Real)
-
-Efficiency model from Ryu et al. 2019, https://arxiv.org/abs/1905.04476
-Values for 2.25 < M <= 5.0 extrapolated to entire range
-"""
-function Ryu19_acc(M::Real)
-
-    if M < 2.25
-        return 0.0
-    elseif M <= 34.0
-        return kr_fitting_function(M, -1.5255114554627316, 2.4026049650156693,
-                 -1.2534251472776456, 0.22152323784680614, 0.0335800899612107)
-    else
-        return 0.0348
-    end
-end
-
-"""
-    CS14_acc(M::Real)
-
-Efficiency from Caprioli&Spitkovsky 2015, doi: 10.1088/0004-637x/783/2/91
-Same simplified approach as Vazza+12 -> is roughly half the efficiency of Kang&Ryu 2013.
-"""
-function CS14_acc(M::Real)
-    vazza_factor = 0.5
-    return vazza_factor * KR13_acc(M)
-end
-
-"""
-    P16_acc(M::Real)
-
-Constant efficiency as in Pfrommer+ 2016, doi: 10.1093/mnras/stw2941 
-"""
-function P16_acc(M::Real)
-    return 0.5
-end
-
-
-"""
-    cre_spec_norm_particle(M::Real, eff_function::Function)
+    cre_spec_norm_particle(M::Real, η_model::AbstractShockAccelerationEfficiency)
 
 Computes the CR electron norm of the particles. 
-This depends on the Mach number `M` and the acceleration efficiency given by `eff_function`.
+This depends on the Mach number `M` and the acceleration efficiency given by `η_model`.
 """
-function cre_spec_norm_particle(M::Real, eff_function::Function)
-    norm = eff_function(M)
-    return norm / 7.6e14 # Donnert et al 2016, eq. 40, p_0 = 0.1 me c 
+function cre_spec_norm_particle(η_model::AbstractShockAccelerationEfficiency, M::T) where {T}
+    η_Ms_acc(η_model, M) / 7.6e14 # Donnert et al 2016, eq. 40, p_0 = 0.1 me c 
 end
 
 """
@@ -116,22 +14,23 @@ end
 Spectral index given by standard Diffuse-Shock-Acceleration (DSA).
 """
 function dsa_spectral_index(M::Real)
-    
+
     # diverges for Mach smaller 1.01
     if M <= 1.01
         return maxintfloat(Float64)
     else
-        return 2.0 * ( M^2 + 1.0 ) / ( M^2 - 1 )
+        return 2 * (M^2 + 1) / (M^2 - 1)
     end
 end
+
 
 """
     EpsNtherm(rho_cgs::Real, T_K::Real)
 
 Thermal energy density in cgs.
 """
-function EpsNtherm(rho_cgs::Real, T_K::Real; xH::Real=0.76)
-    u_mol = (4.0/(5.0*xH+3.0))
+function EpsNtherm(rho_cgs::Real, T_K::Real; xH::Real = 0.76)
+    u_mol = (4 / (5xH + 3))
     return (rho_cgs / (m_p * u_mol) * k_B * T_K)
 end
 
@@ -159,20 +58,19 @@ Returns J_ν in units [erg/cm^3/Hz/s].
 - `integrate_pitch_angle::Bool=true`: Integrates over the pitch angle as in Longair Eq. 8.87.
 - `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz/s]`` to ``mJy/cm``.
 
-# DSA models
-- `0`: [`KR07_acc`](@ref). Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1.
-- `1`: [`KR13_acc`](@ref). Efficiency model from Kang&Ryu 2013, doi:10.1088/0004-637X/764/1/95 .
-- `2`: [`Ryu19_acc`](@ref). Efficiency model from Ryu et al. 2019, https://arxiv.org/abs/1905.04476 .
-- `3`: [`CS14_acc`](@ref). Efficiency model from Caprioli&Spitkovsky 2015, doi: 10.1088/0004-637x/783/2/91 .
-- `4`: [`P16_acc`](@ref). Constant efficiency as in Pfrommer+ 2016, doi: 10.1093/mnras/stw2941 .
-
+# DSA models imported from DSAModels.jl
+- `0`: Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1.
+- `1`: Efficiency model from Kang&Ryu 2013, doi:10.1088/0004-637X/764/1/95 .
+- `2`: Efficiency model from Ryu et al. 2019, https://arxiv.org/abs/1905.04476 .
+- `3`: Efficiency model from Caprioli&Spitkovsky 2015, doi: 10.1088/0004-637x/783/2/91 .
+- `4`: Constant efficiency as in Pfrommer+ 2016, doi: 10.1093/mnras/stw2941 .
 """
 function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
-                                       T_K::Array{<:Real}, Mach::Array{<:Real};
-                                       xH::Real=0.76, dsa_model::Integer=1, ν0::Real=1.44e9,
-                                       K_ep::Real=0.01,
-                                       integrate_pitch_angle::Bool=true,
-                                       convert_to_mJy::Bool=false)
+    T_K::Array{<:Real}, Mach::Array{<:Real};
+    xH::Real = 0.76, dsa_model::Integer = 1, ν0::Real = 1.44e9,
+    K_ep::Real = 0.01,
+    integrate_pitch_angle::Bool = true,
+    convert_to_mJy::Bool = false)
 
     Npart = length(T_K)
 
@@ -182,7 +80,7 @@ function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Re
     # allocate storage array
     J_ν = Vector{Float64}(undef, Npart)
 
-    if length(B_cgs[1,:]) == 1
+    if length(B_cgs[1, :]) == 1
         B_1dim = true
     else
         B_1dim = false
@@ -190,49 +88,49 @@ function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Re
 
     # select DSA model
     if dsa_model == 0
-        acc_function = KR07_acc
+        η_model = Kang07()
     elseif dsa_model == 1
-        acc_function = KR13_acc
+        η_model = KR13()
     elseif dsa_model == 2
-        acc_function = Ryu19_acc
+        η_model = Ryu19()
     elseif dsa_model == 3
-        acc_function = CS14_acc
+        η_model = CS14()
     elseif dsa_model == 4
-        acc_function = P16_acc
+        η_model = P16()
     else
         error("Invalid DSA model selection!")
     end
 
     # bracket of Longair eq. 8128
-    nufac = (3q_e)/(p3(m_e) * c_light * c_light * c_light * c_light * c_light * 2π * ν0)
+    nufac = (3q_e) / (m_e^3 * c_light * c_light * c_light * c_light * c_light * 2π * ν0)
 
 
     @inbounds for i = 1:Npart
         if B_1dim
             B = B_cgs[i]
         else
-            B  = sqrt( B_cgs[1,i]^2 + B_cgs[2,i]^2 + B_cgs[3,i]^2)
+            B = sqrt(B_cgs[1, i]^2 + B_cgs[2, i]^2 + B_cgs[3, i]^2)
         end
-        n0 = K_ep / K_ep_default * cre_spec_norm_particle(Mach[i], acc_function) * EpsNtherm(rho_cgs[i], T_K[i], xH=xH)
-        s  = dsa_spectral_index(Mach[i])
-
+        n0 = K_ep / K_ep_default * cre_spec_norm_particle(η_model, Mach[i]) * EpsNtherm(rho_cgs[i], T_K[i], xH = xH)
+        s = dsa_spectral_index(Mach[i])
+    
         if n0 > 0.0
-
+    
             # Longair eq. 8.129
-            a_p = gamma(s / 4.0 + 19.0 / 12.0) * gamma(s / 4.0 - 1.0 / 12.0)
-
+            a_p = gamma(s / 4 + 19 / 12) * gamma(s / 4 - 1 / 12)
+    
             if integrate_pitch_angle
                 # Longair eq 8.87
-                a_p *= 0.5 * sqrt(π) * gamma(s / 4.0 + 5.0 / 4.0 ) / 
-                                        gamma(s / 4.0 + 7.0 / 4.0 )
+                a_p *= 0.5*√(π) * gamma(s / 4.0 + 5.0 / 4.0) /
+                       gamma(s / 4.0 + 7.0 / 4.0)
             end
-
+    
             # Longair eq 8.128 prefactor
-            prefac = √(3)*q_e^3/(m_e * p2(c_light) * (s + 1.0))
-
+            prefac = √(3) * q_e^3 / (m_e * c_light^2 * (s + 1))
+    
             # Longair eq 8.128
-            J_ν[i] = prefac * n0 * 
-                     nufac^( 0.5 * ( s - 1.0 ) ) * B^( 0.5 * ( s + 1.0 ) ) *
+            J_ν[i] = prefac * n0 *
+                     nufac^(0.5 * (s - 1)) * B^(0.5 * (s + 1)) *
                      a_p
         else
             J_ν[i] = 0.0
