@@ -4,7 +4,7 @@
 
 # SPHtoGrid.jl
 
-> :warning: **This package is not necessarily production ready! I use it mainly for my own work and some functionality is experimental! Be especially cautious with the effect functions! Also: The 3D mapping is currently broken and will (hopefully) be fixed soon!**: Please sanity-check everything before you use it in production!
+> :warning: **This package is in need of a significant overhaul and is not necessarily production ready! I use it mainly for my own work and some functionality is experimental! Be especially cautious with the effect functions! Also: The 3D mapping is currently broken and will (hopefully) be fixed soon!**: Please sanity-check everything before you use it in production!
 
 This package maps SPH quantities to a cartesian grid.
 
