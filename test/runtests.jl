@@ -7,11 +7,7 @@ addprocs(2)
 
     @testset "Smac utility" begin
 
-        @test_nowarn write_smac1_par("", 0, "", "", "", "",
-                                        0, 0, 0, 4, 3,
-                                        20.0, 10.0, 1, 1,
-                                        24, 1.0, 1.e6, 10,
-                                        1, 0.0, 0.0, 0.0)
+        @test_nowarn write_smac1_par("./")
 
         # @test_throws ErrorException("Read error: Incorrect image format!") read_smac1_binary_image(joinpath(dirname(@__FILE__), "snap_050"))
 
@@ -24,9 +20,7 @@ addprocs(2)
         @test length(image[:,1]) == 128
         @test image[1,1] ≈ 0.000120693
 
-        @test_nowarn write_smac1_par("", 0, "", "", "", "",
-                                        0, 0, 0, 0, 0, 0.0, 0.0, 
-                                        1, 1, 0, 1.0, 1.e6, 10, 0, 0.0, 0.0, 0.0)
+        @test_nowarn write_smac1_par("./")
 
         @test_nowarn write_smac2_par(1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
                                         1.0, 1.0, 1024,
@@ -160,58 +154,69 @@ addprocs(2)
         fi = joinpath(dirname(@__FILE__), "m.txt")
         m = Float32.(readdlm(fi))[:,1]
 
-        kernel = WendlandC6()
-
         par = mappingParameters(center = [3.0, 3.0, 3.0],
                         x_size = 6.0, y_size = 6.0, z_size = 6.0,
                         Npixels = 200,
                         boxsize = 6.0)
 
-        @info "2D"
+        @testset "2D" begin
+            
+            kernel = WendlandC6(2)
 
-        @info "Single core."
-        d = sphMapping(x, hsml, m, rho, bin_quantity, rho,
-                            param=par, kernel=kernel,
-                            parallel = false,
-                            show_progress=true)
-
-
-        ideal_file = joinpath(dirname(@__FILE__), "image.dat")
-        d_ideal = readdlm(ideal_file)
-
-        @test d[  1,  1] ≈ d_ideal[1, 1]
-        @test d[ 30, 32] ≈ d_ideal[30, 32]
-        #@test d[117, 92] ≈ d_ideal[117, 92]
+            @testset "Single core" begin
+                d = sphMapping(x, hsml, m, rho, bin_quantity, rho,
+                                    param=par, kernel=kernel,
+                                    parallel = false,
+                                    show_progress=true)
 
 
-        @info "Multi core."
-        @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
-                            param=par, kernel=kernel,
-                            parallel = true,
-                            show_progress=false)
+                ideal_file = joinpath(dirname(@__FILE__), "image.dat")
+                d_ideal = readdlm(ideal_file)
 
-        @info "3D"
+                @test d[  1,  1] ≈ d_ideal[1, 1]
+                @test d[ 30, 32] ≈ d_ideal[30, 32]
+                #@test d[117, 92] ≈ d_ideal[117, 92]
+            end
 
-        par = mappingParameters(center = [3.0, 3.0, 3.0],
-                        x_size = 6.0, y_size = 6.0, z_size = 6.0,
-                        Npixels = 10,
-                        boxsize = 6.0)
-        
-        @info "Single core."
-        d = sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
-                            param=par, kernel=kernel,
-                            parallel = false,
-                            show_progress=true,
-                            dimensions=3)
 
-        @test !isnan(d[1,1,1])
+            @testset "Multi core" begin
+            
+                # @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
+                #                 param=par, kernel=kernel,
+                #                 parallel = true,
+                #                 show_progress=false)
+            end
 
-        @info "Multi core."
-        @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
-                            param=par, kernel=kernel,
-                            parallel = true,
-                            show_progress=false,
-                            dimensions=3)
+        end
+
+        @testset "3D" begin
+
+            kernel = WendlandC6(3)
+
+            par = mappingParameters(center = [3.0, 3.0, 3.0],
+                            x_size = 6.0, y_size = 6.0, z_size = 6.0,
+                            Npixels = 10,
+                            boxsize = 6.0)
+            
+            @testset "Single core" begin
+                d = sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
+                                    param=par, kernel=kernel,
+                                    parallel = false,
+                                    show_progress=true,
+                                    dimensions=3)
+
+                @test !isnan(d[1,1,1])
+            end
+
+            @testset "Multi core" begin
+                # @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
+                #                     param=par, kernel=kernel,
+                #                     parallel = true,
+                #                     show_progress=false,
+                #                     dimensions=3)
+            end
+
+        end # 3D
 
     end
 
@@ -229,18 +234,22 @@ addprocs(2)
                         Npixels = 200,
                         boxsize = 6.0)
 
-        d = sphMapping( x, bin_quantity, 
-                        param=par, show_progress=true)
 
-        @test !isnan(d[1,1])
+        @testset "2D" begin 
+            # d = sphMapping( x, bin_quantity, 
+            #             param=par, show_progress=true)
 
-        @test_nowarn sphMapping( x, bin_quantity, 
-                        param=par, show_progress=false)
+            # @test !isnan(d[1,1])
 
+            # @test_nowarn sphMapping( x, bin_quantity, 
+            #                 param=par, show_progress=false)
+        end
 
-        @test_nowarn sphMapping( x, bin_quantity, 
-                        param=par, show_progress=false,
-                        dimensions=3)
+        @testset "3D" begin
+            # @test_nowarn sphMapping( x, bin_quantity, 
+            #                 param=par, show_progress=false,
+            #                 dimensions=3)
+        end
 
     end
 
@@ -262,7 +271,7 @@ addprocs(2)
         fi = joinpath(dirname(@__FILE__), "m.txt")
         m = Float32.(readdlm(fi))[:,1]
 
-        kernel = WendlandC6()
+        kernel = WendlandC6(2)
 
         par = mappingParameters(center = [3.0, 3.0, 3.0],
                         x_size = 6.0, y_size = 6.0, z_size = 6.0,
