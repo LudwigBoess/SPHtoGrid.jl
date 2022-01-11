@@ -3,7 +3,7 @@
                 Rho, Bin_Quant, 
                 Weights=Rho;
                 param::mappingParameters,
-                kernel::SPHKernel,
+                kernel::AbstractSPHKernel,
                 show_progress::Bool=true,
                 parallel::Bool=false,
                 reduce_image::Bool=true,
@@ -20,7 +20,7 @@ Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 - `Rho`: Array with particle densities.
 - `Bin_Quant`: Array with particle quantity to be mapped.
 - `Weights`: Array with weights. Defaults to density-weighted.
-- `kernel::SPHKernel`: Kernel object to be used.
+- `kernel::AbstractSPHKernel`: Kernel object to be used.
 - `show_progress::Bool=true`: Show progress bar.
 - `parallel::Bool=true`: Run on multiple processors.
 - `reduce_image::Bool=true`: If weights need to be applied or not. Set to `false` for [`part_weight_one`](@ref) and [`part_weight_physical`](@ref).
@@ -31,7 +31,7 @@ function sphMapping(Pos, HSML, M,
                     Rho, Bin_Quant, 
                     Weights=Rho;
                     param::mappingParameters,
-                    kernel::SPHKernel,
+                    kernel::AbstractSPHKernel,
                     show_progress::Bool=true,
                     parallel::Bool=false,
                     reduce_image::Bool=true,
