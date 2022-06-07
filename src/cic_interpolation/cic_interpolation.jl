@@ -36,7 +36,8 @@ function sphMapping(Pos, HSML, M,
                     parallel::Bool=false,
                     reduce_image::Bool=true,
                     filter_particles::Bool=true,
-                    dimensions::Int=2)
+                    dimensions::Int=2,
+                    calc_mean::Bool=false)
 
     
     # store number of input particles
@@ -123,7 +124,8 @@ function sphMapping(Pos, HSML, M,
 
             image = cic_mapping_2D(x, hsml, m, rho, bin_q, weights;
                                 param=par, kernel=kernel,
-                                show_progress=show_progress)
+                                show_progress=show_progress,
+                                calc_mean=calc_mean)
 
             if show_progress
                 t2 = time_ns()
@@ -155,7 +157,8 @@ function sphMapping(Pos, HSML, M,
                                                         m[batch[i]], rho[batch[i]],
                                                         bin_q[batch[i]], weights[batch[i]];
                                                         param=par, kernel=kernel,
-                                                        show_progress=false)
+                                                        show_progress=false,
+                                                        calc_mean=calc_mean)
             end
             
             image = sum(fetch.(futures))

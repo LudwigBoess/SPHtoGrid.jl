@@ -100,7 +100,8 @@ function cic_mapping_2D( Pos, HSML,
                         M, Rho, 
                         Bin_Q, Weights;
                         param::mappingParameters, kernel::AbstractSPHKernel,
-                        show_progress::Bool=false )
+                        show_progress::Bool=false,
+                        calc_mean=true )
 
     N = size(M,1)  # number of particles
     
@@ -127,7 +128,7 @@ function cic_mapping_2D( Pos, HSML,
 
         bin_q = Float64(Bin_Q[p])
 
-        if bin_q == 0.0
+        if iszero(bin_q) && !calc_mean
             continue
         end
 
