@@ -42,8 +42,8 @@ function rotate_3D(x::Array{<:Real}, alpha::Real, beta::Real, gamma::Real)
 
     N = size(x,2)
     ret = Array{eltype(x[1]),2}(undef, 3, N)
-    @threads for i = 1:N
-        @inbounds ret[:,i] = rotate_3D_quantity(x[:,i], α, β, γ)
+    @inbounds for i = 1:N
+        ret[:,i] = rotate_3D_quantity(x[:,i], α, β, γ)
     end
 
     return ret
@@ -62,8 +62,8 @@ function rotate_3D!(x::Array{<:Real}, alpha::Real, beta::Real, gamma::Real)
     β = deg2rad(beta)
     γ = deg2rad(gamma)
 
-    @threads for i = 1:size(x,2)
-        @inbounds x[:,i] = rotate_3D_quantity(x[:,i], α, β, γ)
+    @inbounds for i = 1:size(x,2)
+        x[:,i] = rotate_3D_quantity(x[:,i], α, β, γ)
     end
 
     return x
