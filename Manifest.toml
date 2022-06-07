@@ -130,6 +130,12 @@ version = "0.16.12"
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
+[[deps.GadgetIO]]
+deps = ["Dates", "DelimitedFiles", "Documenter", "DocumenterTools", "Downloads", "LinearAlgebra", "Printf", "ProgressMeter", "Test"]
+git-tree-sha1 = "aa27cbc14fcb338a4ab016927f0f882dd69a2264"
+uuid = "826b50da-1eb7-48f3-bd4b-d2350582c309"
+version = "0.5.9"
+
 [[deps.Gumbo]]
 deps = ["AbstractTrees", "Gumbo_jll", "Libdl"]
 git-tree-sha1 = "e711d08d896018037d6ff0ad4ebe675ca67119d4"
