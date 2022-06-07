@@ -456,7 +456,7 @@ function write_smac1_par( path="./"; kwargs...)
         
         #**** Cosmology to use
         HUBBLE = $( haskey(kwargs, :HUBBLE) ? kwargs[:HUBBLE] : (haskey(kwargs, :h) ? kwargs[:h].h0 : 0.72) )
-        OMEGA  = $( haskey(kwargs, :OMEGA) ? kwargs[:OMEGA] : (haskey(kwargs, :h) ? kwargs[:h].omega_m : 0.24) )
+        OMEGA  = $( haskey(kwargs, :OMEGA) ? kwargs[:OMEGA] : (haskey(kwargs, :h) ? kwargs[:h].omega_0 : 0.24) )
         LAMBDA = $( haskey(kwargs, :LAMBDA) ? kwargs[:LAMBDA] : (haskey(kwargs, :h) ? kwargs[:h].omega_l : 0.76) )
 
         """

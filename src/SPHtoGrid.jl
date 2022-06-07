@@ -56,6 +56,7 @@ include("effects/constants.jl")
 include("effects/density.jl")
 include("effects/synchrotron_analytic.jl")
 include("effects/synchrotron_spectrum.jl")
+include("effects/radio_beam.jl")
 include("effects/sz_effect.jl")
 include("effects/x_ray.jl")
 
@@ -88,6 +89,7 @@ export mappingParameters,                         # parameters for SPH mapping
     x_ray_emission,
     analytic_synchrotron_emission,
     spectral_synchrotron_emission,
+    convert_Pnu_map_to_mJy_beam,
     # IO
     read_fits_image,
     write_fits_image
