@@ -70,9 +70,7 @@ version = "1.0.1"
 
 [[deps.DSAModels]]
 deps = ["Test"]
-git-tree-sha1 = "a4700fae5faf0bab5445c844f1bff3cfc4cdc921"
-repo-rev = "main"
-repo-url = "https://github.com/LudwigBoess/DSAModels.jl"
+git-tree-sha1 = "f7fe3f41a97e2442ee8bdff628f6fe8892adc88d"
 uuid = "c94b82ce-bc6a-4c64-9fc0-cb2d7d683713"
 version = "0.1.0"
 
@@ -383,9 +381,7 @@ version = "2.1.6"
 
 [[deps.SynchrotronKernel]]
 deps = ["Documenter", "DocumenterTools", "SpecialFunctions", "Test"]
-git-tree-sha1 = "c6558649796a24178c1a1070246c464970108356"
-repo-rev = "master"
-repo-url = "https://github.com/LudwigBoess/SynchrotronKernel.jl"
+git-tree-sha1 = "9ffc16d6b7daf88aadcc2857e84580f223fa7562"
 uuid = "7c311715-997f-43ba-a0ee-db1ccfe8d7f2"
 version = "0.2.0"
 
