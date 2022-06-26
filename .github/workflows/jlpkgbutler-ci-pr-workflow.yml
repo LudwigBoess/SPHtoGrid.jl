@@ -23,6 +23,8 @@ jobs:
           version: ${{ matrix.julia-version }}
           arch: ${{ matrix.julia-arch }}
       - uses: julia-actions/julia-buildpkg@latest
+        with:
+          registry: LudwigBoess/LMBRegistry
         env:
           PYTHON: ""
       - uses: julia-actions/julia-runtest@latest
