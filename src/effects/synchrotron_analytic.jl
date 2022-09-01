@@ -19,7 +19,7 @@ function dsa_spectral_index(M::Real)
     if M <= 1.01
         return maxintfloat(Float64)
     else
-        return 2 * (M^2 + 1) / (M^2 - 1)
+        return 2 * (M^2 + 1) / (M^2 - 1) 
     end
 end
 
@@ -185,22 +185,18 @@ function analytic_synchrotron_GS(rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
                                  T_K::Array{<:Real}, Mach::Array{<:Real};
                                  xH::Real = 0.76, dsa_model::Integer = 1, ν0::Real = 1.4e9,
                                  K_ep::Real = 0.01,
-                                 integrate_pitch_angle::Bool = true,
                                  convert_to_mJy::Bool = false)
 
     Npart = length(T_K)
+
+    # check if magnetic field is already in absolute values
+    B1dim = (size(B_cgs,1) == 1) ? true : false
 
     # default ratio for electron to protons from Donnert+16.
     K_ep_default = 0.01
 
     # allocate storage array
     J_ν = Vector{Float64}(undef, Npart)
-
-    if length(B_cgs[1, :]) == 1
-        B_1dim = true
-    else
-        B_1dim = false
-    end
 
     # select DSA model
     if dsa_model == 0
@@ -217,38 +213,25 @@ function analytic_synchrotron_GS(rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
         error("Invalid DSA model selection!")
     end
 
-    # bracket of Longair eq. 8128
-    nufac = (3q_e) / (m_e^3 * c_light * c_light * c_light * c_light * c_light * 2π * ν0)
+    @threads for i = 1:Npart
 
-
-    @inbounds for i = 1:Npart
-        if B_1dim
-            B = B_cgs[i]
+        if B1dim
+            B  = B_cgs[i]
         else
-            B = sqrt(B_cgs[1, i]^2 + B_cgs[2, i]^2 + B_cgs[3, i]^2)
+            B = @. √(B_cgs[1,i]^2 + B_cgs[2,i]^2 + B_cgs[3,i]^2)
         end
+
         n0 = K_ep / K_ep_default * cre_spec_norm_particle(η_model, Mach[i]) * EpsNtherm(rho_cgs[i], T_K[i], xH = xH)
-        s = dsa_spectral_index(Mach[i])
-    
-        if n0 > 0.0
-    
-            # Longair eq. 8.129
-            a_p = gamma(s / 4 + 19 / 12) * gamma(s / 4 - 1 / 12)
-    
-            if integrate_pitch_angle
-                # Longair eq 8.87
-                a_p *= 0.5*√(π) * gamma(s / 4.0 + 5.0 / 4.0) /
-                       gamma(s / 4.0 + 7.0 / 4.0)
-            end
-    
-            # Longair eq 8.128 prefactor
-            prefac = √(3) * q_e^3 / (m_e * c_light^2 * (s + 1))
-    
-            # Longair eq 8.128
-            J_ν[i] = agam * qe^3 / (me * cL^2) * (3qe / (me^3 * c^3 * 4π))^((s - 1) / 2) *
-                        n0 * ν^ (-(s - 1) / 2) * B^((s + 1) / 2) # GS, eq. 3.31, erg/s/cm^3
- 
- 
+
+        if (n0 > 0.0) && (B > 0.0)
+
+            s  = dsa_spectral_index(Mach[i])
+
+            agam = 2^(s / 2 - 1 / 2) * √(3) * gamma(s / 4 - 1 / 12) * gamma(s / 4 + 19 / 12) /
+                    (8√(π) * (s + 1)) * gamma((s + 5) / 4) / gamma((s + 7) / 4) # GS eq 3.32
+
+            J_ν[i] = agam * q_e^3 / (m_e * c_light^2) * (3 * q_e / (m_e^3 * c_light^3 * 4 * π))^((s - 1) / 2) *
+                    n0 * ν0^(-(s - 1) / 2) * B^((s + 1) / 2) # GS, eq. 3.31, erg/s/cm^3
         else
             J_ν[i] = 0.0
         end
