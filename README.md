@@ -1,22 +1,28 @@
 | **Documentation**                                                 | **Build Status**                                                                                | **Licence**                                                                                |
 |:-----------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:| :-----------------------------------------------------------------------------------------------:|
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://LudwigBoess.github.io/SPHtoGrid.jl/stable) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://LudwigBoess.github.io/SPHtoGrid.jl/dev) | [![Build Status](https://github.com/LudwigBoess/SPHtoGrid.jl/workflows/Run%20CI%20on%20master/badge.svg)](https://travis-ci.org/LudwigBoess/SPHtoGrid.jl) [![codecov.io](https://codecov.io/gh/LudwigBoess/SPHtoGrid.jl/coverage.svg?branch=master)](https://codecov.io/gh/LudwigBoess/SPHtoGrid.jl?branch=master) | [![The MIT License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE.md) |
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://LudwigBoess.github.io/SPHtoGrid.jl/stable) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://LudwigBoess.github.io/SPHtoGrid.jl/dev) | [![Build Status](https://github.com/LudwigBoess/SPHtoGrid.jl/workflows/Run%20CI%20on%20master/badge.svg)](https://travis-ci.org/LudwigBoess/SPHtoGrid.jl) [![codecov.io](https://codecov.io/gh/LudwigBoess/SPHtoGrid.jl/coverage.svg?branch=master)](https://codecov.io/gh/LudwigBoess/SPHtoGrid.jl?branch=master) |  [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.md) |
 
 # SPHtoGrid.jl
 
-This package maps SPH quantities to a cartesian grid.
+> :warning: **This package is in need of a significant overhaul and is not necessarily production ready! I use it mainly for my own work and some functionality is experimental! Be especially cautious with the effect functions! Also: The 3D mapping is currently broken and will (hopefully) be fixed soon!**: Please sanity-check everything before you use it in production!
+
+This package maps SPH quantities to a cartesian grid. It is based on [Smac](https://ui.adsabs.harvard.edu/abs/2005MNRAS.363...29D/abstract) by [Klaus Dolag](https://www.usm.uni-muenchen.de/~dolag/) und [Smac2](https://github.com/jdonnert/Smac2) by Julius Donnert.
+
 
 You can map SPH data to a grid using the function `sphMapping`:
 
 ```julia
-function sphMapping(Pos, HSML, M, ρ, Bin_Quant,
-                    Weights=ρ;
+function sphMapping( Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real}, 
+                    Rho::Array{<:Real}, Bin_Quant::Array{<:Real}, 
+                    Weights::Array{<:Real}=Rho;
                     param::mappingParameters,
-                    kernel::SPHKernel [,
+                    kernel::AbstractSPHKernel,
                     show_progress::Bool=true,
                     parallel::Bool=false,
+                    reduce_image::Bool=true,
                     filter_particles::Bool=true,
-                    dimensions::Int=2])
+                    dimensions::Int=2,
+                    calc_mean::Bool=false)
 
 
     [...]

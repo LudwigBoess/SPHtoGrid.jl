@@ -6,11 +6,8 @@ If you want to store the constructed images you can save them as FITS files. Thi
 
 To save an image and the relevant fields from the [`mappingParameters`](@ref) struct you can use the function [`write_fits_image`](@ref):
 
-```julia
-write_fits_image( filename::String, image::Array{<:Real}, 
-                  par::mappingParameters; 
-                  units::String="[i.u.]",
-                  snap::Integer=0)
+```@docs
+write_fits_image
 ```
 
 The keyword arguments `units` and `snap` are optional and are used to store a unit string and the snapshot number for the image, respectively.
@@ -20,8 +17,6 @@ The keyword arguments `units` and `snap` are optional and are used to store a un
 
 To read a mapped image from a FITS file you can use [`read_fits_image`](@ref):
 
-```julia
-image, par, snap_nr, unit_string = read_fits_image(filename::String)
+```@docs
+read_fits_image
 ```
-
-Where `image` is the image, `par` is a struct of type `mappingParameters`, `snap_nr` is the number of the snapshot which was mapped and `unit_string` contains a string of the image units.

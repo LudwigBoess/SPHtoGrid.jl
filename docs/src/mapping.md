@@ -13,6 +13,11 @@ You can map SPH data to a grid using the function [`sphMapping`](@ref), which co
 # Define parameters for mapping
 
 To map the data you need to define the mapping parameters via the [`mappingParameters`](@ref) object.
+
+```@docs
+mappingParameters
+```
+
 One way to set this up is by defining the limits of the map as
 
 ```julia
@@ -49,23 +54,10 @@ par = mappingParameters(center=[x0, y0, z0],
 
 For "Counts in Cell" (CIC) interpolation use the function `sphMapping` with these input values:
 
-```julia
-function sphMapping(Pos, HSML, M, ρ, Bin_Quant,
-                    Weights=ρ;
-                    param::mappingParameters,
-                    kernel::SPHKernel [,
-                    show_progress::Bool=true,
-                    parallel::Bool=false,
-                    filter_particles::Bool=true,
-                    dimensions::Int=2])
-
-
-    [...]
-
-end
+```@docs
+sphMapping(::Array{<:Real}, ::Array{<:Real}, ::Array{<:Real}, ::Array{<:Real}, ::Array{<:Real})
 ```
 
-where `Pos` is the 3D positional data, `HSML` is the kernel support of each particle, `M` are the particle masses, `ρ` is the density of the particle, `Bin_Quant` is the qantity you want to bin and `Weights` is an array of weights. These weights can be calculated using one of the supplied [Weight functions](@ref). They default to density weighted.
 
 ## Select Kernel
 

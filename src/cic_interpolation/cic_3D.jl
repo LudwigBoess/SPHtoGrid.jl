@@ -1,40 +1,27 @@
 """
-    get_d_hsml_3D( dx::Real, dy::Real, dz::Real,
-                   hsml_inv::Real )
-
-Computes the distance in 3D to the pixel center in units of the kernel support.
-"""
-function get_d_hsml( dx::T, dy::T, dz::T,
-                     hsml_inv::T) where T
-    √( dx*dx + dy*dy + dz*dz ) * hsml_inv
-end
-
-
-
-"""
     function calculate_weights_3D(  wk::Array{<:Real,1}, 
                                     iMin::Integer, iMax::Integer, 
                                     jMin::Integer, jMax::Integer,
                                     kMin::Integer, kMax::Integer,
                                     x::Real, y::Real, z::Real, 
                                     hsml::Real, hsml_inv::Real,
-                                    kernel::SPHKernel,
+                                    kernel::AbstractSPHKernel,
                                     x_pixels::Integer, y_pixels::Integer )
                                                 
 Calculates the kernel- and geometric weights of the pixels a particle contributes to.
 """
-@fastmath function calculate_weights( wk::Vector{Float64}, 
+function calculate_weights( wk::Vector{Float64}, 
                                     iMin::Integer, iMax::Integer, 
                                     jMin::Integer, jMax::Integer,
                                     kMin::Integer, kMax::Integer,
                                     x::T, y::T, z::T, 
                                     hsml::T, hsml_inv::T,
-                                    kernel::SPHKernel,
+                                    kernel::AbstractSPHKernel,
                                     x_pixels::Integer, y_pixels::Integer ) where T
 
     is_undersampled = false
 
-    if hsml <= 1.0
+    if hsml <= 1
         is_undersampled = true
     end
 
@@ -66,9 +53,9 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
 
                     u = get_d_hsml(x_dist, y_dist, z_dist, hsml_inv)
 
-                    if u <= 1.0
+                    if u <= 1
 
-                        wk[idx]       =  𝒲₃(kernel, u, hsml_inv)
+                        wk[idx]       =  𝒲(kernel, u, hsml_inv)
                         wk[idx]      *= dxdydz
                         distr_weight += wk[idx]
                         n_distr_pix  += 1
@@ -85,15 +72,6 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
     return wk, n_distr_pix, distr_weight
 end
 
-
-"""
-    function calculate_index(i::Integer, j::Integer, x_pixels::Integer)
-
-Calculates the index of a flattened 3D image array.
-"""
-function calculate_index(  i::T, j::T, k::T, x_pixels::T, y_pixels::T) where T
-    return floor(T, i * x_pixels + j * y_pixels + k) + 1
-end
 
 """
     get_quantities_3D( pos, weight, hsml, 
@@ -116,18 +94,19 @@ end
 
 
 """
-   sphMapping_3D( Pos::Array{<:Real}, HSML::Array{<:Real}, 
+   cic_mapping_3D( Pos::Array{<:Real}, HSML::Array{<:Real}, 
                   M::Array{<:Real}, Rho::Array{<:Real}, 
                   Bin_Q::Array{<:Real}, Weights::Array{<:Real}=ones(length(Rho));
-                  param::mappingParameters, kernel::SPHKernel,
+                  param::mappingParameters, kernel::AbstractSPHKernel,
                   show_progress::Bool=false )
 
 Underlying function to map SPH data to a 3D grid.
 """
-function sphMapping_3D( Pos::Array{T}, HSML::Array{T}, 
-                        M::Array{T}, Rho::Array{T}, 
-                        Bin_Q::Array{T}, Weights::Array{T};
-                        param::mappingParameters, kernel::SPHKernel,
+
+function cic_mapping_3D( Pos, HSML, 
+                        M, Rho, 
+                        Bin_Q, Weights;
+                        param::mappingParameters, kernel::AbstractSPHKernel,
                         show_progress::Bool=false ) where T
 
     N = size(M,1)  # number of particles
