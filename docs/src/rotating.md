@@ -20,6 +20,7 @@ pos_new = (pos_old, axis)
 ## Define Euler Angle
 
 If projection along one of the principle axis is too crude for you, you can define individual angles α, β and γ corresponding to rotations around the x, y, and z-axis respectively and use the function [`rotate_3D`](@ref).
+This function uses [Rotations.jl](https://github.com/JuliaGeometry/Rotations.jl).
 
 ```@docs
 rotate_3D
