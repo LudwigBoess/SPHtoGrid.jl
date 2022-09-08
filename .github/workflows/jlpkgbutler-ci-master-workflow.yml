@@ -23,6 +23,7 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
           arch: ${{ matrix.julia-arch }}
+      - run: julia --color=yes -e 'import Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/LudwigBoess/LMBRegistry.git"))'
       - uses: julia-actions/julia-buildpkg@latest
         env:
           PYTHON: ""
