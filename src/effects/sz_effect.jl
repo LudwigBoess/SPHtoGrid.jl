@@ -31,10 +31,21 @@ end
 Computes the kinetic Sunyaev-Zel'dovich effect from electron density `n_cm3` and velocity in y-direction to the projection plane in cgs units `vel_y_cgs`.
 If `DI_over_I` is set to `true` you also need to provide an observation frequency `ν` and redshift `z`.
 """
-function kinetic_SZ(n_cm3::Real, vel_y_cgs::Real,
+function kinetic_SZ(n_cm3::Vector{<:Real}, vel_y_cgs::Vector{<:Real},
                     ν::Real = 1.e9, z::Real = 0.0;
                     DI_over_I::Bool = false)
-    kSzPrefac(ν, z, DI_over_I) * n_cm3 * vel_y_cgs
+
+    # calculate prefator once
+    prefac = kSzPrefac(ν, z, DI_over_I)
+
+    # allocate storage vector
+    kin_SZ = Vector{eltype(n_cm3[1])}(undef, length(n_cm3))
+
+    @threads for i = 1:length(kin_SZ)
+        kin_SZ[i] = prefac * n_cm3[i] * vel_y_cgs[i]
+    end
+
+    return kin_SZ
 end
 
 """
@@ -64,16 +75,26 @@ function tSzPrefac(ν::Real, z::Real, DI_over_I::Bool)
 end
 
 """
-    thermal_SZ( n_cm3::Real, T_K::Real, 
+    thermal_SZ( n_cm3::Vector{<:Real}, T_K::Vector{<:Real},
                 z::Real=0.0, ν::Real=1.44e9; 
                 DI_over_I::Bool=false )
 
 Computes the thermal Sunyaev-Zel'dovich effect for electron density `n_cm3` and temperature `T_K` in Kelvin at redshift `z` and observer frequency `ν`.
 `DI_over_I` outputs in units of ``dI/I`` if set to `true` and `dT/T` otherwise.
 """
-function thermal_SZ(n_cm3::Real, T_K::Real,
-    z::Real = 0.0, ν::Real = 1.44e9;
-    DI_over_I::Bool = false)
+function thermal_SZ(n_cm3::Vector{<:Real}, T_K::Vector{<:Real},
+                    z::Real = 0.0, ν::Real = 1.44e9;
+                    DI_over_I::Bool = false)
 
-    return tSzPrefac(ν, z, DI_over_I) * comptonY(n_cm3, T_K, z)
+    # calculate prefator once
+    prefac = tSzPrefac(ν, z, DI_over_I)
+
+    # allocate storage vector
+    th_SZ = Vector{eltype(T_K[1])}(undef, length(T_K))
+
+    @threads for i = 1:length(T_K)
+        th_SZ[i] = prefac * comptonY(n_cm3[i], T_K[i], z)
+    end
+
+    return th_SZ
 end

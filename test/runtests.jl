@@ -94,11 +94,6 @@ addprocs(2)
 
     @testset "Rotate particles" begin
 
-        # no rotation
-        x_in = [1.0, 1.0, 1.0]
-        x_out = SPHtoGrid.rotate_3D_quantity(x_in, 0.0, 0.0, 0.0)
-        @test x_out ≈ x_in
-
         # matrix no rotation
         x_rand = rand(3, 10)
         x_out = rotate_3D(x_rand, 0.0, 0.0, 0.0)
@@ -110,8 +105,8 @@ addprocs(2)
 
         # project along axis
         x_in = [1.0 1.0
-            1.0 1.0
-            0.0 0.0]
+                1.0 1.0
+                0.0 0.0]
 
         # along z-axis should not change anything
         x_out = project_along_axis(x_in, 3)
@@ -316,9 +311,9 @@ addprocs(2)
         @test weight[1] == 1.0
 
         par = mappingParameters(center = [3.0, 3.0, 3.0],
-            x_size = 6.0, y_size = 6.0, z_size = 6.0,
-            Npixels = 200,
-            boxsize = 6.0)
+                                x_size = 6.0, y_size = 6.0, z_size = 6.0,
+                                Npixels = 200,
+                                boxsize = 6.0)
 
         weight = part_weight_physical(1, par)
         @test weight[1] ≈ par.pixelSideLength * 3.085678e21
@@ -345,15 +340,16 @@ addprocs(2)
             @test SPHtoGrid.Tcmb(0.0) ≈ 2.728
             @test SPHtoGrid.Tcmb(10.0) ≈ 30.008000000000003
 
-            @test kinetic_SZ(1.0, 1.0) ≈ -2.2190366589946296e-35
+            @test kinetic_SZ([1.0], [1.0])[1] ≈ -2.2190366589946296e-35
 
-            @test thermal_SZ(1.0, 1.0) ≈ 3.876935843260665e-34
+            @test thermal_SZ([1.0], [1.0])[1] ≈ 3.876935843260665e-34
         end
 
         @testset "X-Ray" begin
-            @test x_ray_emission(1.0, 1.0e8) ≈ 4.87726213161308e-26
-
-            @test x_ray_emission(1.0, 1.0e9) ≈ 2.8580049510920225e-23
+            # in spectral range
+            @test x_ray_emission([10.0], [1.989e38], [1.e-28])[1] ≈ 1.9479441169462751e34
+            # bolometric
+            @test x_ray_emission([10.0], [1.989e38], [1.e-28], E0=0.0, E1=Inf)[1] ≈ 9.575878609659925e34
         end
 
         @testset "Synchrotron" begin
