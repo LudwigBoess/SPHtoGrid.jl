@@ -1,14 +1,15 @@
 """
-    sphMapping( Pos, HSML, M, 
-                Rho, Bin_Quant, 
-                Weights=Rho;
+    sphMapping( Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real}, 
+                Rho::Array{<:Real}, Bin_Quant::Array{<:Real}, 
+                Weights::Array{<:Real}=Rho;
                 param::mappingParameters,
                 kernel::AbstractSPHKernel,
                 show_progress::Bool=true,
                 parallel::Bool=false,
                 reduce_image::Bool=true,
                 filter_particles::Bool=true,
-                dimensions::Int=2)
+                dimensions::Int=2,
+                calc_mean::Bool=false)
 
 Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 `param` and the kernel to be used in `kernel`.
@@ -23,13 +24,14 @@ Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 - `kernel::AbstractSPHKernel`: Kernel object to be used.
 - `show_progress::Bool=true`: Show progress bar.
 - `parallel::Bool=true`: Run on multiple processors.
-- `reduce_image::Bool=true`: If weights need to be applied or not. Set to `false` for [`part_weight_one`](@ref) and [`part_weight_physical`](@ref).
+- `reduce_image::Bool=true`: If weights need to be applied or not. Set to `false` for [`part_weight_physical`](@ref).
 - `filter_particles::Bool=true`: Find the particles that are actually contained in the image.
 - `dimensions::Int=2`: Number of mapping dimensions (2 = to grid, 3 = to cube).
+- `calc_mean::Bool=false`: Calculates the mean value along the line of sight. If set to `false` the particle only contributes if its `Bin_Quant` is larger than 0.
 """
-function sphMapping(Pos, HSML, M, 
-                    Rho, Bin_Quant, 
-                    Weights=Rho;
+function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real}, 
+                    Rho::Array{<:Real}, Bin_Quant::Array{<:Real}, 
+                    Weights::Array{<:Real}=Rho;
                     param::mappingParameters,
                     kernel::AbstractSPHKernel,
                     show_progress::Bool=true,
