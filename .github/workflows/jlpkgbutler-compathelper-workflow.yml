@@ -11,7 +11,7 @@ jobs:
     name: "Run CompatHelper.jl"
     runs-on: ubuntu-latest
     steps:
-      - run: julia --color=yes -e 'import Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/LudwigBoess/LMBRegistry.git"))'
+      - run: julia --color=yes -e 'import Pkg; Pkg.Registry.add("General"); Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/LudwigBoess/LMBRegistry.git"))'
       - name: Pkg.add("CompatHelper")
         run: julia -e 'using Pkg; Pkg.add("CompatHelper")'
       - name: CompatHelper.main()
