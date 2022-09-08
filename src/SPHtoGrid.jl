@@ -61,6 +61,7 @@ include("effects/x_ray.jl")
 
 export mappingParameters,                         # parameters for SPH mapping
     sphMapping,                                # main function for mapping 
+    map_it,
     filter_particles_in_image,                 # helper function to preselect particles
     get_map_grid_2D,
     get_map_grid_3D,

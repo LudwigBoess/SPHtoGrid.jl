@@ -234,3 +234,30 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
 
 
 end
+
+
+"""
+    map_it(pos_in, hsml, mass, rho, bin_q, weights, k, 
+           snap, units, image_path, reduce_image, param, 
+           filter_particles=true, parallel=true)
+
+Small helper function to copy positions, map particles and save the fits file.
+"""
+function map_it(pos_in, hsml, mass, rho, bin_q, weights, k, 
+                snap, units, image_path, reduce_image, param, 
+                filter_particles=true, parallel=true)
+
+    pos = copy(pos_in)
+
+    quantitiy_map = sphMapping( pos, hsml, mass, rho,
+                                bin_q, weights, show_progress = true,
+                                param = param, kernel = k, parallel = parallel,
+                                reduce_image = reduce_image, filter_particles = filter_particles)
+
+
+    fo_image = image_path * ".fits"
+
+    @info "map maximum: $(maximum(quantitiy_map))"
+
+    write_fits_image(fo_image, quantitiy_map, param, snap = snap, units = units)
+end
