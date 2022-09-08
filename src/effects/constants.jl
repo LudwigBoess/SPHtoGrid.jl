@@ -13,3 +13,5 @@ global const C_crit     = 3q_e / ( 4π * m_e * c_light ) # Donnert+16, MNRAS 462
 global const γ          = 5.0/3.0
 global const mJy_factor = 1.e26       # conversion factor from [erg/cm^3/Hz/s] to mJy/cm.
 global const f_p_prefac = 4π / c_light
+global const C_j        = 2.42e-24   # factor for X-ray emissivity (BS1996, eq.4)
+global const gg         = 1  # Gaunt factor used for X-ray emission

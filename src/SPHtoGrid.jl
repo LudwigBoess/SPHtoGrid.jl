@@ -8,6 +8,8 @@ using ProgressMeter
 using DSAModels
 using SpecialFunctions
 using LinearAlgebra
+using Rotations
+using Base.Threads
 
 function output_time(t1, t2)
     return @sprintf("%0.3e", Float64((t2 - t1)) * 1.e-9)
@@ -67,6 +69,8 @@ export mappingParameters,                         # parameters for SPH mapping
     get_map_grid_3D,
     read_smac1_binary_info,
     read_smac1_binary_image,
+    read_smac1_fits_info,
+    read_smac1_fits_image,
     read_smac2_image,
     read_smac2_info,
     write_smac1_par,
@@ -87,7 +91,9 @@ export mappingParameters,                         # parameters for SPH mapping
     kinetic_SZ,
     thermal_SZ,
     x_ray_emission,
+    get_T_keV,
     analytic_synchrotron_emission,
+    analytic_synchrotron_GS,
     spectral_synchrotron_emission,
     convert_Pnu_map_to_mJy_beam,
     # IO

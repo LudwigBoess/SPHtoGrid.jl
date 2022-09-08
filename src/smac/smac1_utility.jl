@@ -463,3 +463,51 @@ function write_smac1_par( path="./"; kwargs...)
         )
     end
 end
+
+
+"""
+    read_smac1_fits_info(filename::String)
+
+Returns the image info in a `mappingParameters` struct.
+"""
+function read_smac1_fits_info(filename::String)
+
+    f = FITS(filename)
+
+    center = [read_key(f[2], 26)[2], 
+              read_key(f[2], 27)[2], 
+              read_key(f[2], 28)[2] ]
+
+    pixel_sidelength = read_key(f[2], 18)[2]
+    z_size  = read_key(f[2], 29)[2]
+    Npixels = read_key(f[2], 31)[2]
+
+    xy_size = pixel_sidelength * Npixels
+
+    close(f)
+
+    return mappingParameters(center=center, 
+							 x_size=xy_size,
+							 y_size=xy_size,
+							 z_size=z_size,
+							 Npixels=Npixels)
+
+end
+
+
+"""
+    read_smac1_fits_image(filename::String)
+
+Returns the image of a Smac1 FITS file.
+"""
+function read_smac1_fits_image(filename::String, num_image::Integer=1)
+
+    f = FITS(filename)
+
+    image = read(f[2])[:,:,num_image]
+
+    close(f)
+
+    return image
+
+end
