@@ -10,6 +10,7 @@ using SpecialFunctions
 using LinearAlgebra
 using Rotations
 using Base.Threads
+using Healpix
 
 function output_time(t1, t2)
     return @sprintf("%0.3e", Float64((t2 - t1)) * 1.e-9)
@@ -50,6 +51,10 @@ include("splash_interpolation/splash_2D.jl")
 include("splash_interpolation/splash_3D.jl")
 include("splash_interpolation/splash_interpolation.jl")
 
+# healpix interpolation
+include("healpix_interpolation/shared.jl")
+include("healpix_interpolation/main.jl")
+
 # effect functions
 include("effects/constants.jl")
 include("effects/density.jl")
@@ -62,6 +67,8 @@ include("effects/x_ray.jl")
 export mappingParameters,                         # parameters for SPH mapping
     sphMapping,                                # main function for mapping 
     map_it,
+    allsky_map,
+    reduce_image_healpix,
     filter_particles_in_image,                 # helper function to preselect particles
     get_map_grid_2D,
     get_map_grid_3D,

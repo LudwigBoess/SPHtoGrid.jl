@@ -52,8 +52,43 @@ function write_fits_image(filename::String, image::Array{<:Real},
 
     write(f, image, header = header)
 
-
+    close(f)
 end
+
+
+"""
+    write_fits_image(filename::String, image::Array{<:Real}, 
+                            par::mappingParameters; 
+                            units::String="[i.u.]",
+                            snap::Integer=0)
+
+Writes a mapped image to a FITS file and stored the essential mapping parameters in the header.
+"""
+function write_fits_image(filename::String, image::Array{<:Real};
+    units::String = "[i.u.]",
+    snap::Integer = 0)
+
+    header_keys = ["SNAP",
+        "UNITS"
+    ]
+
+    header_values = [snap, units]
+
+    header_comments = ["snapshot number", "units of the image"]
+
+
+    # construct header object
+    header = FITSHeader(header_keys, header_values, header_comments)
+
+    # write the FITS file
+    f = FITS(filename, "w")
+
+    write(f, image, header = header)
+
+    close(f)
+end
+
+
 
 """
     read_fits_image(filename::String)

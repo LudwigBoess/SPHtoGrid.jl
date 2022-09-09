@@ -2,7 +2,7 @@
 
 julia_version = "1.8.0"
 manifest_format = "2.0"
-project_hash = "638615226625ae3428f7e6d7ce3602d7872e394d"
+project_hash = "ed960d508eb1e8ea803172257d1d85a09fb06b06"
 
 [[deps.AbstractTrees]]
 git-tree-sha1 = "5c0b629df8a5566a06f5fef5100b53ea56e465a0"
@@ -177,6 +177,12 @@ git-tree-sha1 = "29070dee9df18d9565276d68a596854b1764aa38"
 uuid = "528830af-5a63-567c-a44a-034ed33b8444"
 version = "0.10.2+0"
 
+[[deps.Healpix]]
+deps = ["CFITSIO", "LazyArtifacts", "Libsharp", "LinearAlgebra", "Pkg", "Printf", "RecipesBase", "StaticArrays", "Test"]
+git-tree-sha1 = "4f4784e758778f62dcca3b8eca4609a858a49312"
+uuid = "9f4e344d-96bc-545a-84a3-ae6b9e1b672b"
+version = "4.1.0"
+
 [[deps.IOCapture]]
 deps = ["Logging"]
 git-tree-sha1 = "377252859f740c217b936cebcd918a44f9b53b59"
@@ -215,6 +221,10 @@ git-tree-sha1 = "3c837543ddb02250ef42f4738347454f95079d4e"
 uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 version = "0.21.3"
 
+[[deps.LazyArtifacts]]
+deps = ["Artifacts", "Pkg"]
+uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
+
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
@@ -236,6 +246,12 @@ version = "1.10.2+0"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+
+[[deps.Libsharp]]
+deps = ["Libdl", "libsharp2_jll"]
+git-tree-sha1 = "e09051a3f95b83091fc9b7a26e6c585c6691b5bc"
+uuid = "ac8d63fe-4615-43ae-9860-9cd4a3820532"
+version = "0.2.0"
 
 [[deps.LinearAlgebra]]
 deps = ["Libdl", "libblastrampoline_jll"]
@@ -361,6 +377,11 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 [[deps.Random]]
 deps = ["SHA", "Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[[deps.RecipesBase]]
+git-tree-sha1 = "6bf3f380ff52ce0832ddd3a2a7b9538ed1bcca7d"
+uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
+version = "1.2.1"
 
 [[deps.Reexport]]
 git-tree-sha1 = "45e428421666073eab6f2da5c9d310d99bb12f9b"
@@ -516,6 +537,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "941afb93587dcec07f89e511057f5efc0bec6f0d"
 uuid = "47bcb7c8-5119-555a-9eeb-0afcc36cd728"
 version = "3.6.4+0"
+
+[[deps.libsharp2_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "9a7b8663b021ba776c89d9de7cdb2069cc27c00a"
+uuid = "180207a7-b08e-5162-af94-7d62a04fe081"
+version = "1.0.2+1"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
