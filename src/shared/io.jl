@@ -57,25 +57,22 @@ end
 
 
 """
-    write_fits_image(filename::String, image::Array{<:Real}, 
-                            par::mappingParameters; 
-                            units::String="[i.u.]",
-                            snap::Integer=0)
+    write_fits_image(filename::String, image::Array{<:Real};
+                    units::String = "[i.u.]",
+                    snap::Integer = 0)
 
-Writes a mapped image to a FITS file and stored the essential mapping parameters in the header.
+Writes a mapped allsky image to a FITS file and stored units and snapshot number in the header.
 """
 function write_fits_image(filename::String, image::Array{<:Real};
-    units::String = "[i.u.]",
-    snap::Integer = 0)
+                          units::String = "[i.u.]",
+                          snap::Integer = 0)
 
     header_keys = ["SNAP",
         "UNITS"
     ]
 
     header_values = [snap, units]
-
     header_comments = ["snapshot number", "units of the image"]
-
 
     # construct header object
     header = FITSHeader(header_keys, header_values, header_comments)
@@ -139,4 +136,48 @@ function read_fits_image(filename::String; verbose::Bool = false)
     )
 
     return image, par, header["SNAP"], header["UNITS"]
+end
+
+
+
+"""
+    read_allsky_fits_image(filename::String)
+
+Read a FITS file containing an allsky image and returns the image, snapshot number and units.
+
+# Returns
+- image: A 2D array with the image pixels 
+- snap:  Number of the mapped snapshot
+- units: A unit string of the image
+
+# Example
+image, snap_nr, unit_string = read_allsky_fits_image(filename)
+"""
+function read_allsky_fits_image(filename::String; verbose::Bool = false)
+
+    if verbose
+        @info "Reading image: $filename"
+    end
+
+    f = FITS(filename)
+
+    if verbose
+        @info "Opened file"
+    end
+
+    # read image
+    image = read(f[1])
+
+    if verbose
+        @info "Read Image"
+    end
+
+    # read the header
+    header = read_header(f[1])
+
+    if verbose
+        @info "Read Header"
+    end
+
+    return image, header["SNAP"], header["UNITS"]
 end

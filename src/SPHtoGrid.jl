@@ -103,6 +103,7 @@ export mappingParameters,                         # parameters for SPH mapping
     convert_Pnu_map_to_mJy_beam,
     # IO
     read_fits_image,
+    read_allsky_fits_image,
     write_fits_image
 
 
