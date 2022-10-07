@@ -65,7 +65,12 @@ function calculate_weights(wk::Vector{Float64}, A::Vector{Float64},
         wk[1:Npixels] .= 1.0
         
         # the weight is normalized by the pixel area
-        weight_per_pix = 1 / sum(A[1:Npixels])
+        area_sum = sum(A[1:Npixels])
+        if !iszero(area_sum)
+            weight_per_pix = 1 / area_sum
+        else
+            weight_per_pix = 1
+        end
         
         # set N by hand
         N = Npixels
@@ -99,6 +104,9 @@ function allsky_map(pos, hsml, m, rho, bin_q, weights;
     show_progress::Bool=true,
     radius_limits::Vector{<:Real}=[0.0, Inf])
 
+    # worker ID for output
+    min_worker = minimum(workers())
+
     # subtract center
     pos .-= center
 
@@ -130,7 +138,6 @@ function allsky_map(pos, hsml, m, rho, bin_q, weights;
 
     gt1_pixel = 0
 
-    #@inbounds for ipart = 1:length(m)
     @inbounds for ipart ∈ sel#[9297073]# sel
 
         # get distance to particle
@@ -193,9 +200,11 @@ function allsky_map(pos, hsml, m, rho, bin_q, weights;
         println()
     end
 
-    # construct 2D array by deprojecting
-    image, mask, maskflag = project(mollweideprojinv, allsky_map, 2Nside, Nside)
-    w_image, mask, maskflag = project(mollweideprojinv, weight_map, 2Nside, Nside)
+    # # construct 2D array by deprojecting
+    # image, mask, maskflag = project(mollweideprojinv, allsky_map, 2Nside, Nside)
+    # w_image, mask, maskflag = project(mollweideprojinv, weight_map, 2Nside, Nside)
 
-    return [image[1:end] w_image[1:end]]
+    # return [image[1:end] w_image[1:end]]
+
+    return allsky_map, weight_map
 end
