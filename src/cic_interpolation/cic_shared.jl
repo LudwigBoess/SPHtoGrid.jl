@@ -86,11 +86,11 @@ end
 Applies the different contributions to the image and the weight image.
 """
 function update_image( image::Float64, w_image::Float64, 
-                        wk::Float64, bin_q::Float64, 
-                        geometry_norm::Float64 )
+                        wk::Float64, A::Float64, geometry_norm::Float64,
+                        bin_q::Float64 )
 
     if wk > 0.0
-        pix_weight  = geometry_norm * wk
+        pix_weight  = geometry_norm * wk * A
         image      += bin_q * pix_weight
         w_image    += pix_weight
     end

@@ -83,10 +83,10 @@ function get_quantities_2D( pos, weight, hsml,
                             rho, m, len2pix::T) where T
         
     hsml    *= T(len2pix)
-    hsml_inv = T(1.0)/hsml
+    hsml_inv = T(1/hsml)
     area     = (2hsml)^2 # Effective area of squared particle [pix^2]
 
-    rho *= T(1.0/(len2pix*len2pix*len2pix)) # [10^10 Msun * pix^-3]
+    rho *= T(1/(len2pix*len2pix*len2pix)) # [10^10 Msun * pix^-3]
     dz   = m / rho / area # [pix]
 
     return T.(pos), T(weight), hsml, hsml_inv, area, dz
@@ -173,12 +173,7 @@ function cic_mapping_2D( Pos, HSML,
 
                 idx = calculate_index(i, j, param.Npixels[1])
 
-                pixel_contribution = A[idx] * wk[idx] * kernel_norm
-
-                # actual image
-                image[idx,1] += bin_q * pixel_contribution
-                # weight image
-                image[idx,2] += pixel_contribution
+                image[idx,1], image[idx,2] = update_image(image[idx,1], image[idx,2], wk[idx], A[idx], kernel_norm, bin_q)
 
                 grid_mass += Rho[p] * wk[idx] * A[idx] * dz / param.len2pix^3
                 
