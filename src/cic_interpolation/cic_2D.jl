@@ -18,7 +18,7 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
     area_sum     = 0.0
     distr_weight = 0.0
     n_distr_pix  = 0
-
+    n_tot_pix    = 0
 
     @inbounds for i = iMin:iMax
         x_dist, dx = get_x_dx(x, hsml, i)
@@ -37,17 +37,40 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
 
             u = get_d_hsml(x_dist, y_dist, hsml_inv)
 
-            # check if inside the kernel
-            if u <= 1
-                # evaluate kernel
-                wk[idx]       = 𝒲(kernel, u, hsml_inv)
-                distr_weight += wk[idx] * A[idx]
+            # evaluate kernel
+            wk[idx]       = 𝒲(kernel, u, hsml_inv)
+
+            # count up distributed weigh
+            distr_weight += wk[idx] * A[idx]
+
+            # count up total pixels 
+            n_tot_pix += 1
+
+            # if pixel center is within the kernel
+            # count that pixel contributes to pixel
+            if !iszero(wk[idx])
                 n_distr_pix  += 1
-            end # u < 1.0
+            end
+
         end # j
     end # i
 
-    return wk, A, n_distr_pix, distr_weight
+    # check if particle intersects with any pixel center
+    if !iszero(distr_weight)
+        weight_per_pixel = n_distr_pix / distr_weight
+    else # particle contributes to pixel but does not overlap with any pixel center
+        n_distr_pix = n_tot_pix
+
+        # check if particle contributes to more than one pixel 
+        if !iszero(area_sum)
+            weight_per_pixel = n_distr_pix / area_sum
+        else 
+            # particle only contributes to one pixel
+            weight_per_pixel = 1
+        end
+    end
+
+    return wk, A, n_distr_pix, weight_per_pixel
 end
 
 """
@@ -61,10 +84,10 @@ function get_quantities_2D( pos, weight, hsml,
         
     hsml    *= T(len2pix)
     hsml_inv = T(1.0)/hsml
-    area     = π * hsml^2
+    area     = (2hsml)^2 # Effective area of squared particle [pix^2]
 
-    rho *= T(1.0/(len2pix*len2pix*len2pix))
-    dz   = m / rho / area
+    rho *= T(1.0/(len2pix*len2pix*len2pix)) # [10^10 Msun * pix^-3]
+    dz   = m / rho / area # [pix]
 
     return T.(pos), T(weight), hsml, hsml_inv, area, dz
 end
@@ -109,6 +132,7 @@ function cic_mapping_2D( Pos, HSML,
     end
 
     grid_mass = 0.0
+    particle_mass = 0.0
 
     # loop over all particles
     @inbounds for p = 1:N
@@ -119,7 +143,7 @@ function cic_mapping_2D( Pos, HSML,
             continue
         end
 
-        _pos, weight, hsml, hsml_inv, area, dz = get_quantities_2D(Pos[:,p], Weights[p], HSML[p], Rho[p], M[p], param.len2pix)
+        _pos, los_weight, hsml, hsml_inv, particle_area, dz = get_quantities_2D(Pos[:,p], Weights[p], HSML[p], Rho[p], M[p], param.len2pix)
 
         for k = k_start:7
 
@@ -134,38 +158,49 @@ function cic_mapping_2D( Pos, HSML,
             iMin, iMax = pix_index_min_max( x, hsml, param.Npixels[1] )
             jMin, jMax = pix_index_min_max( y, hsml, param.Npixels[2] )
 
-            wk, A, n_distr_pix, distr_weight = calculate_weights(wk, A, 
+            # calculate all relevant quantities
+            wk, A, n_distr_pix, weight_per_pixel = calculate_weights(wk, A, 
                                                               iMin, iMax, jMin, jMax,
                                                               x, y, hsml, hsml_inv, 
                                                               kernel,
                                                               param.Npixels[1])
            
-            # skip if the particle is not contained in the image 
-            # ( should only happen with periodic boundary conditions )
-            if n_distr_pix == 0
-                continue
-            end
 
-            weight_per_pix  = n_distr_pix / distr_weight
-            kernel_norm     = area / n_distr_pix
-            area_norm       = kernel_norm * weight_per_pix * weight * dz
+            part_area_per_pix  = particle_area / n_distr_pix
+            kernel_norm = part_area_per_pix * weight_per_pixel * los_weight * dz
 
             @inbounds for i = iMin:iMax, j = jMin:jMax
+
                 idx = calculate_index(i, j, param.Npixels[1])
 
-                image[idx,1], image[idx,2] = update_image( image[idx,1], image[idx,2], 
-                                                           wk[idx], bin_q, area_norm)
+                pixel_contribution = A[idx] * wk[idx] * kernel_norm
+
+                # actual image
+                image[idx,1] += bin_q * pixel_contribution
+                # weight image
+                image[idx,2] += pixel_contribution
+
+                grid_mass += Rho[p] * wk[idx] * A[idx] * dz / param.len2pix^3
                 
             end # i, j
-
-            grid_mass += 
+            
         end # k
+
+        # store mass of contributing particle 
+        particle_mass += M[p]
 
          # update for ProgressMeter
         if show_progress
             next!(P)
         end
     end # p
+
+    if show_progress
+        @info "Mass conservation:"
+        @info "\tMass on grid:      $(grid_mass)"
+        @info "\tMass in particles: $(particle_mass)"
+        @info "\tRel. Error:        $(abs(particle_mass-grid_mass)/particle_mass)"
+    end
 
     return image
 
