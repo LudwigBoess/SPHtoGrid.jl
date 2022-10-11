@@ -8,19 +8,14 @@
 
 Calculates the kernel- and geometric weights of the pixels a particle contributes to.
 """
-@fastmath function calculate_weights( wk::Vector{Float64}, 
+@fastmath function calculate_weights( wk::Vector{Float64}, A::Vector{Float64},
                                       iMin::Integer, iMax::Integer, 
                                       jMin::Integer, jMax::Integer,
                                       x::Real, y::Real, hsml::Real, hsml_inv::Real,
                                       kernel::AbstractSPHKernel,
                                       x_pixels::Integer )
 
-    is_undersampled = false
-
-    if hsml <= 1
-        is_undersampled = true
-    end
-
+    area_sum     = 0.0
     distr_weight = 0.0
     n_distr_pix  = 0
 
@@ -36,33 +31,23 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
 
             dxdy = dx * dy
 
-            if is_undersampled
+            # store are of pixel the particle contributes to
+            A[idx]    = dxdy
+            area_sum +=  dxdy
 
-                wk[idx]       = dxdy
-                distr_weight += dxdy
+            u = get_d_hsml(x_dist, y_dist, hsml_inv)
+
+            # check if inside the kernel
+            if u <= 1
+                # evaluate kernel
+                wk[idx]       = 𝒲(kernel, u, hsml_inv)
+                distr_weight += wk[idx] * A[idx]
                 n_distr_pix  += 1
-
-            else # is_undersampled
-
-                u = get_d_hsml(x_dist, y_dist, hsml_inv)
-
-                # check if inside the kernel
-                if u <= 1
-                    # evaluate kernel
-                    wk[idx]       = 𝒲(kernel, u, hsml_inv)
-                    wk[idx]      *= dxdy
-                    distr_weight += wk[idx]
-                    n_distr_pix  += 1
-                else
-                    wk[idx] = 0.0
-                end # u < 1.0
-
-            end # is_undersampled
-
+            end # u < 1.0
         end # j
     end # i
 
-    return wk, n_distr_pix, distr_weight
+    return wk, A, n_distr_pix, distr_weight
 end
 
 """
@@ -116,10 +101,14 @@ function cic_mapping_2D( Pos, HSML,
 
     # allocate arrays for weights
     wk = zeros(Float64, N_distr)
+    # storage array for mapped area
+    A  = Vector{Float64}(undef, N_distr)
 
     if show_progress
         P = Progress(N)
     end
+
+    grid_mass = 0.0
 
     # loop over all particles
     @inbounds for p = 1:N
@@ -145,7 +134,8 @@ function cic_mapping_2D( Pos, HSML,
             iMin, iMax = pix_index_min_max( x, hsml, param.Npixels[1] )
             jMin, jMax = pix_index_min_max( y, hsml, param.Npixels[2] )
 
-            wk, n_distr_pix, distr_weight = calculate_weights(wk, iMin, iMax, jMin, jMax,
+            wk, A, n_distr_pix, distr_weight = calculate_weights(wk, A, 
+                                                              iMin, iMax, jMin, jMax,
                                                               x, y, hsml, hsml_inv, 
                                                               kernel,
                                                               param.Npixels[1])
@@ -166,7 +156,9 @@ function cic_mapping_2D( Pos, HSML,
                 image[idx,1], image[idx,2] = update_image( image[idx,1], image[idx,2], 
                                                            wk[idx], bin_q, area_norm)
                 
-            end # i, j 
+            end # i, j
+
+            grid_mass += 
         end # k
 
          # update for ProgressMeter

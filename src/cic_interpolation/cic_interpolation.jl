@@ -236,6 +236,9 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
 end
 
 
+using Statistics
+using Printf
+
 """
     map_it(pos_in, hsml, mass, rho, bin_q, weights, k, 
            snap, units, image_path, reduce_image, param, 
@@ -249,15 +252,39 @@ function map_it(pos_in, hsml, mass, rho, bin_q, weights, k,
 
     pos = copy(pos_in)
 
+    # if projection == "xy"
+    #     pos = pos
+    # elseif projection == "xz"
+    #     pos = rotate_to_xz_plane!(pos)
+    # elseif projection == "yz"
+    #     pos = rotate_to_yz_plane!(pos)
+    # elseif typeof(projection) <: AbstractVector
+    #     pos = rotate_3D(pos, projection...)
+    #     projection = "alpha=$(@sprintf("%0.2f", projection[1]))beta=$(@sprintf("%0.2f", projection[2]))gamma=$(@sprintf("%0.2f", projection[3]))"
+    # else
+    #     error("projection must be either along in 'xy', 'xz', or 'yz' plane of defined by a vector of Euler angles!")
+    # end 
+
+    # get cic map
     quantitiy_map = sphMapping( pos, hsml, mass, rho,
                                 bin_q, weights, show_progress = true,
                                 param = param, kernel = k, parallel = parallel,
-                                reduce_image = reduce_image, filter_particles = filter_particles)
+                                reduce_image = reduce_image, 
+                                filter_particles = filter_particles)
 
 
     fo_image = image_path * ".fits"
 
-    @info "map maximum: $(maximum(quantitiy_map))"
+    @info "Map Properties:"
+    @info "\tMax: $(maximum(quantitiy_map))"
+    @info "\tMin: $(minimum(quantitiy_map))"
+    @info "\tMean: $(mean(quantitiy_map))"
+    println()
+    Npixels = size(quantitiy_map,1) * size(quantitiy_map,2)
+    @info "\tNr. of pixels:     $Npixels"
+    @info "\tNr. of 0 pixels:   $(length(findall(iszero.(quantitiy_map))))"
+    @info "\tNr. of NaN pixels: $(length(findall(isnan.(quantitiy_map))))"
+    @info "\tNr. of Inf pixels: $(length(findall(isinf.(quantitiy_map))))"
 
     write_fits_image(fo_image, quantitiy_map, param, snap = snap, units = units)
 end
