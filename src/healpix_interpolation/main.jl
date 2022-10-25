@@ -1,11 +1,59 @@
 mutable struct PixelAtomic
-    weight::Float64 
-    N::Int64
+    @atomic distr_weight::Float64 
+    @atomic distr_area::Float64 
+    @atomic n_distr_pix::Int64
+    @atomic n_tot_pix::Int64
 end
 
 using Statistics
 
 using Base.Threads
+
+function get_area(dx, hsml, pix_radius)
+    max(0.0, min((2pix_radius)^2, 2pix_radius * ( pix_radius + hsml - dx)))
+    #1.0
+end
+
+function calculations_per_index(_Δx, _pos, _hsml, _hsml_inv,
+                                _pixidx,
+                                distr_area, distr_weight, 
+                                n_tot_pix, n_distr_pix, 
+                                res, pix_radius,
+                                kernel)
+
+    # get vector to pixel center at horizon of particle
+    pixel_center = _Δx .* pix2vecRing(res, _pixidx)
+
+    # compute distance to pixel center 
+    dx = get_norm(_pos .- pixel_center)
+    # convert in units of hsml
+    u = dx * _hsml_inv
+
+    # fraction of particle area in the pixel
+    _A = get_area(dx, _hsml, pix_radius)
+    # total area over which particle is distributed 
+    distr_area += _A
+
+    # count up total pixels 
+    n_tot_pix += 1
+
+    # number of pixels the particle contributes to
+    if u <= 1
+        # evaluate kernel
+        _wk = 𝒲(kernel, u, _hsml_inv)
+
+        # total distributed weight
+        distr_weight += _wk * _A
+        # number of pixels the particle contributes to
+        n_distr_pix += 1
+    else
+        _wk = 0.0
+    end
+
+    return _A, _wk, 
+        distr_area, distr_weight, 
+        n_tot_pix, n_distr_pix
+end
 
 function calculate_weights(wk::Vector{Float64}, A::Vector{Float64}, 
     _pos::Vector{Float64}, _hsml::Float64,
@@ -16,80 +64,91 @@ function calculate_weights(wk::Vector{Float64}, A::Vector{Float64},
     # number of pixels to which the particle contributes
     Npixels = length(pixidx)
 
-    # set kernel weight array to zero 
-    wk[1:Npixels] .= 0.0
-
-    # set contributing area weight array to zero 
-    A[1:Npixels] .= 0.0
-
     # compute here once
     hsml_inv = 1 / _hsml
 
     # storage variable for atomic operations
-    #a = PixelAtomic(0.0, 0)
-    N      = 0
-    weight = 0.0
+    # a = PixelAtomic(0.0, 0.0, 0, 0)
+    n_distr_pix  = 0
+    n_tot_pix    = 0
+    distr_weight = 0.0
+    distr_area   = 0.0
 
     # loop over all relevant pixels
     @inbounds for ipixel = 1:Npixels
 
-        # get vector to pixel center at horizon of particle
-        pixel_center = _Δx .* pix2vecRing(res, pixidx[ipixel])
-
-        # compute distance to pixel center 
-        dx = get_norm(_pos .- pixel_center)
-        # convert in units of hsml
-        u = dx * hsml_inv
-
-        # fraction of particle area in the pixel
-        A[ipixel] = max(0.0, min((2*pix_radius)^2, 2*pix_radius * ( dx + pix_radius - _hsml)))
-
-        # evaluate kernel if pixel center is within particle
-        if u <= 1
-            # evaluate kernel
-            wk[ipixel] = 𝒲(kernel, u, hsml_inv)
-
-            # total distributed weight
-            weight += wk[ipixel] * A[ipixel]
-            # number of pixels the particle contributes to
-            N      += 1
-        end
+        A[ipixel], wk[ipixel], 
+        distr_area, distr_weight, 
+        n_tot_pix, n_distr_pix = calculations_per_index(_Δx, _pos, _hsml, hsml_inv,
+                                                        pixidx[ipixel],
+                                                        distr_area, distr_weight, 
+                                                        n_tot_pix, n_distr_pix, 
+                                                        res, pix_radius,
+                                                        kernel)
 
     end # loop over all relevant pixels
 
     # if particle contributes to pixels
     # but does not overlap with any pixel center
-    if iszero(weight)
+    if iszero(distr_weight)
         
+        n_distr_pix = n_tot_pix
+
         # write full particle quantity into the pixel
         wk[1:Npixels] .= 1.0
         
         # the weight is normalized by the pixel area
-        area_sum = sum(A[1:Npixels])
-        if !iszero(area_sum)
-            weight_per_pix = 1 / area_sum
+        if !iszero(distr_area)
+            weight_per_pix = n_distr_pix / distr_area
         else
             weight_per_pix = 1
         end
-        
-        # set N by hand
-        N = Npixels
     else 
-        weight_per_pix = N / weight
+        weight_per_pix = n_distr_pix / distr_weight
     end
 
-    return wk, A, N, weight_per_pix
+    return wk, A, n_distr_pix, weight_per_pix
 
 end
 
 
 function find_in_shell(Δx, radius_limits)
-    findall( @. ( radius_limits[1] <= Δx <= radius_limits[2] ) )
+    @. ( radius_limits[1] <= Δx <= radius_limits[2] )
 end
 
 
+function get_pixel_quantities(r, _pos, _hsml, pix_radian, allsky_map, res)
+
+    # maximum radius of pixel at particle distance
+    pix_radius   = r * tan(pix_radian)
+    # area of one pixel at particle distance
+    pix_area_inv = 1 / (2*pix_radius)^2
+
+    # general particle quantities
+    area = π * _hsml^2
+    dz = 2*_hsml
+    #area = m[ipart] / rho[ipart] / dz
+
+    # transform position vector to spherical coordinates 
+    (theta, phi) = vec2ang(_pos...)
+
+    # get radius around particle position in radians
+    radius = atan(_hsml / r)
+
+    # collect indices of all healpix pixels this particles contributes to 
+    pixidx = queryDiscRing(res, theta, phi, radius)
+
+    # also add the index of the pixel which contains the particle center
+    push!(pixidx, ang2pix(allsky_map, theta, phi))
+
+    # paranoia check for index uniqueness
+    unique!(pixidx)
+
+    return pixidx, pix_radius, area, dz
+end
+
 """
-    allsky_map(pos::T, hsml::T, m::T, rho::T, bin_q::T, weights::T;
+    healpix_map(pos::T, hsml::T, m::T, rho::T, bin_q::T, weights::T;
                center::Vector{<:Real}=[0.0, 0.0, 0.0],
                Nside::Integer=1024,
                kernel::AbstractSPHKernel,
@@ -97,7 +156,7 @@ end
 
 Calculate an allsky map from SPH particles.
 """
-function allsky_map(pos, hsml, m, rho, bin_q, weights;
+function healpix_map(pos, hsml, m, rho, bin_q, weights;
     center::Vector{<:Real}=[0.0, 0.0, 0.0],
     Nside::Integer=1024,
     kernel::AbstractSPHKernel,
@@ -129,16 +188,20 @@ function allsky_map(pos, hsml, m, rho, bin_q, weights;
     # select contributing particles
     sel = find_in_shell(_Δx, radius_limits)
 
-    if show_progress
+    #sel = sel[sortperm(_Δx[sel])]
+
+    if show_progress && myid() == min_worker
         P = Progress(length(sel))
         println("min, max dist: $(minimum(_Δx)), $(maximum(_Δx))")
         println("radius limits: $radius_limits")
-        println("$(length(sel)) / $(length(m)) in image")
+        println("$(length(findall(sel))) / $(length(_Δx)) in image")
     end
 
-    gt1_pixel = 0
+    @inbounds for ipart ∈ 1:length(sel)
 
-    @inbounds for ipart ∈ sel#[9297073]# sel
+        if !sel[ipart]
+            continue 
+        end
 
         # get distance to particle
         Δx = get_norm(pos[:, ipart])
@@ -149,37 +212,14 @@ function allsky_map(pos, hsml, m, rho, bin_q, weights;
             continue
         end
 
-        # maximum radius of pixel at particle distance
-        pix_radius   = 0.5 * Δx * tan(pix_radian)
-        # area of one pixel at particle distance
-        pix_area_inv = 1 / (2*pix_radius)^2
-
-        # general particle quantities
-        #area = π * hsml[ipart]^2
-        dz = 2*hsml[ipart]
-        area = m[ipart] / rho[ipart] / dz
-
-        # transform position vector to spherical coordinates 
-        (theta, phi) = vec2ang(pos[:, ipart]...)
-
-        # get radius around particle position in radians
-        radius = atan(hsml[ipart] / Δx)
-
-        # collect indices of all healpix pixels this particles contributes to 
-        pixidx = queryDiscRing(res, theta, phi, radius)
-
-        # also add the index of the pixel which contains the particle center
-        push!(pixidx, ang2pix(allsky_map, theta, phi))
-
-        # paranoia check for index uniqueness
-        unique!(pixidx)
-
+        pixidx, pix_radius, area, dz = get_pixel_quantities(Δx, pos[:, ipart], hsml[ipart], pix_radian, allsky_map, res)
+        
         # calculate kernel weights and mapped area
         wk, A, N, weight_per_pix = calculate_weights(wk, A, pos[:, ipart], hsml[ipart],
-                                            Δx, res, pixidx, pix_radius, kernel)
+                                                        Δx, res, pixidx, pix_radius, kernel)
 
         # normalisation factors for pixel contribution
-        kernel_norm = area * pix_area_inv / N
+        kernel_norm = area / N #* pix_area_inv 
         area_norm = kernel_norm * weight_per_pix * weights[ipart] * dz
 
         # loop over all relevant pixels
@@ -189,22 +229,16 @@ function allsky_map(pos, hsml, m, rho, bin_q, weights;
             weight_map[pixidx[ipixel]] += pix_weight
         end # loop over all relevant pixels
 
-        if show_progress
+        if show_progress && myid() == min_worker
             next!(P)
         end
     end # loop over particles
 
-    if show_progress
+    if show_progress && myid() == min_worker
         println()
         @info "Number of zero pixels in image: $(length(findall(iszero.(allsky_map))))"
         println()
     end
-
-    # # construct 2D array by deprojecting
-    # image, mask, maskflag = project(mollweideprojinv, allsky_map, 2Nside, Nside)
-    # w_image, mask, maskflag = project(mollweideprojinv, weight_map, 2Nside, Nside)
-
-    # return [image[1:end] w_image[1:end]]
 
     return allsky_map, weight_map
 end
