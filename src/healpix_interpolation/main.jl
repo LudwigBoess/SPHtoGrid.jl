@@ -142,12 +142,11 @@ Computes the particle area and depth.
 Caution: This has to be represented as a cylinder instead of a sphere, which introduces an error by design.
 Also computes the pixel radius at the particle horizon.
 """
-function particle_area_and_depth(hsml, m, rho)
+function particle_area_and_depth(hsml)
 
     # general particle quantities
     area = π * hsml^2
     dz = 2*hsml
-    #area = m / rho / dz
 
     return area, dz
 end
@@ -232,7 +231,7 @@ end
 
 Calculate an allsky map from SPH particles.
 """
-function healpix_map(pos, hsml, m, rho, bin_q, weights;
+function healpix_map(pos, hsml, bin_q, weights;
                     center::Vector{<:Real}=[0.0, 0.0, 0.0],
                     Nside::Integer=1024,
                     kernel::AbstractSPHKernel,
@@ -265,8 +264,10 @@ function healpix_map(pos, hsml, m, rho, bin_q, weights;
     # select contributing particles
     sel = find_in_shell(_Δx, radius_limits)
 
+    # define progressmeter
+    P = Progress(length(sel))
+    
     if show_progress && myid() == min_worker
-        P = Progress(length(sel))
         println("min, max dist: $(minimum(_Δx)), $(maximum(_Δx))")
         println("radius limits: $radius_limits")
         println("$(length(findall(sel))) / $(length(_Δx)) in image")
@@ -298,7 +299,7 @@ function healpix_map(pos, hsml, m, rho, bin_q, weights;
         pixidx = contributing_pixels(pos[:, ipart], hsml[ipart], Δx, res, allsky_map)
 
         # area of particle and length along line of sight
-        area, dz = particle_area_and_depth(hsml[ipart], m[ipart], rho[ipart])
+        area, dz = particle_area_and_depth(hsml[ipart])
         
         # calculate kernel weights and mapped area
         wk, A, N, weight_per_pix = calculate_weights(wk, A, pos[:, ipart], hsml[ipart],
