@@ -1,3 +1,36 @@
+function get_weight_per_pixel( _A, _wk, distr_area, distr_weight, 
+                            n_tot_pix, n_distr_pix, 
+                            dxdy, u, hsml_inv,
+                            kernel)
+
+    # store are of pixel the particle contributes to
+    _A          = dxdy
+    distr_area +=  dxdy
+
+    # count up total pixels 
+    n_tot_pix += 1
+
+    # if pixel center is within kernel
+    if u <= 1
+        # evaluate kernel
+        _wk = 𝒲(kernel, u, hsml_inv)
+
+        # count up distributed weigh
+        distr_weight += _wk * dxdy
+
+        # if pixel center is within the kernel
+        # count that pixel contributes to pixel
+        n_distr_pix  += 1
+    else
+        _wk = 0.0
+    end
+
+    return _A, _wk, 
+        distr_area, distr_weight, 
+        n_tot_pix, n_distr_pix
+end
+
+
 """
     function calculate_weights_2D(  wk::Array{<:Real,1}, 
                                     iMin::Integer, iMax::Integer, 
@@ -15,10 +48,12 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
                                       kernel::AbstractSPHKernel,
                                       x_pixels::Integer )
 
-    area_sum     = 0.0
-    distr_weight = 0.0
+    # storage variables for count operations
     n_distr_pix  = 0
     n_tot_pix    = 0
+    distr_weight = 0.0
+    distr_area   = 0.0
+
 
     @inbounds for i = iMin:iMax
         x_dist, dx = get_x_dx(x, hsml, i)
@@ -26,51 +61,44 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
         for j = jMin:jMax
             y_dist, dy = get_x_dx(y, hsml, j)
 
+            # projected distance to pixel center in units of hsml
+            u = get_d_hsml(x_dist, y_dist, hsml_inv)
+
+            # pixel area 
+            dxdy = dx * dy
+
             # index in flattened 2D array
             idx = calculate_index(i, j, x_pixels)
 
-            dxdy = dx * dy
-
-            # store are of pixel the particle contributes to
-            A[idx]    = dxdy
-            area_sum +=  dxdy
-
-            u = get_d_hsml(x_dist, y_dist, hsml_inv)
-
-            # evaluate kernel
-            wk[idx]       = 𝒲(kernel, u, hsml_inv)
-
-            # count up distributed weigh
-            distr_weight += wk[idx] * A[idx]
-
-            # count up total pixels 
-            n_tot_pix += 1
-
-            # if pixel center is within the kernel
-            # count that pixel contributes to pixel
-            if !iszero(wk[idx])
-                n_distr_pix  += 1
-            end
+            A[idx], wk[idx], 
+            distr_area, distr_weight, 
+            n_tot_pix, n_distr_pix = get_weight_per_pixel(  A[idx], wk[idx], distr_area, distr_weight, 
+                                                        n_tot_pix, n_distr_pix, 
+                                                        dxdy, u, hsml_inv, kernel)
 
         end # j
     end # i
 
-    # check if particle intersects with any pixel center
-    if !iszero(distr_weight)
-        weight_per_pixel = n_distr_pix / distr_weight
-    else # particle contributes to pixel but does not overlap with any pixel center
+    # if particle contributes to pixels
+    # but does not overlap with any pixel center
+    if iszero(distr_weight)
+        
         n_distr_pix = n_tot_pix
 
-        # check if particle contributes to more than one pixel 
-        if !iszero(area_sum)
-            weight_per_pixel = n_distr_pix / area_sum
-        else 
-            # particle only contributes to one pixel
-            weight_per_pixel = 1
+        # write full particle quantity into the pixel
+        wk[1:n_tot_pix] .= 1.0
+        
+        # the weight is normalized by the pixel area
+        if !iszero(distr_area)
+            weight_per_pix = n_distr_pix / distr_area
+        else
+            weight_per_pix = 1
         end
+    else 
+        weight_per_pix = n_distr_pix / distr_weight
     end
 
-    return wk, A, n_distr_pix, weight_per_pixel
+    return wk, A, n_distr_pix, weight_per_pix
 end
 
 """
@@ -143,7 +171,7 @@ function cic_mapping_2D( Pos, HSML,
             continue
         end
 
-        _pos, los_weight, hsml, hsml_inv, particle_area, dz = get_quantities_2D(Pos[:,p], Weights[p], HSML[p], Rho[p], M[p], param.len2pix)
+        _pos, los_weight, hsml, hsml_inv, area, dz = get_quantities_2D(Pos[:,p], Weights[p], HSML[p], Rho[p], M[p], param.len2pix)
 
         for k = k_start:7
 
@@ -159,21 +187,21 @@ function cic_mapping_2D( Pos, HSML,
             jMin, jMax = pix_index_min_max( y, hsml, param.Npixels[2] )
 
             # calculate all relevant quantities
-            wk, A, n_distr_pix, weight_per_pixel = calculate_weights(wk, A, 
+            wk, A, N, weight_per_pix  = calculate_weights(wk, A, 
                                                               iMin, iMax, jMin, jMax,
                                                               x, y, hsml, hsml_inv, 
                                                               kernel,
                                                               param.Npixels[1])
-           
 
-            part_area_per_pix  = particle_area / n_distr_pix
-            kernel_norm = part_area_per_pix * weight_per_pixel * los_weight * dz
+            # normalisation factors for pixel contribution
+            kernel_norm = area / N
+            area_norm = kernel_norm * weight_per_pix * los_weight * dz
 
             @inbounds for i = iMin:iMax, j = jMin:jMax
 
                 idx = calculate_index(i, j, param.Npixels[1])
 
-                image[idx,1], image[idx,2] = update_image(image[idx,1], image[idx,2], wk[idx], A[idx], kernel_norm, bin_q)
+                image[idx,1], image[idx,2] = update_image(image[idx,1], image[idx,2], wk[idx], A[idx], area_norm, bin_q)
 
                 grid_mass += Rho[p] * wk[idx] * A[idx] * dz / param.len2pix^3
                 
