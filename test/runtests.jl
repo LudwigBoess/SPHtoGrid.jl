@@ -250,6 +250,48 @@ addprocs(2)
 
     end
 
+    @testset "HealPix mapping" begin
+        
+        snap_base = "snap_allsky"
+
+        kernel = WendlandC6(2)
+
+        h  = GadgetIO.read_header(snap_base)
+        GU = GadgetPhysical(h)
+
+        Nside = 256
+        center = 0.5h.boxsize .* ones(3) .* GU.x_physical
+
+        hsml = read_block(snap_base, "HSML", parttype=0) .* GU.x_physical
+        rho  = read_block(snap_base, "RHO", parttype=0)  .* GU.rho_physical
+        mass = read_block(snap_base, "MASS", parttype=0) .* GU.m_physical
+
+        T_K   = read_block(snap_base, "U", parttype=0) .* GU.T_K
+
+        pos  = read_block(snap_base, "POS", parttype=0) .* GU.x_physical
+
+        allsky_map, weight_map = healpix_map(pos, hsml, T_K, rho,
+                            show_progress=true, radius_limits=[1000.0, 24_000.0]; 
+                            center, kernel, Nside)
+
+        @inbounds for i ∈ eachindex(allsky_map)
+            if !isnan(weight_map[i]) && !iszero(weight_map[i]) && !isinf(weight_map[i])
+                allsky_map[i]  /= weight_map[i]
+            end
+        end
+
+        # check if all pixels are filled
+        @test length(findall(iszero.(allsky_map))) == 0
+
+        # check min and max of map 
+        @test minimum(allsky_map) ≈ 48.36386218136346
+        @test maximum(allsky_map) ≈ 2.1833783864072125e7
+
+        # check sum of all pixels 
+        @test sum(allsky_map[:]) ≈ 1.5226804906281857e11
+
+    end
+
     @testset "FITS io" begin
 
         # map data
