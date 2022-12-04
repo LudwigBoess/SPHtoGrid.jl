@@ -54,7 +54,6 @@ include("splash_interpolation/splash_interpolation.jl")
 # healpix interpolation
 include("healpix_interpolation/shared.jl")
 include("healpix_interpolation/main.jl")
-include("healpix_interpolation/distributed_mapping.jl")
 
 # effect functions
 include("effects/constants.jl")
@@ -70,7 +69,6 @@ export mappingParameters,                         # parameters for SPH mapping
     map_it,
     healpix_map,
     reduce_image_healpix,
-    distributed_allsky_map,
     filter_particles_in_image,                 # helper function to preselect particles
     get_map_grid_2D,
     get_map_grid_3D,

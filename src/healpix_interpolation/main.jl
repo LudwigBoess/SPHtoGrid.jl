@@ -5,7 +5,7 @@ using Statistics
 
 Calculates the area of the pixel the particle contributes to.
 """
-function contributing_area(dx, hsml, pix_radius)
+function contributing_area(dx::T, hsml::T, pix_radius::T) where T
     max(0.0, min((2pix_radius)^2, 2pix_radius * ( pix_radius + hsml - dx)))
 end
 
@@ -19,12 +19,12 @@ end
 
 Helper function to compute the weights for one pixel
 """
-function weight_per_index(_Δx, _pos, _hsml, _hsml_inv,
-                          _pixidx,
-                          distr_area, distr_weight, 
-                          n_tot_pix, n_distr_pix, 
-                          res, pix_radius,
-                          kernel)
+function weight_per_index(_Δx::T, _pos::Vector{T}, _hsml::T, _hsml_inv::T,
+                          _pixidx::Integer,
+                          distr_area::T, distr_weight::T, 
+                          n_tot_pix::Integer, n_distr_pix::Integer, 
+                          res, pix_radius::T,
+                          kernel::AbstractSPHKernel) where T
 
     # get vector to pixel center at horizon of particle
     pixel_center = _Δx .* pix2vecRing(res, _pixidx)
@@ -69,11 +69,11 @@ end
 
 
 """
-function calculate_weights(wk::Vector{Float64}, A::Vector{Float64}, 
-                            _pos::Vector{Float64}, _hsml::Float64,
-                            _Δx::Float64, res::Resolution,
-                            pixidx::Vector{Int64}, pix_radius::Float64,
-                            kernel::AbstractSPHKernel)
+function calculate_weights(wk::Vector{T}, A::Vector{T}, 
+                            _pos::Vector{T}, _hsml::T,
+                            _Δx::T, res::Resolution,
+                            pixidx::Vector{Int64}, pix_radius::T,
+                            kernel::AbstractSPHKernel) where T
 
     # number of pixels to which the particle contributes
     Npixels = length(pixidx)
@@ -130,7 +130,7 @@ end
 
 Checks if a particle is contained in a shell around 
 """
-function find_in_shell(Δx, radius_limits)
+function find_in_shell(Δx::Vector{T}, radius_limits::Vector{T}) where T
     @. ( radius_limits[1] <= Δx <= radius_limits[2] )
 end
 
@@ -142,7 +142,7 @@ Computes the particle area and depth.
 Caution: This has to be represented as a cylinder instead of a sphere, which introduces an error by design.
 Also computes the pixel radius at the particle horizon.
 """
-function particle_area_and_depth(hsml)
+function particle_area_and_depth(hsml::T) where T
 
     # general particle quantities
     area = π * hsml^2
@@ -157,7 +157,7 @@ end
 
 Computes the pixels the particle contributes to.
 """
-function contributing_pixels(pos, hsml, r, res, allsky_map)
+function contributing_pixels(pos::Vector{T}, hsml::T, r::T, res::Resolution, allsky_map) where T
 
     # transform position vector to spherical coordinates 
     (theta, phi) = vec2ang(pos...)
@@ -236,7 +236,8 @@ function healpix_map(pos, hsml, bin_q, weights;
                     Nside::Integer=1024,
                     kernel::AbstractSPHKernel,
                     show_progress::Bool=true,
-                    radius_limits::Vector{<:Real}=[0.0, Inf])
+                    radius_limits::Vector{<:Real}=[0.0, Inf],
+                    calc_mean::Bool=true)
 
     # worker ID for output
     min_worker = minimum(workers())
@@ -279,7 +280,14 @@ function healpix_map(pos, hsml, bin_q, weights;
         # this seems to be faster than taking the new index list
         if !sel[ipart]
             update_progress!(P, min_worker, show_progress)
-            continue 
+            continue
+        end
+
+        if !calc_mean
+            if iszero(bin_q[ipart])
+                update_progress!(P, min_worker, show_progress)
+                continue
+            end
         end
 
         # get distance to particle
