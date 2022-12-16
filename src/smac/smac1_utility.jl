@@ -296,8 +296,8 @@ function write_smac1_par( path="./"; kwargs...)
         #           (1) X_crp ( P_crp/P_th )
         #        (22) BP_CR Electrons
         #           (0) Pressure
-        #           (1) Number density
-        #           (2) Energy density
+        #           (1) Number in range given by [CR_Emin, CR_Emax]
+        #           (2) Energy in range given by [CR_Emin, CR_Emax]
         #           (3) Synchrotron Emission
         #          (31) Synchrotron Polarised Emission & Polarisation Angle
         #       (100) 3D DM density
@@ -366,8 +366,9 @@ function write_smac1_par( path="./"; kwargs...)
         CR_nbins = $( haskey(kwargs, :CR_nbins) ? kwargs[:CR_nbins] : 48 )
         CR_pmin = $( haskey(kwargs, :CR_pmin) ? kwargs[:CR_pmin] : 1.0 )
         CR_pmax = $( haskey(kwargs, :CR_pmax) ? kwargs[:CR_pmax] : 1.e6 )
-        CR_subsamples = $( haskey(kwargs, :CR_subsamples) ? kwargs[:CR_subsamples] : 10 )
         CR_DSlope = $( haskey(kwargs, :CR_DSlope) ? kwargs[:CR_DSlope] : 1.0e-6 )
+        CR_Emin = $( haskey(kwargs, :CR_Emin) ? kwargs[:CR_Emin] : 1.0 )
+        CR_Emax = $( haskey(kwargs, :CR_Emax) ? kwargs[:CR_Emax] : 1.0e6 )
         
         
         #**** Set to 1 if you want additional statistical informations (L_x,T,...).
