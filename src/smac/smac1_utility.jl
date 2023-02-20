@@ -369,6 +369,10 @@ function write_smac1_par( path="./"; kwargs...)
         CR_DSlope = $( haskey(kwargs, :CR_DSlope) ? kwargs[:CR_DSlope] : 1.0e-6 )
         CR_Emin = $( haskey(kwargs, :CR_Emin) ? kwargs[:CR_Emin] : 1.0 )
         CR_Emax = $( haskey(kwargs, :CR_Emax) ? kwargs[:CR_Emax] : 1.0e6 )
+
+        #**** Magnetic field models (to be used with synchrotron emission)
+        Bfield_model = $( haskey(kwargs, :Bfield_model) ? kwargs[:Bfield_model] : 0 )   # default is intrinsic magnetic field 
+        PLASMA_BETA  = $( haskey(kwargs, :PLASMA_BETA) ? kwargs[:PLASMA_BETA] : 50.0 )
         
         
         #**** Set to 1 if you want additional statistical informations (L_x,T,...).
