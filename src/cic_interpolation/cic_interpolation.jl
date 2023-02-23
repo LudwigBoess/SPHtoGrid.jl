@@ -7,6 +7,7 @@
                 show_progress::Bool=true,
                 parallel::Bool=false,
                 reduce_image::Bool=true,
+                return_both_maps::Bool=false,
                 filter_particles::Bool=true,
                 dimensions::Int=2,
                 calc_mean::Bool=false)
@@ -25,6 +26,7 @@ Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 - `show_progress::Bool=true`: Show progress bar.
 - `parallel::Bool=true`: Run on multiple processors.
 - `reduce_image::Bool=true`: If weights need to be applied or not. Set to `false` for [`part_weight_physical`](@ref).
+- `return_both_maps::Bool=true`: Returns the full image array. To be used with parallel mapping of subfiles.
 - `filter_particles::Bool=true`: Find the particles that are actually contained in the image.
 - `dimensions::Int=2`: Number of mapping dimensions (2 = to grid, 3 = to cube).
 - `calc_mean::Bool=false`: Calculates the mean value along the line of sight. If set to `false` the particle only contributes if its `Bin_Quant` is larger than 0.
@@ -37,6 +39,7 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
                     show_progress::Bool=true,
                     parallel::Bool=false,
                     reduce_image::Bool=true,
+                    return_both_maps::Bool=false,
                     filter_particles::Bool=true,
                     dimensions::Int=2,
                     calc_mean::Bool=false)
@@ -134,12 +137,13 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
                 @info "  elapsed: $(output_time(t1,t2)) s"
             end
 
-            if !reduce_image 
-                image[:,2] .= 1.0
+            if return_both_maps
+                return image
             end
 
             return reduce_image_2D( image,
-                            param.Npixels[1], param.Npixels[2] )
+                            param.Npixels[1], param.Npixels[2],
+                            reduce_image)
         else
             @info "Running on $(nworkers()) cores."
 
@@ -170,12 +174,13 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
                 @info "  elapsed: $(output_time(t1,t2)) s"
             end
 
-            if !reduce_image 
-                image[:,2] .= 1.0
+            if return_both_maps
+                return image
             end
 
             return reduce_image_2D( image, 
-                        param.Npixels[1], param.Npixels[2] )
+                        param.Npixels[1], param.Npixels[2], 
+                        reduce_image)
         end
 
     elseif (dimensions == 3 )
