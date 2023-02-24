@@ -1,3 +1,6 @@
+using Statistics
+using Distributed
+
 # the job channels take their ID as a 32-bit integer
 const jobs = RemoteChannel(()->Channel{Int}(32))
 
@@ -5,7 +8,11 @@ const jobs = RemoteChannel(()->Channel{Int}(32))
 const results = RemoteChannel(()->Channel{Tuple}(160))
 
 
-# define work function everywhere
+"""
+    do_work(jobs, results, f)
+
+Defines the work function `f` on all processes. 
+"""
 function do_work(jobs, results, f) 
     while true
         job_id = take!(jobs)
@@ -13,6 +20,11 @@ function do_work(jobs, results, f)
     end
 end
 
+"""
+    make_jobs(n)
+
+Starts up `n` number of jobs.
+"""
 function make_jobs(n)
     for i in 1:n
         put!(jobs, i)
@@ -38,7 +50,7 @@ function distributed_allsky_map(allsky_filename::String,
 
     println("starting workers")
 
-    for p in workers() # start tasks on the workers to process requests in parallel
+    for p ∈ workers() # start tasks on the workers to process requests in parallel
         remote_do(do_work, p, jobs, results, mapping_function)
     end
     
@@ -46,7 +58,8 @@ function distributed_allsky_map(allsky_filename::String,
     sum_allsky  = HealpixMap{Float64,RingOrder}(Nside)
     sum_weights = HealpixMap{Float64,RingOrder}(Nside)
 
-    errormonitor(@async make_jobs(Nsubfiles)); # feed the jobs channel with "Nsubfiles" jobs
+    # feed the jobs channel with "Nsubfiles" jobs
+    errormonitor(@async make_jobs(Nsubfiles)); 
     
     println("running")
     flush(stdout); flush(stderr)
@@ -59,8 +72,13 @@ function distributed_allsky_map(allsky_filename::String,
 
         # sum up contribution
         @inbounds for i ∈ eachindex(allsky_map)
-            sum_allsky[i]  += allsky_map[i]
-            sum_weights[i] += weight_map[i]
+            if !isnan(allsky_map[i]) && !isinf(allsky_map[i])
+                sum_allsky[i]  += allsky_map[i]
+            end
+
+            if !isnan(weight_map[i]) && !isinf(weight_map[i])
+                sum_weights[i] += weight_map[i]
+            end
         end
 
         # count down
@@ -77,7 +95,9 @@ function distributed_allsky_map(allsky_filename::String,
 
     println("saving")
     flush(stdout); flush(stderr)
-    rm(allsky_filename)
+    if isfile(allsky_filename)
+        rm(allsky_filename)
+    end
     saveToFITS(sum_allsky, allsky_filename)
 
     println("Image values")
@@ -87,5 +107,4 @@ function distributed_allsky_map(allsky_filename::String,
     println("    Median: $(median(sum_allsky[.!isnan.(sum_allsky)]))")
 
     flush(stdout); flush(stderr)
-
 end
