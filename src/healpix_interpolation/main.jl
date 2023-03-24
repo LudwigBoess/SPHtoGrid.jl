@@ -222,6 +222,44 @@ function update_image!(allsky_map, weight_map, wk,
 end
 
 """
+    filter_sort_particles(Pos, Hsml, Bin_q, Weights, center, radius_limits)
+
+Filters the particles that are in the shell that should be mapped and sorts them by according to their position along the line of sight.
+Returns arrays with only relevant particles
+"""
+function filter_sort_particles(Pos, Hsml, Bin_q, Weights, center, radius_limits)
+
+    # subtract center
+    Pos .-= center
+
+    # calculate radii of all particles
+    Δx = @. √(Pos[1, :]^2 + Pos[2, :]^2 + Pos[3, :]^2)
+
+    # select contributing particles
+    sel = find_in_shell(Δx, radius_limits)
+
+    # sort particles by radial distance
+    sorted = reverse(sortperm(Δx))
+
+    # allocate arrays only for relevant particles
+    pos = Pos[:, sorted[sel]]
+    hsml = Hsml[sorted[sel]]
+    bin_q = Bin_q[sorted[sel]]
+    weights = Weights[sorted[sel]]
+
+    # free memory allocated for full arrays
+    Pos = nothing
+    Hsml = nothing
+    Bin_q = nothing
+    Weights = nothing
+    GC.gc()
+
+    # return relevant particle arrays
+    return pos, hsml, bin_q, weights
+end
+
+
+"""
     healpix_map(pos, hsml, m, rho, bin_q, weights;
                 center::Vector{<:Real}=[0.0, 0.0, 0.0],
                 Nside::Integer=1024,
@@ -231,57 +269,53 @@ end
 
 Calculate an allsky map from SPH particles.
 """
-function healpix_map(pos, hsml, bin_q, weights;
-                    center::Vector{<:Real}=[0.0, 0.0, 0.0],
-                    Nside::Integer=1024,
-                    kernel::AbstractSPHKernel,
-                    show_progress::Bool=true,
-                    radius_limits::Vector{<:Real}=[0.0, Inf],
-                    calc_mean::Bool=true)
+function healpix_map(Pos, Hsml, Bin_q, Weights;
+    center::Vector{<:Real}=[0.0, 0.0, 0.0],
+    Nside::Integer=1024,
+    kernel::AbstractSPHKernel,
+    show_progress::Bool=true,
+    radius_limits::Vector{<:Real}=[0.0, Inf],
+    calc_mean::Bool=true)
 
     # worker ID for output
     min_worker = minimum(workers())
 
-    # subtract center
-    pos .-= center
+    # Npart before filtering
+    Npart_in = length(Hsml)
+
+    if show_progress && myid() == min_worker
+        println("filtering particles")
+    end
+
+    # filter and sort the particles, return arrays with only relevant particles
+    pos, hsml, bin_q, weights = filter_sort_particles(Pos, Hsml, Bin_q, Weights, center, radius_limits)
+
+    # Npart after filtering 
+    Npart = length(hsml)
+
+    if show_progress && myid() == min_worker
+        println("$Npart / $Npart_in in image")
+    end
 
     # allocate arrays
-    allsky_map = HealpixMap{Float64,RingOrder}(Nside)
-    weight_map = HealpixMap{Float64,RingOrder}(Nside)
+    allsky_map = HealpixMap{Float64,NestedOrder}(Nside)
+    weight_map = HealpixMap{Float64,NestedOrder}(Nside)
     res = Healpix.Resolution(Nside)
 
     # maximum angular distance (in radians) between a pixel center 
     # and any of its corners
-    tan_pix_radian = tan(0.5√(4π/length(allsky_map)))
+    #tan_pix_radian = tan(0.5√(4π/length(allsky_map)))
+    tan_pix_radian = tan(max_pixrad(res))
 
     # storage array for kernel weights
     wk = Vector{Float64}(undef, length(allsky_map))
     # storage array for mapped area
     A  = Vector{Float64}(undef, length(allsky_map))
 
-    # calculate radii of all particles
-    _Δx = @. √( pos[1,:]^2 + pos[2,:]^2 + pos[3,:]^2 )
-
-    # select contributing particles
-    sel = find_in_shell(_Δx, radius_limits)
-
     # define progressmeter
-    P = Progress(length(sel))
-    
-    if show_progress && myid() == min_worker
-        println("min, max dist: $(minimum(_Δx)), $(maximum(_Δx))")
-        println("radius limits: $radius_limits")
-        println("$(length(findall(sel))) / $(length(_Δx)) in image")
-    end
+    P = Progress(Npart)
 
-    @inbounds for ipart ∈ 1:length(sel)
-
-        # if the particle is not contained in the desired shell -> skip it
-        # this seems to be faster than taking the new index list
-        if !sel[ipart]
-            update_progress!(P, min_worker, show_progress)
-            continue
-        end
+    @inbounds for ipart ∈ 1:Npart
 
         if !calc_mean
             if iszero(bin_q[ipart])
