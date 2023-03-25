@@ -52,7 +52,7 @@ function get_xyz( pos, hsml, k::Integer,
 
         # check if the particle is still contained in the image frame
         # after the periodic mapping
-        if !particle_in_image(x, y, z, hsml, par.halfsize)
+        if !particle_in_image(x, y, z, hsml, par.halfsize, par.pixelSideLength / 2)
 
             # if not return skip_particle as true
             return x, y, z, true

@@ -5,12 +5,29 @@
 Checks if a periodically mapped particle is still in the image frame.
 """
 @inline function particle_in_image( x::Real, y::Real, z::Real, hsml::Real,
-                                    halfsize::Array{T}) where T
+                                    halfsize::Array{T},
+                                    halfpixel::Real) where {T}
 
-    if (( x - hsml ) > halfsize[1] || ( x + hsml ) < -halfsize[1] ||
-        ( y - hsml ) > halfsize[2] || ( y + hsml ) < -halfsize[2] ||
-        ( z - hsml ) > halfsize[3] || ( z + hsml ) < -halfsize[3] )
+    if (( x - hsml + halfpixel ) > halfsize[1] || ( x + hsml - halfpixel ) < -halfsize[1] ||
+        ( y - hsml + halfpixel ) > halfsize[2] || ( y + hsml - halfpixel ) < -halfsize[2] ||
+        ( z - hsml + halfpixel ) > halfsize[3] || ( z + hsml - halfpixel ) < -halfsize[3] )
 
+        return false
+    else
+        return true
+    end
+end
+
+"""
+    particle_in_image(x::Real, y::Real, z::Real)
+
+Checks if a periodically mapped particle is still in the image frame.
+"""
+@inline function particle_in_image(x::Real, y::Real, z::Real, halfsize::Array{T}) where T
+
+    if (x > halfsize[1] || x < -halfsize[1] ||
+        y > halfsize[2] || y < -halfsize[2] ||
+        z > halfsize[3] || z < -halfsize[3])
         return false
     else
         return true
@@ -24,11 +41,12 @@ end
 Checks if a periodically mapped particle is still in the image frame.
 """
 @inline function particle_in_image( pos::Vector{T}, hsml::T,
-                                    halfsize::Vector{Float64}) where T
+                                    halfsize::Vector{Float64},
+                                    halfpixel) where T
 
-    if ( ( pos[1] - hsml ) > halfsize[1] || ( pos[1] + hsml ) < -halfsize[1]  ||
-         ( pos[2] - hsml ) > halfsize[2] || ( pos[2] + hsml ) < -halfsize[2]  ||
-         ( pos[3] - hsml ) > halfsize[3] || ( pos[3] + hsml ) < -halfsize[3]  )
+    if ( ( pos[1] - hsml + halfpixel ) > halfsize[1] || ( pos[1] + hsml - halfpixel ) < -halfsize[1]  ||
+         ( pos[2] - hsml + halfpixel ) > halfsize[2] || ( pos[2] + hsml - halfpixel ) < -halfsize[2]  ||
+         ( pos[3] - hsml + halfpixel ) > halfsize[3] || ( pos[3] + hsml - halfpixel ) < -halfsize[3]  )
 
         return false
     else

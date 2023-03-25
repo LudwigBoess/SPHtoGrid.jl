@@ -99,7 +99,7 @@ function mappingParameters( T::DataType=Float64;
     end
 
     # area of a pixel in code units
-    pixelArea = pixelSideLength^2
+    # pixelArea = pixelSideLength^2
 
     # number of pixels in each dimension
     Npix = [ Npixels, Npixels, Npixels ]

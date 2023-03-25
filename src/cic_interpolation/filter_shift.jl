@@ -54,7 +54,9 @@ function filter_particles_in_image(pos::Array{T}, hsml::Array{T}, param::mapping
                 x, y, z = pos[:,p]
             end
 
-            in_image = particle_in_image(x, y, z, hsml[p], param.halfsize)
+            #in_image = particle_in_image(x, y, z, param.halfsize)
+
+            in_image = particle_in_image(x, y, z, hsml[p], param.halfsize, param.pixelSideLength/2)
             
             if in_image
                 break
