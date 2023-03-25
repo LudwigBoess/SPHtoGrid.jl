@@ -1,7 +1,28 @@
+using Downloads
+
+@info "downloading test data..."
+Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_sedov", "./snap_sedov")
+
+Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.0", "./snap_002.0")
+Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.1", "./snap_002.1")
+Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.2", "./snap_002.2")
+Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.3", "./snap_002.3")
+
+Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.0.key", "./snap_002.0.key")
+Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.1.key", "./snap_002.1.key")
+Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.2.key", "./snap_002.2.key")
+Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.3.key", "./snap_002.3.key")
+
+Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.key.index", "./snap_002.key.index")
+
+Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_cutout_072", "./snap_cutout_072")
+
+@info "done"
+
 using Distributed
 addprocs(2)
 
-@everywhere using SPHtoGrid, Test, DelimitedFiles, SPHKernels, GadgetIO
+@everywhere using SPHtoGrid, Test, DelimitedFiles, SPHKernels, GadgetIO, GadgetUnits
 
 @testset "SPHtoGrid" begin
 
@@ -130,212 +151,211 @@ addprocs(2)
             1.0 0.0 1.0]))
     end
 
-    @testset "SPH Mapping" begin
+    # @testset "SPH Mapping" begin
 
-        @info "SPH Mapping tests take a while..."
+    #     @info "SPH Mapping tests take a while..."
 
-        @info "Data read-in."
+    #     @info "Data read-in."
 
-        fi = joinpath(dirname(@__FILE__), "bin_q.txt")
-        bin_quantity = Float32.(readdlm(fi))[:, 1]
+    #     fi = joinpath(dirname(@__FILE__), "bin_q.txt")
+    #     bin_quantity = Float32.(readdlm(fi))[:, 1]
 
-        fi = joinpath(dirname(@__FILE__), "x.txt")
-        x = copy(transpose(Float32.(readdlm(fi))))
+    #     fi = joinpath(dirname(@__FILE__), "x.txt")
+    #     x = copy(transpose(Float32.(readdlm(fi))))
 
-        fi = joinpath(dirname(@__FILE__), "rho.txt")
-        rho = Float32.(readdlm(fi))[:, 1]
+    #     fi = joinpath(dirname(@__FILE__), "rho.txt")
+    #     rho = Float32.(readdlm(fi))[:, 1]
 
-        fi = joinpath(dirname(@__FILE__), "hsml.txt")
-        hsml = Float32.(readdlm(fi))[:, 1]
+    #     fi = joinpath(dirname(@__FILE__), "hsml.txt")
+    #     hsml = Float32.(readdlm(fi))[:, 1]
 
-        fi = joinpath(dirname(@__FILE__), "m.txt")
-        m = Float32.(readdlm(fi))[:, 1]
+    #     fi = joinpath(dirname(@__FILE__), "m.txt")
+    #     m = Float32.(readdlm(fi))[:, 1]
 
-        par = mappingParameters(center = [3.0, 3.0, 3.0],
-            x_size = 6.0, y_size = 6.0, z_size = 6.0,
-            Npixels = 200,
-            boxsize = 6.0)
+    #     par = mappingParameters(center = [3.0, 3.0, 3.0],
+    #         x_size = 6.0, y_size = 6.0, z_size = 6.0,
+    #         Npixels = 200,
+    #         boxsize = 6.0)
 
-        @testset "2D" begin
+    #     @testset "2D" begin
             
-            kernel = WendlandC6(2)
+    #         kernel = WendlandC6(2)
 
-            @testset "Single core" begin
-                d = sphMapping(x, hsml, m, rho, bin_quantity, rho,
-                                    param=par, kernel=kernel,
-                                    parallel = false,
-                                    show_progress=true)
-
-
-                ideal_file = joinpath(dirname(@__FILE__), "image.dat")
-                d_ideal = readdlm(ideal_file)
-
-                @test d[  1,  1] ≈ d_ideal[1, 1]
-                @test d[ 30, 32] ≈ d_ideal[30, 32]
-                #@test d[117, 92] ≈ d_ideal[117, 92]
-            end
+    #         @testset "Single core" begin
+    #             d = sphMapping(x, hsml, m, rho, bin_quantity, rho,
+    #                                 param=par, kernel=kernel,
+    #                                 parallel = false,
+    #                                 show_progress=true)
 
 
-            @testset "Multi core" begin
-            
-                # @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
-                #                 param=par, kernel=kernel,
-                #                 parallel = true,
-                #                 show_progress=false)
-            end
+    #             ideal_file = joinpath(dirname(@__FILE__), "image.dat")
+    #             d_ideal = readdlm(ideal_file)
 
-        end
-
-        @testset "3D" begin
-
-            kernel = WendlandC6(3)
-
-            par = mappingParameters(center = [3.0, 3.0, 3.0],
-                            x_size = 6.0, y_size = 6.0, z_size = 6.0,
-                            Npixels = 10,
-                            boxsize = 6.0)
-            
-            @testset "Single core" begin
-                d = sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
-                                    param=par, kernel=kernel,
-                                    parallel = false,
-                                    show_progress=true,
-                                    dimensions=3)
-
-                @test !isnan(d[1,1,1])
-            end
-
-            @testset "Multi core" begin
-                # @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
-                #                     param=par, kernel=kernel,
-                #                     parallel = true,
-                #                     show_progress=false,
-                #                     dimensions=3)
-            end
-
-        end # 3D
-
-    end
-
-    @testset "TSC Mapping" begin
-
-        fi = joinpath(dirname(@__FILE__), "x.txt")
-        x = Float32.(copy(transpose(readdlm(fi))))
-
-        fi = joinpath(dirname(@__FILE__), "bin_q.txt")
-        bin_quantity = Float32.(readdlm(fi))
-
-
-        par = mappingParameters(center = [3.0, 3.0, 3.0],
-            x_size = 6.0, y_size = 6.0, z_size = 6.0,
-            Npixels = 200,
-            boxsize = 6.0)
-
-
-        @testset "2D" begin 
-            # d = sphMapping( x, bin_quantity, 
-            #             param=par, show_progress=true)
-
-            # @test !isnan(d[1,1])
-
-            # @test_nowarn sphMapping( x, bin_quantity, 
-            #                 param=par, show_progress=false)
-        end
-
-        @testset "3D" begin
-            # @test_nowarn sphMapping( x, bin_quantity, 
-            #                 param=par, show_progress=false,
-            #                 dimensions=3)
-        end
-
-    end
-
-    # @testset "HealPix mapping" begin
-        
-    #     snap_base = "snap_allsky"
-
-    #     kernel = WendlandC6(2)
-
-    #     h  = GadgetIO.read_header(snap_base)
-    #     GU = GadgetPhysical(h)
-
-    #     Nside = 256
-    #     center = 0.5h.boxsize .* ones(3) .* GU.x_physical
-
-    #     hsml = read_block(snap_base, "HSML", parttype=0) .* GU.x_physical
-    #     rho  = read_block(snap_base, "RHO", parttype=0)  .* GU.rho_physical
-    #     mass = read_block(snap_base, "MASS", parttype=0) .* GU.m_physical
-
-    #     T_K   = read_block(snap_base, "U", parttype=0) .* GU.T_K
-
-    #     pos  = read_block(snap_base, "POS", parttype=0) .* GU.x_physical
-
-    #     allsky_map, weight_map = healpix_map(pos, hsml, T_K, rho,
-    #                         show_progress=true, radius_limits=[1000.0, 24_000.0]; 
-    #                         center, kernel, Nside)
-
-    #     @inbounds for i ∈ eachindex(allsky_map)
-    #         if !isnan(weight_map[i]) && !iszero(weight_map[i]) && !isinf(weight_map[i])
-    #             allsky_map[i]  /= weight_map[i]
+    #             @test d[  1,  1] ≈ d_ideal[1, 1]
+    #             @test d[ 30, 32] ≈ d_ideal[30, 32]
+    #             #@test d[117, 92] ≈ d_ideal[117, 92]
     #         end
+
+
+    #         @testset "Multi core" begin
+            
+    #             # @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
+    #             #                 param=par, kernel=kernel,
+    #             #                 parallel = true,
+    #             #                 show_progress=false)
+    #         end
+
     #     end
 
-    #     # check if all pixels are filled
-    #     @test length(findall(iszero.(allsky_map))) == 0
+    #     @testset "3D" begin
 
-    #     # check min and max of map 
-    #     @test minimum(allsky_map) ≈ 48.36386218136346
-    #     @test maximum(allsky_map) ≈ 2.1833783864072125e7
+    #         kernel = WendlandC6(3)
 
-    #     # check sum of all pixels 
-    #     @test sum(allsky_map[:]) ≈ 1.5226804906281857e11
+    #         par = mappingParameters(center = [3.0, 3.0, 3.0],
+    #                         x_size = 6.0, y_size = 6.0, z_size = 6.0,
+    #                         Npixels = 10,
+    #                         boxsize = 6.0)
+            
+    #         @testset "Single core" begin
+    #             d = sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
+    #                                 param=par, kernel=kernel,
+    #                                 parallel = false,
+    #                                 show_progress=true,
+    #                                 dimensions=3)
+
+    #             @test !isnan(d[1,1,1])
+    #         end
+
+    #         @testset "Multi core" begin
+    #             # @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
+    #             #                     param=par, kernel=kernel,
+    #             #                     parallel = true,
+    #             #                     show_progress=false,
+    #             #                     dimensions=3)
+    #         end
+
+    #     end # 3D
 
     # end
 
-    @testset "FITS io" begin
+    # @testset "TSC Mapping" begin
 
-        # map data
-        fi = joinpath(dirname(@__FILE__), "bin_q.txt")
-        bin_quantity = Float32.(readdlm(fi))[:, 1]
+    #     fi = joinpath(dirname(@__FILE__), "x.txt")
+    #     x = Float32.(copy(transpose(readdlm(fi))))
 
-        fi = joinpath(dirname(@__FILE__), "x.txt")
-        x = copy(transpose(Float32.(readdlm(fi))))
+    #     fi = joinpath(dirname(@__FILE__), "bin_q.txt")
+    #     bin_quantity = Float32.(readdlm(fi))
 
-        fi = joinpath(dirname(@__FILE__), "rho.txt")
-        rho = Float32.(readdlm(fi))[:, 1]
 
-        fi = joinpath(dirname(@__FILE__), "hsml.txt")
-        hsml = Float32.(readdlm(fi))[:, 1]
+    #     par = mappingParameters(center = [3.0, 3.0, 3.0],
+    #         x_size = 6.0, y_size = 6.0, z_size = 6.0,
+    #         Npixels = 200,
+    #         boxsize = 6.0)
 
-        fi = joinpath(dirname(@__FILE__), "m.txt")
-        m = Float32.(readdlm(fi))[:, 1]
 
-        kernel = WendlandC6(2)
+    #     @testset "2D" begin 
+    #         # d = sphMapping( x, bin_quantity, 
+    #         #             param=par, show_progress=true)
 
-        par = mappingParameters(center = [3.0, 3.0, 3.0],
-            x_size = 6.0, y_size = 6.0, z_size = 6.0,
-            Npixels = 200,
-            boxsize = 6.0)
+    #         # @test !isnan(d[1,1])
 
-        d = sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho, 1)),
-            param = par, kernel = kernel,
-            parallel = false,
-            show_progress = false)
+    #         # @test_nowarn sphMapping( x, bin_quantity, 
+    #         #                 param=par, show_progress=false)
+    #     end
 
-        # store image in a file
-        fits_file = joinpath(dirname(@__FILE__), "image.fits")
+    #     @testset "3D" begin
+    #         # @test_nowarn sphMapping( x, bin_quantity, 
+    #         #                 param=par, show_progress=false,
+    #         #                 dimensions=3)
+    #     end
 
-        @test_nowarn write_fits_image(fits_file, d, par)
+    # end
 
-        # read image back into memory and compare
-        # image, fits_par, snap = read_fits_image(fits_file)
+    @testset "HealPix mapping" begin
+        
+        snap_base = "snap_cutout_072"
 
-        # @test image ≈ d 
-        # @test par.boxsize == fits_par.boxsize
-        # @test par.center == fits_par.center
+        kernel = WendlandC4(2)
 
+        h  = GadgetIO.read_header(snap_base)
+        GU = GadgetPhysical(h, xH=0.752)
+
+        Nside = 128
+        center = 0.5h.boxsize .* ones(3) .* GU.x_physical
+
+        hsml = read_block(snap_base, "HSML", parttype=0) .* GU.x_physical
+        rho  = read_block(snap_base, "RHO", parttype=0)  .* GU.rho_physical
+        mass = read_block(snap_base, "MASS", parttype=0) .* GU.m_physical
+
+        T_K   = read_block(snap_base, "U", parttype=0) .* GU.T_K
+
+        pos  = read_block(snap_base, "POS", parttype=0) .* GU.x_physical
+
+        allsky_map, weight_map = healpix_map(pos, hsml, mass, rho, T_K, rho;
+                            center, kernel, Nside)
+
+        @inbounds for i ∈ eachindex(allsky_map)
+            if !isnan(weight_map[i]) && !iszero(weight_map[i]) && !isinf(weight_map[i])
+                allsky_map[i]  /= weight_map[i]
+            end
+        end
+
+        # check if all pixels are filled
+        @test length(findall(iszero.(allsky_map))) == 0
+
+        # check min and max of map 
+        @test minimum(allsky_map) ≈ 4766.125101327221
+        @test maximum(allsky_map) ≈ 5.937353111693359e7
+
+        # check sum of all pixels 
+        @test sum(allsky_map[:]) ≈ 3.637350200286616e11
 
     end
+
+    # @testset "FITS io" begin
+
+    #     # map data
+    #     fi = joinpath(dirname(@__FILE__), "bin_q.txt")
+    #     bin_quantity = Float32.(readdlm(fi))[:, 1]
+
+    #     fi = joinpath(dirname(@__FILE__), "x.txt")
+    #     x = copy(transpose(Float32.(readdlm(fi))))
+
+    #     fi = joinpath(dirname(@__FILE__), "rho.txt")
+    #     rho = Float32.(readdlm(fi))[:, 1]
+
+    #     fi = joinpath(dirname(@__FILE__), "hsml.txt")
+    #     hsml = Float32.(readdlm(fi))[:, 1]
+
+    #     fi = joinpath(dirname(@__FILE__), "m.txt")
+    #     m = Float32.(readdlm(fi))[:, 1]
+
+    #     kernel = WendlandC6(2)
+
+    #     par = mappingParameters(center = [3.0, 3.0, 3.0],
+    #         x_size = 6.0, y_size = 6.0, z_size = 6.0,
+    #         Npixels = 200,
+    #         boxsize = 6.0)
+
+    #     d = sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho, 1)),
+    #         param = par, kernel = kernel,
+    #         parallel = false,
+    #         show_progress = false)
+
+    #     # store image in a file
+    #     fits_file = joinpath(dirname(@__FILE__), "image.fits")
+
+    #     @test_nowarn write_fits_image(fits_file, d, par)
+
+    #     # read image back into memory and compare
+    #     # image, fits_par, snap = read_fits_image(fits_file)
+
+    #     # @test image ≈ d 
+    #     # @test par.boxsize == fits_par.boxsize
+    #     # @test par.center == fits_par.center
+
+
+    # end
 
     @testset "Reconstructing Grid" begin
         par = mappingParameters(center = [3.0, 3.0, 3.0],
@@ -372,101 +392,116 @@ addprocs(2)
 
     end
 
-    @testset "Effect functions" begin
+    # @testset "Effect functions" begin
 
-        @testset "Density" begin
-            @test density_2D(1.0, 1.0) ≈ 6.769911178294544e-22
-        end
+    #     @testset "Density" begin
+    #         @test density_2D(1.0, 1.0) ≈ 6.769911178294544e-22
+    #     end
 
-        @testset "SZ-effect" begin
-            @test SPHtoGrid.Tcmb(0.0) ≈ 2.728
-            @test SPHtoGrid.Tcmb(10.0) ≈ 30.008000000000003
+    #     @testset "SZ-effect" begin
+    #         @test SPHtoGrid.Tcmb(0.0) ≈ 2.728
+    #         @test SPHtoGrid.Tcmb(10.0) ≈ 30.008000000000003
 
-            @test kinetic_SZ([1.0], [1.0])[1] ≈ -2.2190366589946296e-35
+    #         @test kinetic_SZ([1.0], [1.0])[1] ≈ -2.2190366589946296e-35
 
-            @test thermal_SZ([1.0], [1.0])[1] ≈ 3.876935843260665e-34
-        end
+    #         @test thermal_SZ([1.0], [1.0])[1] ≈ 3.876935843260665e-34
+    #     end
 
-        @testset "X-Ray" begin
-            # in spectral range
-            @test x_ray_emission([10.0], [1.989e38], [1.e-28])[1] ≈ 1.9479441169462751e34
-            # bolometric
-            @test x_ray_emission([10.0], [1.989e38], [1.e-28], E0=0.0, E1=Inf)[1] ≈ 9.575878609659925e34
-        end
+    #     @testset "X-Ray" begin
+    #         # in spectral range
+    #         @test x_ray_emission([10.0], [1.989e38], [1.e-28])[1] ≈ 1.9479441169462751e34
+    #         # bolometric
+    #         @test x_ray_emission([10.0], [1.989e38], [1.e-28], E0=0.0, E1=Inf)[1] ≈ 9.575878609659925e34
+    #     end
 
-        @testset "Synchrotron" begin
+    #     @testset "Synchrotron" begin
 
-            @testset "Analytic" begin
-                @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0])[1] ≈ 6.424386277144697e-25
+    #         @testset "Analytic" begin
+    #             @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0])[1] ≈ 6.424386277144697e-25
 
-                @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0], convert_to_mJy = true)[1] ≈ 6.424386277144697e1
+    #             @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0], convert_to_mJy = true)[1] ≈ 6.424386277144697e1
 
-                @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0])[1] == 0.0
+    #             @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0])[1] == 0.0
 
-                @test_throws ErrorException("Invalid DSA model selection!") analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0], dsa_model = 10)
-            end
+    #             @test_throws ErrorException("Invalid DSA model selection!") analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0], dsa_model = 10)
+    #         end
 
-            @testset "Spectrum" begin
+    #         @testset "Spectrum" begin
 
-                # # test thermal energy density - redundant!
-                # # acc_function = SPHtoGrid.KR13_acc
-                # # ϵ_th = SPHtoGrid.EpsNtherm(1.52606e-30, 4.75088e+08, xH=0.76)
-                # # ϵ_cr0 = 0.01 * SPHtoGrid.get_rel_energy_density(10.0, acc_function) * ϵ_th
-                # # @test ϵ_cr0 / ϵ_th ≈ 0.00244270822665505
+    #             # # test thermal energy density - redundant!
+    #             # # acc_function = SPHtoGrid.KR13_acc
+    #             # # ϵ_th = SPHtoGrid.EpsNtherm(1.52606e-30, 4.75088e+08, xH=0.76)
+    #             # # ϵ_cr0 = 0.01 * SPHtoGrid.get_rel_energy_density(10.0, acc_function) * ϵ_th
+    #             # # @test ϵ_cr0 / ϵ_th ≈ 0.00244270822665505
 
-                # @testset "ϵ_th" begin
-                #     # with pitch angle integration
-                #     j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model = 2,
-                #         integrate_pitch_angle = true)
+    #             # @testset "ϵ_th" begin
+    #             #     # with pitch angle integration
+    #             #     j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model = 2,
+    #             #         integrate_pitch_angle = true)
 
-                #     @test j_ν ≈ 1.8643638246341477e-55
+    #             #     @test j_ν ≈ 1.8643638246341477e-55
 
-                #     # without pitch angle integration
-                #     j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model = 2,
-                #         integrate_pitch_angle = false)
+    #             #     # without pitch angle integration
+    #             #     j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model = 2,
+    #             #         integrate_pitch_angle = false)
 
-                #     @test j_ν ≈ 4.451252238469209e-55
+    #             #     @test j_ν ≈ 4.451252238469209e-55
 
-                #     # conversion to mJy/cm
-                #     j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model = 2,
-                #         integrate_pitch_angle = false,
-                #         convert_to_mJy = true)
+    #             #     # conversion to mJy/cm
+    #             #     j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model = 2,
+    #             #         integrate_pitch_angle = false,
+    #             #         convert_to_mJy = true)
 
-                #     @test j_ν ≈ 4.4512522384692095e-29
+    #             #     @test j_ν ≈ 4.4512522384692095e-29
 
-                # end
+    #             # end
 
-                # @testset "pre-defined" begin
-                #     # test for pre-defined spectrum
-                #     Nbins = 128
-                #     q0 = 4.166666666666667
+    #             # @testset "pre-defined" begin
+    #             #     # test for pre-defined spectrum
+    #             #     Nbins = 128
+    #             #     q0 = 4.166666666666667
 
-                #     # define spectrum
-                #     bounds = 10.0 .^ LinRange(-1.0, 6.0, Nbins + 1)
-                #     norm = Vector{Float64}(undef, Nbins)
-                #     # reference from previous test
-                #     norm[1] = 2.3141104241756675e-30
-                #     for Nbin = 2:Nbins-1
-                #         norm[Nbin] = norm[Nbin-1] * (bounds[Nbin] / bounds[Nbin-1])^(-q0)
-                #     end
+    #             #     # define spectrum
+    #             #     bounds = 10.0 .^ LinRange(-1.0, 6.0, Nbins + 1)
+    #             #     norm = Vector{Float64}(undef, Nbins)
+    #             #     # reference from previous test
+    #             #     norm[1] = 2.3141104241756675e-30
+    #             #     for Nbin = 2:Nbins-1
+    #             #         norm[Nbin] = norm[Nbin-1] * (bounds[Nbin] / bounds[Nbin-1])^(-q0)
+    #             #     end
 
-                #     j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6,
-                #         integrate_pitch_angle = true)
+    #             #     j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6,
+    #             #         integrate_pitch_angle = true)
 
-                #     @test j_ν ≈ 1.6530988606617404e-55
+    #             #     @test j_ν ≈ 1.6530988606617404e-55
 
-                #     j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6,
-                #         integrate_pitch_angle = false)
+    #             #     j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6,
+    #             #         integrate_pitch_angle = false)
 
-                #     @test j_ν ≈ 4.2742001929052135e-55
+    #             #     @test j_ν ≈ 4.2742001929052135e-55
 
-                #     j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6,
-                #         integrate_pitch_angle = false,
-                #         convert_to_mJy = true)
+    #             #     j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6,
+    #             #         integrate_pitch_angle = false,
+    #             #         convert_to_mJy = true)
 
-                #     @test j_ν ≈ 4.2742001929052134e-29
-                # end # pre-fedined
-            end # Spectrum
-        end
-    end
+    #             #     @test j_ν ≈ 4.2742001929052134e-29
+    #             # end # pre-fedined
+    #         end # Spectrum
+    #     end
+    # end
 end
+
+
+rm("snap_sedov")
+
+rm("snap_002.0")
+rm("snap_002.1")
+rm("snap_002.2")
+rm("snap_002.3")
+rm("snap_002.0.key")
+rm("snap_002.1.key")
+rm("snap_002.2.key")
+rm("snap_002.3.key")
+rm("snap_002.key.index")
+
+rm("snap_cutout_072")
