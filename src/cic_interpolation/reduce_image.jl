@@ -19,7 +19,8 @@ function reduce_image_2D( image::Matrix{<:Real},
         end
         k += 1
     end
-    return im_plot
+    # rotate to correct orientation
+    return copy(transpose(im_plot))
 end
 
 """
