@@ -53,6 +53,9 @@ include("splash_interpolation/splash_interpolation.jl")
 
 # healpix interpolation
 include("healpix_interpolation/shared.jl")
+include("healpix_interpolation/filter_particles.jl")
+include("healpix_interpolation/constributing_pixels.jl")
+include("healpix_interpolation/pixel_weights.jl")
 include("healpix_interpolation/main.jl")
 include("healpix_interpolation/distributed_mapping.jl")
 
