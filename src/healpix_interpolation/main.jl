@@ -61,6 +61,22 @@ function particle_area_and_depth(hsml::T, m::T, rho::T) where {T}
     return area, dz
 end
 
+"""
+    particle_area_and_depth(d, hsml, pix_radian)
+
+Computes the particle area and depth.
+Caution: This has to be represented as a cylinder instead of a sphere, which introduces an error by design.
+Also computes the pixel radius at the particle horizon.
+"""
+function particle_area_and_depth(hsml::T) where {T}
+
+    # general particle quantities
+    dz = 2hsml
+    area = π * hsml^2
+
+    return area, dz
+end
+
 
 """
     healpix_map(pos, hsml, m, rho, bin_q, weights;
@@ -101,8 +117,8 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
     end
 
     # allocate arrays
-    allsky_map = HealpixMap{Float64,NestedOrder}(Nside)
-    weight_map = HealpixMap{Float64,NestedOrder}(Nside)
+    allsky_map = HealpixMap{Float64,RingOrder}(Nside)
+    weight_map = HealpixMap{Float64,RingOrder}(Nside)
     res = Healpix.Resolution(Nside)
 
     # maximum angular distance (in radians) between a pixel center 
@@ -149,6 +165,7 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
 
         # area of particle and length along line of sight
         area, dz = particle_area_and_depth(hsml[ipart], m[ipart], rho[ipart])
+        #area, dz = particle_area_and_depth(hsml[ipart])
 
         # calculate kernel weights and mapped area
         wk, A, N, weight_per_pix = calculate_weights(wk, A, pos[:, ipart], hsml[ipart],
