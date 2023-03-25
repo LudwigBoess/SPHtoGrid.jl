@@ -81,6 +81,10 @@ function distributed_allsky_map(allsky_filename::String,
             end
         end
 
+        allsky_map = nothing 
+        weight_map = nothing
+        GC.gc()
+
         # count down
         Nsubfiles -= 1
     end
