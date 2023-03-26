@@ -87,11 +87,10 @@ function get_quantities_3D( pos, weight, hsml,
         hsml     = T(hsml * len2pix)
         hsml_inv = T(1.0/hsml)
 
-        volume  = T(4π/3) * hsml^3
         rho    /= T(len2pix)^3
-        dz      = T(m / rho / volume)
+        volume  = T(m / rho)
 
-    return T.(pos), T(weight), hsml, hsml_inv, volume, dz
+    return T.(pos), T(weight), hsml, hsml_inv, volume
 end
 
 
@@ -117,17 +116,12 @@ function cic_mapping_3D( Pos, HSML,
     # max number of pixels over which the particle can be distributed
     N_distr = param.Npixels[1] * param.Npixels[2] * param.Npixels[3]
 
+    # allocate image array
     image = zeros(Float64, N_distr, 2)
-
-    if param.periodic
-        k_start = 0
-    else
-        k_start = 7
-    end
 
     # allocate arrays for weights
     wk = zeros(Float64, N_distr)
-    # storage array for mapped area
+    # storage array for mapped volume
     V  = Vector{Float64}(undef, N_distr)
 
     if show_progress
@@ -142,53 +136,48 @@ function cic_mapping_3D( Pos, HSML,
 
         bin_q = Float64(Bin_Q[p])
 
-        if iszero(bin_q) # && !calc_mean
-        continue
+        if iszero(bin_q) && !calc_mean
+            continue
         end
 
-        _pos, los_weight, hsml, hsml_inv, area, dz = get_quantities_3D(Pos[:,p], Weights[p], HSML[p], Rho[p], M[p], param.len2pix)
+        # convert to pixel units
+        _pos, los_weight, hsml, hsml_inv, vol = get_quantities_3D(Pos[:,p], Weights[p], HSML[p], Rho[p], M[p], param.len2pix)
 
-        for k = k_start:7
+        # simplify position quantities for performance
+        x, y, z = get_xyz( _pos, param)
+        
+        # calculate relevant pixel range
+        iMin, iMax = pix_index_min_max( x, hsml, param.Npixels[1] )
+        jMin, jMax = pix_index_min_max( y, hsml, param.Npixels[2] )
+        kMin, kMax = pix_index_min_max( z, hsml, param.Npixels[3] )
+        
+        # calculate all relevant quantities
+        wk, V, N, weight_per_pix  = calculate_weights(wk, V, 
+                                                            iMin, iMax, jMin, jMax,
+                                                            kMin, kMax,
+                                                            x, y, z, 
+                                                            hsml, hsml_inv, 
+                                                            kernel,
+                                                            param.Npixels[1], 
+                                                            param.Npixels[2])
 
-            # simplify position quantities for performance
-            x, y, z, skip_k = get_xyz( _pos, HSML[p], k, param)
+        # normalisation factors for pixel contribution
+        kernel_norm = vol / N
+        volume_norm = kernel_norm * weight_per_pix * los_weight
 
-            if skip_k
-                continue
-            end
+        # loop over all contributing pixels
+        @inbounds for i = iMin:iMax, j = jMin:jMax, k = kMin:kMax
+
+            idx = calculate_index( i, j, k, 
+                                    param.Npixels[1],
+                                    param.Npixels[2] )
+
+            image[idx,1], image[idx,2] = update_image(image[idx,1], image[idx,2], wk[idx], V[idx], volume_norm, bin_q)
+
+            grid_mass += Rho[p] * wk[idx] * V[idx]
             
-            # calculate relevant pixel range
-            iMin, iMax = pix_index_min_max( x, hsml, param.Npixels[1] )
-            jMin, jMax = pix_index_min_max( y, hsml, param.Npixels[2] )
-            kMin, kMax = pix_index_min_max( z, hsml, param.Npixels[3] )
-           
-            # calculate all relevant quantities
-            wk, V, N, weight_per_pix  = calculate_weights(wk, V, 
-                                                              iMin, iMax, jMin, jMax,
-                                                              kMin, kMax,
-                                                               x, y, z, 
-                                                               hsml, hsml_inv, 
-                                                               kernel,
-                                                               param.Npixels[1], 
-                                                               param.Npixels[2])
+        end # i, j, k
 
-            # normalisation factors for pixel contribution
-            kernel_norm = area / N
-            volume_norm = kernel_norm * weight_per_pix * los_weight * dz
-
-            @inbounds for i = iMin:iMax, j = jMin:jMax, k = kMin:kMax
-
-                idx = calculate_index( i, j, k, 
-                                       param.Npixels[1],
-                                       param.Npixels[2] )
-
-                image[idx,1], image[idx,2] = update_image(image[idx,1], image[idx,2], wk[idx], V[idx], volume_norm, bin_q)
-
-                grid_mass += Rho[p] * wk[idx] * V[idx] / param.len2pix^3
-                
-            end # i, j, k
-
-        end # k_periodic
 
         # store mass of contributing particle 
         particle_mass += M[p]
@@ -201,8 +190,8 @@ function cic_mapping_3D( Pos, HSML,
 
     if show_progress
         @info "Mass conservation:"
-        @info "\tMass on grid:      $(grid_mass)"
-        @info "\tMass in particles: $(particle_mass)"
+        @info "\tMass on grid:      $(grid_mass*1.e10) Msun"
+        @info "\tMass in particles: $(particle_mass*1.e10) Msun"
         @info "\tRel. Error:        $(abs(particle_mass-grid_mass)/particle_mass)"
     end
 
