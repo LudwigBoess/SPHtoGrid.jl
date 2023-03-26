@@ -36,7 +36,7 @@ end
 Spectroscopic weighted mapping from Mazotta+ 04. Takes density and temperature and computes weights.
 """
 function part_weight_spectroscopic(rho::Array{<:Real}, T_K::Array{<:Real})
-    return @. rho^2 * T_K^(0.75 - 1.5)
+    return @. rho^2 / √(√(T_K))^3
 end
 
 """
