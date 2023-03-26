@@ -173,41 +173,33 @@ function cic_mapping_2D( Pos, HSML,
 
         _pos, los_weight, hsml, hsml_inv, area, dz = get_quantities_2D(Pos[:,p], Weights[p], HSML[p], Rho[p], M[p], param.len2pix)
 
-        for k = k_start:7
+        # simplify position quantities for performance
+        x, y, z = get_xyz( _pos, param)
+        
+        # calculate relevant pixel range
+        iMin, iMax = pix_index_min_max( x, hsml, param.Npixels[1] )
+        jMin, jMax = pix_index_min_max( y, hsml, param.Npixels[2] )
 
-            # simplify position quantities for performance
-            x, y, z, skip_k = get_xyz( _pos, HSML[p], k, param)
+        # calculate all relevant quantities
+        wk, A, N, weight_per_pix  = calculate_weights(wk, A, 
+                                                            iMin, iMax, jMin, jMax,
+                                                            x, y, hsml, hsml_inv, 
+                                                            kernel,
+                                                            param.Npixels[1])
 
-            if skip_k
-                continue
-            end
+        # normalisation factors for pixel contribution
+        kernel_norm = area / N
+        area_norm = kernel_norm * weight_per_pix * los_weight * dz
+
+        @inbounds for i = iMin:iMax, j = jMin:jMax
+
+            idx = calculate_index(i, j, param.Npixels[1])
+
+            image[idx,1], image[idx,2] = update_image(image[idx,1], image[idx,2], wk[idx], A[idx], area_norm, bin_q)
+
+            grid_mass += Rho[p] * wk[idx] * A[idx] * dz / param.len2pix^3
             
-            # calculate relevant pixel range
-            iMin, iMax = pix_index_min_max( x, hsml, param.Npixels[1] )
-            jMin, jMax = pix_index_min_max( y, hsml, param.Npixels[2] )
-
-            # calculate all relevant quantities
-            wk, A, N, weight_per_pix  = calculate_weights(wk, A, 
-                                                              iMin, iMax, jMin, jMax,
-                                                              x, y, hsml, hsml_inv, 
-                                                              kernel,
-                                                              param.Npixels[1])
-
-            # normalisation factors for pixel contribution
-            kernel_norm = area / N
-            area_norm = kernel_norm * weight_per_pix * los_weight * dz
-
-            @inbounds for i = iMin:iMax, j = jMin:jMax
-
-                idx = calculate_index(i, j, param.Npixels[1])
-
-                image[idx,1], image[idx,2] = update_image(image[idx,1], image[idx,2], wk[idx], A[idx], area_norm, bin_q)
-
-                grid_mass += Rho[p] * wk[idx] * A[idx] * dz / param.len2pix^3
-                
-            end # i, j
-            
-        end # k
+        end # i, j    
 
         # store mass of contributing particle 
         particle_mass += M[p]

@@ -66,11 +66,8 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
         t1 = time_ns()
     end
 
-    if filter_particles
-        p_in_image = filter_particles_in_image(Pos, HSML, param)
-    else
-        p_in_image = trues(N_in)
-    end
+    p_in_image = filter_particles_in_image(Pos, par)
+
 
     if show_progress
         t2 = time_ns()
