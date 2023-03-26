@@ -122,18 +122,19 @@ end
 
 
 """
-   cic_mapping_2D( Pos, HSML, 
-                  M, Rho, 
-                  Bin_Q, Weights;
-                  param::mappingParameters, kernel::AbstractSPHKernel,
-                  show_progress::Bool=false )
+   cic_mapping_2D( Pos, HSML, M, Rho, Bin_Q, Weights;
+                   param::mappingParameters, 
+                   kernel::AbstractSPHKernel,
+                   show_progress::Bool=false,
+                   calc_mean::Bool=true )
 
 Underlying function to map SPH data to a 2D grid.
 """
 function cic_mapping_2D( Pos, HSML, 
                         M, Rho, 
                         Bin_Q, Weights;
-                        param::mappingParameters, kernel::AbstractSPHKernel,
+                        param::mappingParameters, 
+                        kernel::AbstractSPHKernel,
                         show_progress::Bool=false,
                         calc_mean::Bool=true )
 
@@ -193,13 +194,14 @@ function cic_mapping_2D( Pos, HSML,
 
         grid_vol = 0.0
 
+        # loop over all contributing pixels
         @inbounds for i = iMin:iMax, j = jMin:jMax
 
             idx = calculate_index(i, j, param.Npixels[1])
 
             image[idx,1], image[idx,2] = update_image(image[idx,1], image[idx,2], wk[idx], A[idx], area_norm, bin_q)
 
-            grid_vol += wk[idx] * A[idx] * dz #/ param.len2pix^3
+            grid_vol += wk[idx] * A[idx] * dz
             
         end # i, j    
 
