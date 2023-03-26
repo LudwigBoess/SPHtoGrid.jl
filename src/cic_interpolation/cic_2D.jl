@@ -1,4 +1,4 @@
-function get_weight_per_pixel( _A, _wk, distr_area, distr_weight, 
+function get_weight_per_pixel( distr_area, distr_weight, 
                             n_tot_pix, n_distr_pix, 
                             dxdy, u, hsml_inv,
                             kernel)
@@ -72,7 +72,7 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
 
             A[idx], wk[idx], 
             distr_area, distr_weight, 
-            n_tot_pix, n_distr_pix = get_weight_per_pixel(  A[idx], wk[idx], distr_area, distr_weight, 
+            n_tot_pix, n_distr_pix = get_weight_per_pixel( distr_area, distr_weight, 
                                                         n_tot_pix, n_distr_pix, 
                                                         dxdy, u, hsml_inv, kernel)
 
