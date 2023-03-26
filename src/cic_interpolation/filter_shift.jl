@@ -1,9 +1,9 @@
 """
-    check_center_and_move_particles(x, par::mappingParameters)
+    center_particles(x, par::mappingParameters)
 
-Mapping only works if all coordinates are positive. This function shifts the particles accordingly.
+Shifts all particles so that the image is centered on [0, 0, 0].
 """
-function check_center_and_move_particles(x::Matrix{T}, par::mappingParameters) where T
+function center_particles(x::Matrix{T}, par::mappingParameters) where T
 
     # explicitly copy to its own variable to avoid memory overwrite
     cen  = copy(par.center)
