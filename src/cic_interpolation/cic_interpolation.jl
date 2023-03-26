@@ -40,9 +40,9 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
                     parallel::Bool=false,
                     reduce_image::Bool=true,
                     return_both_maps::Bool=false,
-                    filter_particles::Bool=true,
                     dimensions::Int=2,
-                    calc_mean::Bool=false)
+                    calc_mean::Bool=false,
+                    sort_z::Bool=false)
 
     
     # store number of input particles
@@ -53,7 +53,8 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
         @info "Centering on [0.0, 0.0, 0.0]"
         t1 = time_ns()
     end
-    Pos, par = check_center_and_move_particles(Pos, param)
+
+    Pos, par = center_particles(Pos, param)
 
     if show_progress
         t2 = time_ns()
@@ -66,11 +67,8 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
         t1 = time_ns()
     end
 
-    if filter_particles
-        p_in_image = filter_particles_in_image(Pos, HSML, param)
-    else
-        p_in_image = trues(N_in)
-    end
+    p_in_image = filter_particles_in_image(Pos, par)
+
 
     if show_progress
         t2 = time_ns()
@@ -251,45 +249,57 @@ using Printf
 
 Small helper function to copy positions, map particles and save the fits file.
 """
-function map_it(pos_in, hsml, mass, rho, bin_q, weights, k, 
-                snap, units, image_path, reduce_image, param, 
-                filter_particles=true, parallel=true)
+function map_it(pos_in, hsml, mass, rho, bin_q, weights;
+                param::mappingParameters,
+                kernel::AbstractSPHKernel=WendlandC6(), 
+                snap::Integer=0, 
+                units::AbstractString="", 
+                image_prefix::String="dummy",
+                reduce_image::Bool=true, 
+                parallel=true,
+                calc_mean::Bool=true, show_progress::Bool=true,
+                sort_z::Bool=false,
+                projection="xy")
 
+    # copy the positions to new array to be able to shift particles 
+    # and also continue mapping with the same array
     pos = copy(pos_in)
 
-    # if projection == "xy"
-    #     pos = pos
-    # elseif projection == "xz"
-    #     pos = rotate_to_xz_plane!(pos)
-    # elseif projection == "yz"
-    #     pos = rotate_to_yz_plane!(pos)
-    # elseif typeof(projection) <: AbstractVector
-    #     pos = rotate_3D(pos, projection...)
-    #     projection = "alpha=$(@sprintf("%0.2f", projection[1]))beta=$(@sprintf("%0.2f", projection[2]))gamma=$(@sprintf("%0.2f", projection[3]))"
-    # else
-    #     error("projection must be either along in 'xy', 'xz', or 'yz' plane of defined by a vector of Euler angles!")
-    # end 
+    if projection == "xy"
+        pos = pos
+    elseif projection == "xz"
+        pos = rotate_to_xz_plane!(pos)
+    elseif projection == "yz"
+        pos = rotate_to_yz_plane!(pos)
+    elseif typeof(projection) <: AbstractVector
+        pos = rotate_3D(pos, projection...)
+        projection = "alpha=$(@sprintf("%0.2f", projection[1]))beta=$(@sprintf("%0.2f", projection[2]))gamma=$(@sprintf("%0.2f", projection[3]))"
+    else
+        error("projection must be either along in 'xy', 'xz', or 'yz' plane of defined by a vector of Euler angles!")
+    end 
 
     # get cic map
     quantitiy_map = sphMapping( pos, hsml, mass, rho,
-                                bin_q, weights, show_progress = true,
-                                param = param, kernel = k, parallel = parallel,
-                                reduce_image = reduce_image, 
-                                filter_particles = filter_particles)
+                                bin_q, weights; show_progress,
+                                param, kernel, parallel,
+                                reduce_image,
+                                calc_mean,
+                                sort_z)
 
 
-    fo_image = image_path * ".fits"
+    fo_image = image_prefix * ".fits"
 
     @info "Map Properties:"
-    @info "\tMax: $(maximum(quantitiy_map))"
-    @info "\tMin: $(minimum(quantitiy_map))"
-    @info "\tMean: $(mean(quantitiy_map))"
+    @info "  Max:  $(maximum(quantitiy_map))"
+    @info "  Min:  $(minimum(quantitiy_map))"
+    @info "  Mean: $(mean(quantitiy_map))"
+    @info "  Sum:  $(sum(quantitiy_map))"
     println()
     Npixels = size(quantitiy_map,1) * size(quantitiy_map,2)
-    @info "\tNr. of pixels:     $Npixels"
-    @info "\tNr. of 0 pixels:   $(length(findall(iszero.(quantitiy_map))))"
-    @info "\tNr. of NaN pixels: $(length(findall(isnan.(quantitiy_map))))"
-    @info "\tNr. of Inf pixels: $(length(findall(isinf.(quantitiy_map))))"
+    @info "  Nr. of pixels:     $Npixels"
+    @info "  Nr. of 0 pixels:   $(length(findall(iszero.(quantitiy_map))))"
+    @info "  Nr. of NaN pixels: $(length(findall(isnan.(quantitiy_map))))"
+    @info "  Nr. of Inf pixels: $(length(findall(isinf.(quantitiy_map))))"
 
     write_fits_image(fo_image, quantitiy_map, param, snap = snap, units = units)
 end

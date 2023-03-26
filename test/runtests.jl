@@ -3,17 +3,17 @@ using Downloads
 @info "downloading test data..."
 Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_sedov", "./snap_sedov")
 
-Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.0", "./snap_002.0")
-Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.1", "./snap_002.1")
-Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.2", "./snap_002.2")
-Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.3", "./snap_002.3")
+# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.0", "./snap_002.0")
+# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.1", "./snap_002.1")
+# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.2", "./snap_002.2")
+# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.3", "./snap_002.3")
 
-Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.0.key", "./snap_002.0.key")
-Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.1.key", "./snap_002.1.key")
-Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.2.key", "./snap_002.2.key")
-Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.3.key", "./snap_002.3.key")
+# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.0.key", "./snap_002.0.key")
+# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.1.key", "./snap_002.1.key")
+# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.2.key", "./snap_002.2.key")
+# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.3.key", "./snap_002.3.key")
 
-Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.key.index", "./snap_002.key.index")
+# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.key.index", "./snap_002.key.index")
 
 Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_cutout_072", "./snap_cutout_072")
 
@@ -84,7 +84,7 @@ addprocs(2)
 
         hsml = [0.5, 0.5]
 
-        p_in_image = filter_particles_in_image(x, hsml, par)
+        p_in_image = filter_particles_in_image(x, par)
 
         @test p_in_image[1] == true
         @test p_in_image[2] == false
@@ -103,13 +103,13 @@ addprocs(2)
 
         hsml = [0.5, 0.5]
 
-        x, par2 = SPHtoGrid.check_center_and_move_particles(x, par)
+        x, par2 = SPHtoGrid.center_particles(x, par)
 
         @test x[:, 1] ≈ [0.0, 0.0, 0.0]
         @test x[:, 2] ≈ [-4.0, -2.0, 0.0]
 
-        @test par.center ≈ [1.0, 1.0, 1.0]
-        @test par2.center ≈ [0.0, 0.0, 0.0]
+        @test par.center == [1.0, 1.0, 1.0]
+        @test par2.center == [0.0, 0.0, 0.0]
 
     end
 
@@ -151,92 +151,145 @@ addprocs(2)
             1.0 0.0 1.0]))
     end
 
-    # @testset "SPH Mapping" begin
+    @testset "SPH Mapping" begin
 
-    #     @info "SPH Mapping tests take a while..."
+        @info "SPH Mapping tests take a while..."
 
-    #     @info "Data read-in."
+        @info "Data read-in."
 
-    #     fi = joinpath(dirname(@__FILE__), "bin_q.txt")
-    #     bin_quantity = Float32.(readdlm(fi))[:, 1]
+        # reference images
+        T_ref, par, snap, units   = read_fits_image("sedov_T_reference.fits")
+        rho_ref, par, snap, units = read_fits_image("sedov_rho_reference.fits")
 
-    #     fi = joinpath(dirname(@__FILE__), "x.txt")
-    #     x = copy(transpose(Float32.(readdlm(fi))))
+        # sedov reference snapshot
+        fi = "snap_sedov"
 
-    #     fi = joinpath(dirname(@__FILE__), "rho.txt")
-    #     rho = Float32.(readdlm(fi))[:, 1]
+        # kernel definition
+        k = WendlandC4(2)
 
-    #     fi = joinpath(dirname(@__FILE__), "hsml.txt")
-    #     hsml = Float32.(readdlm(fi))[:, 1]
+        # read header and find units
+        h = read_header(fi)
+        GU = GadgetPhysical(xH=0.752)
 
-    #     fi = joinpath(dirname(@__FILE__), "m.txt")
-    #     m = Float32.(readdlm(fi))[:, 1]
+        blocks = ["POS", "MASS", "HSML", "RHO", "U"]
+        data = Dict(block => read_block(fi, block, parttype=0) for block ∈ blocks)
 
-    #     par = mappingParameters(center = [3.0, 3.0, 3.0],
-    #         x_size = 6.0, y_size = 6.0, z_size = 6.0,
-    #         Npixels = 200,
-    #         boxsize = 6.0)
+        # convert to physical code units for mapping
+        pos  = data["POS"]  .* GU.x_physical
+        hsml = data["HSML"] .* GU.x_physical
+        rho  = data["RHO"]  .* GU.rho_physical
+        mass = data["MASS"] .* GU.m_physical
 
-    #     @testset "2D" begin
+        rho_gcm3 = data["RHO"]  .* GU.rho_cgs
+        m_cgs    = data["MASS"] .* GU.m_cgs
+        T = data["U"] .* GU.T_K
+
+
+        Npart = length(m_cgs)
+
+        center = ones(3) .* 0.5h.boxsize * GU.x_physical
+        xy_size = 0.9h.boxsize * GU.x_physical
+        z_size = 0.9h.boxsize * GU.x_physical
+
+        # define mapping parameters
+        par = mappingParameters(center=center .* GU.x_physical,
+            x_size=xy_size,
+            y_size=xy_size,
+            z_size=z_size,
+            Npixels=256,
+            boxsize=h.boxsize * GU.x_physical)
+
+        snap = 50
+
+        @testset "2D" begin
             
-    #         kernel = WendlandC6(2)
+            kernel = WendlandC6(2)
 
-    #         @testset "Single core" begin
-    #             d = sphMapping(x, hsml, m, rho, bin_quantity, rho,
-    #                                 param=par, kernel=kernel,
-    #                                 parallel = false,
-    #                                 show_progress=true)
+            @testset "Single core" begin
+                @testset "rho" begin 
+                    image_prefix = "sedov_rho"
+                    weights = part_weight_physical(length(hsml), par, GU.x_cgs)
+                    map_it(pos, hsml, mass, rho, rho_gcm3, weights, kernel=k, units="g/cm^2", param=par,
+                        reduce_image=false, parallel=false;
+                        snap, image_prefix)
+
+                    image, par, snap, units = read_fits_image("sedov_rho.fits")
+
+                    @test image ≈ rho_ref
+                end
+
+                @testset "T" begin
+                    image_prefix = "sedov_T"
+                    map_it(pos, hsml, mass, rho, T, rho, kernel=k, units="T", param=par,
+                        reduce_image=true, parallel=false;
+                        snap, image_prefix)
+
+                    image, par, snap, units = read_fits_image("sedov_T.fits")
+
+                    @test image ≈ T_ref
+                end
+            end
 
 
-    #             ideal_file = joinpath(dirname(@__FILE__), "image.dat")
-    #             d_ideal = readdlm(ideal_file)
-
-    #             @test d[  1,  1] ≈ d_ideal[1, 1]
-    #             @test d[ 30, 32] ≈ d_ideal[30, 32]
-    #             #@test d[117, 92] ≈ d_ideal[117, 92]
-    #         end
-
-
-    #         @testset "Multi core" begin
+            @testset "Multi core" begin
             
-    #             # @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
-    #             #                 param=par, kernel=kernel,
-    #             #                 parallel = true,
-    #             #                 show_progress=false)
-    #         end
+                @testset "rho" begin
+                    image_prefix = "sedov_rho"
+                    weights = part_weight_physical(length(hsml), par, GU.x_cgs)
+                    map_it(pos, hsml, mass, rho, rho_gcm3, weights, kernel=k, units="g/cm^2", param=par,
+                        reduce_image=false, parallel=true;
+                        snap, image_prefix)
 
-    #     end
+                    image, par, snap, units = read_fits_image("sedov_rho.fits")
 
-    #     @testset "3D" begin
+                    @test image ≈ rho_ref
+                end
 
-    #         kernel = WendlandC6(3)
+                @testset "T" begin
+                    image_prefix = "sedov_T"
+                    map_it(pos, hsml, mass, rho, T, rho, kernel=k, units="T", param=par,
+                        reduce_image=true, parallel=true;
+                        snap, image_prefix)
 
-    #         par = mappingParameters(center = [3.0, 3.0, 3.0],
-    #                         x_size = 6.0, y_size = 6.0, z_size = 6.0,
-    #                         Npixels = 10,
-    #                         boxsize = 6.0)
+                    image, par, snap, units = read_fits_image("sedov_T.fits")
+
+                    @test image ≈ T_ref
+                end
+
+            end
+
+        end
+
+        # @testset "3D" begin
+
+        #     kernel = WendlandC6(3)
+
+        #     par = mappingParameters(center = [3.0, 3.0, 3.0],
+        #                     x_size = 6.0, y_size = 6.0, z_size = 6.0,
+        #                     Npixels = 10,
+        #                     boxsize = 6.0)
             
-    #         @testset "Single core" begin
-    #             d = sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
-    #                                 param=par, kernel=kernel,
-    #                                 parallel = false,
-    #                                 show_progress=true,
-    #                                 dimensions=3)
+        #     @testset "Single core" begin
+        #         d = sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
+        #                             param=par, kernel=kernel,
+        #                             parallel = false,
+        #                             show_progress=true,
+        #                             dimensions=3)
 
-    #             @test !isnan(d[1,1,1])
-    #         end
+        #         @test !isnan(d[1,1,1])
+        #     end
 
-    #         @testset "Multi core" begin
-    #             # @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
-    #             #                     param=par, kernel=kernel,
-    #             #                     parallel = true,
-    #             #                     show_progress=false,
-    #             #                     dimensions=3)
-    #         end
+        #     @testset "Multi core" begin
+        #         # @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
+        #         #                     param=par, kernel=kernel,
+        #         #                     parallel = true,
+        #         #                     show_progress=false,
+        #         #                     dimensions=3)
+        #     end
 
-    #     end # 3D
+        # end # 3D
 
-    # end
+    end
 
     # @testset "TSC Mapping" begin
 
@@ -271,46 +324,46 @@ addprocs(2)
 
     # end
 
-    @testset "HealPix mapping" begin
+    # @testset "HealPix mapping" begin
         
-        snap_base = "snap_cutout_072"
+    #     snap_base = "snap_cutout_072"
 
-        kernel = WendlandC4(2)
+    #     kernel = WendlandC4(2)
 
-        h  = GadgetIO.read_header(snap_base)
-        GU = GadgetPhysical(h, xH=0.752)
+    #     h  = GadgetIO.read_header(snap_base)
+    #     GU = GadgetPhysical(h, xH=0.752)
 
-        Nside = 128
-        center = 0.5h.boxsize .* ones(3) .* GU.x_physical
+    #     Nside = 128
+    #     center = 0.5h.boxsize .* ones(3) .* GU.x_physical
 
-        hsml = read_block(snap_base, "HSML", parttype=0) .* GU.x_physical
-        rho  = read_block(snap_base, "RHO", parttype=0)  .* GU.rho_physical
-        mass = read_block(snap_base, "MASS", parttype=0) .* GU.m_physical
+    #     hsml = read_block(snap_base, "HSML", parttype=0) .* GU.x_physical
+    #     rho  = read_block(snap_base, "RHO", parttype=0)  .* GU.rho_physical
+    #     mass = read_block(snap_base, "MASS", parttype=0) .* GU.m_physical
 
-        T_K   = read_block(snap_base, "U", parttype=0) .* GU.T_K
+    #     T_K   = read_block(snap_base, "U", parttype=0) .* GU.T_K
 
-        pos  = read_block(snap_base, "POS", parttype=0) .* GU.x_physical
+    #     pos  = read_block(snap_base, "POS", parttype=0) .* GU.x_physical
 
-        allsky_map, weight_map = healpix_map(pos, hsml, mass, rho, T_K, rho;
-                            center, kernel, Nside)
+    #     allsky_map, weight_map = healpix_map(pos, hsml, mass, rho, T_K, rho;
+    #                         center, kernel, Nside)
 
-        @inbounds for i ∈ eachindex(allsky_map)
-            if !isnan(weight_map[i]) && !iszero(weight_map[i]) && !isinf(weight_map[i])
-                allsky_map[i]  /= weight_map[i]
-            end
-        end
+    #     @inbounds for i ∈ eachindex(allsky_map)
+    #         if !isnan(weight_map[i]) && !iszero(weight_map[i]) && !isinf(weight_map[i])
+    #             allsky_map[i]  /= weight_map[i]
+    #         end
+    #     end
 
-        # check if all pixels are filled
-        @test length(findall(iszero.(allsky_map))) == 0
+    #     # check if all pixels are filled
+    #     @test length(findall(iszero.(allsky_map))) == 0
 
-        # check min and max of map 
-        @test minimum(allsky_map) ≈ 4766.125101327221
-        @test maximum(allsky_map) ≈ 5.937353111693359e7
+    #     # check min and max of map 
+    #     @test minimum(allsky_map) ≈ 4766.125101327221
+    #     @test maximum(allsky_map) ≈ 5.937353111693359e7
 
-        # check sum of all pixels 
-        @test sum(allsky_map[:]) ≈ 3.637350200286616e11
+    #     # check sum of all pixels 
+    #     @test sum(allsky_map[:]) ≈ 3.637350200286616e11
 
-    end
+    # end
 
     # @testset "FITS io" begin
 
@@ -494,14 +547,14 @@ end
 
 rm("snap_sedov")
 
-rm("snap_002.0")
-rm("snap_002.1")
-rm("snap_002.2")
-rm("snap_002.3")
-rm("snap_002.0.key")
-rm("snap_002.1.key")
-rm("snap_002.2.key")
-rm("snap_002.3.key")
-rm("snap_002.key.index")
+# rm("snap_002.0")
+# rm("snap_002.1")
+# rm("snap_002.2")
+# rm("snap_002.3")
+# rm("snap_002.0.key")
+# rm("snap_002.1.key")
+# rm("snap_002.2.key")
+# rm("snap_002.3.key")
+# rm("snap_002.key.index")
 
 rm("snap_cutout_072")

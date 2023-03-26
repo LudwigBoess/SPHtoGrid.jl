@@ -1,9 +1,9 @@
 """
-    check_center_and_move_particles(x, par::mappingParameters)
+    center_particles(x, par::mappingParameters)
 
-Mapping only works if all coordinates are positive. This function shifts the particles accordingly.
+Shifts all particles so that the image is centered on [0, 0, 0].
 """
-function check_center_and_move_particles(x::Matrix{T}, par::mappingParameters) where T
+function center_particles(x::Matrix{T}, par::mappingParameters) where T
 
     # explicitly copy to its own variable to avoid memory overwrite
     cen  = copy(par.center)
@@ -13,6 +13,13 @@ function check_center_and_move_particles(x::Matrix{T}, par::mappingParameters) w
     
     @inbounds for i = 1:size(x,2), dim = 1:3
         x[dim, i] -= cen[dim]
+
+        # do periodic mapping here
+        if par.periodic
+            if abs(x[dim,i]) > par.boxsize/2
+                x[dim, i] = x[dim, i] > 0 ? x[dim,i] - par.boxsize/2 : x[dim,i] + par.boxsize/2 
+            end
+        end
     end
 
     xlim .-= cen[1]
@@ -30,43 +37,25 @@ end
 
 Checks if a particle is contained in the image and returns an array of `Bool`.
 """
-function filter_particles_in_image(pos::Array{T}, hsml::Array{T}, param::mappingParameters) where T
+function filter_particles_in_image(pos::Array{T}, par::mappingParameters) where T
 
-    N = size(hsml,1)
+    N = size(pos,2)
 
-    p_in_image = falses(N)
+    corner_lower_right = par.center - par.halfsize
+    corner_upper_right = par.center + par.halfsize
+    
+    # allocate array to store if particle is in image
+    p_in_image = trues(N)
 
-    if param.periodic
-        k_start = 0
-    else
-        k_start = 7
+    @inbounds for i = 1:N
+        in_image = true
+        for dim = 1:3
+            if !(corner_lower_right[dim] <= pos[dim, i] <= corner_upper_right[dim])
+                in_image = false
+            end
+        end
+        p_in_image[i] = in_image
     end
-
-    in_image = false
-
-    @inbounds for p = 1:N
-
-        @inbounds for k_periodic = k_start:7
-
-            if param.periodic
-                x, y, z = find_position_periodic(pos[:,p], k_periodic, param.boxsize)
-            else
-                x, y, z = pos[:,p]
-            end
-
-            #in_image = particle_in_image(x, y, z, param.halfsize)
-
-            in_image = particle_in_image(x, y, z, hsml[p], param.halfsize, param.pixelSideLength/2)
-            
-            if in_image
-                break
-            end
-
-        end # k_periodic
-
-        p_in_image[p] = in_image
-
-    end # p
 
     return p_in_image
 end
