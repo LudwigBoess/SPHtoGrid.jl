@@ -151,6 +151,35 @@ addprocs(2)
             1.0 0.0 1.0]))
     end
 
+    @testset "indices" begin 
+
+        Npixels = 128
+
+        @testset "2D" begin
+            indices = Vector{Int64}(undef, Npixels^2)
+            count = 1
+            for i = 0:Npixels-1, j = 0:Npixels-1
+                idx = SPHtoGrid.calculate_index(i, j, Npixels)
+                indices[idx] = count
+                count += 1
+            end
+
+            @test indices == collect(1:Npixels^2)
+        end
+
+        @testset "3D" begin
+            indices = Vector{Int64}(undef, Npixels^3)
+            count = 1
+            for i = 0:Npixels-1, j = 0:Npixels-1, k = 0:Npixels-1
+                idx = SPHtoGrid.calculate_index(i, j, k, Npixels, Npixels)
+                indices[idx] = count
+                count += 1
+            end
+            
+            @test indices == collect(1:Npixels^3)
+        end
+    end
+
     @testset "SPH Mapping" begin
 
         @info "SPH Mapping tests take a while..."
@@ -324,46 +353,47 @@ addprocs(2)
 
     # end
 
-    # @testset "HealPix mapping" begin
+    @testset "HealPix mapping" begin
         
-    #     snap_base = "snap_cutout_072"
+        snap_base = "snap_cutout_072"
 
-    #     kernel = WendlandC4(2)
+        kernel = WendlandC4(2)
 
-    #     h  = GadgetIO.read_header(snap_base)
-    #     GU = GadgetPhysical(h, xH=0.752)
+        h  = GadgetIO.read_header(snap_base)
+        GU = GadgetPhysical(h, xH=0.752)
 
-    #     Nside = 128
-    #     center = 0.5h.boxsize .* ones(3) .* GU.x_physical
+        Nside = 128
+        center = 0.5h.boxsize .* ones(3) .* GU.x_physical
 
-    #     hsml = read_block(snap_base, "HSML", parttype=0) .* GU.x_physical
-    #     rho  = read_block(snap_base, "RHO", parttype=0)  .* GU.rho_physical
-    #     mass = read_block(snap_base, "MASS", parttype=0) .* GU.m_physical
+        hsml = read_block(snap_base, "HSML", parttype=0) .* GU.x_physical
+        rho  = read_block(snap_base, "RHO", parttype=0)  .* GU.rho_physical
+        mass = read_block(snap_base, "MASS", parttype=0) .* GU.m_physical
 
-    #     T_K   = read_block(snap_base, "U", parttype=0) .* GU.T_K
+        T_K   = read_block(snap_base, "U", parttype=0) .* GU.T_K
 
-    #     pos  = read_block(snap_base, "POS", parttype=0) .* GU.x_physical
+        pos  = read_block(snap_base, "POS", parttype=0) .* GU.x_physical
 
-    #     allsky_map, weight_map = healpix_map(pos, hsml, mass, rho, T_K, rho;
-    #                         center, kernel, Nside)
+        allsky_map, weight_map = healpix_map(pos, hsml, mass, rho, T_K, rho,
+                            output_from_all_workers=true;
+                            center, kernel, Nside)
 
-    #     @inbounds for i ∈ eachindex(allsky_map)
-    #         if !isnan(weight_map[i]) && !iszero(weight_map[i]) && !isinf(weight_map[i])
-    #             allsky_map[i]  /= weight_map[i]
-    #         end
-    #     end
+        @inbounds for i ∈ eachindex(allsky_map)
+            if !isnan(weight_map[i]) && !iszero(weight_map[i]) && !isinf(weight_map[i])
+                allsky_map[i]  /= weight_map[i]
+            end
+        end
 
-    #     # check if all pixels are filled
-    #     @test length(findall(iszero.(allsky_map))) == 0
+        # check if all pixels are filled
+        @test length(findall(iszero.(allsky_map))) == 0
 
-    #     # check min and max of map 
-    #     @test minimum(allsky_map) ≈ 4766.125101327221
-    #     @test maximum(allsky_map) ≈ 5.937353111693359e7
+        # check min and max of map 
+        @test minimum(allsky_map) ≈ 4766.125101327221
+        @test maximum(allsky_map) ≈ 5.937353111693359e7
 
-    #     # check sum of all pixels 
-    #     @test sum(allsky_map[:]) ≈ 3.637350200286616e11
+        # check sum of all pixels 
+        @test sum(allsky_map[:]) ≈ 3.637350200286616e11
 
-    # end
+    end
 
     # @testset "FITS io" begin
 
