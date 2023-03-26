@@ -1,7 +1,7 @@
 using Downloads
 
-# @info "downloading test data..."
-# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_sedov", "./snap_sedov")
+@info "downloading test data..."
+Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_sedov", "./snap_sedov")
 
 # Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.0", "./snap_002.0")
 # Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.1", "./snap_002.1")
@@ -15,9 +15,9 @@ using Downloads
 
 # Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.key.index", "./snap_002.key.index")
 
-# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_cutout_072", "./snap_cutout_072")
+Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_cutout_072", "./snap_cutout_072")
 
-# @info "done"
+@info "done"
 
 using Distributed
 addprocs(2)
@@ -162,7 +162,7 @@ addprocs(2)
         rho_ref, par, snap, units = read_fits_image("sedov_rho_reference.fits")
 
         # sedov reference snapshot
-        fi = "snap_050"
+        fi = "snap_sedov"
 
         # kernel definition
         k = WendlandC4(2)
@@ -545,7 +545,7 @@ addprocs(2)
 end
 
 
-# rm("snap_sedov")
+rm("snap_sedov")
 
 # rm("snap_002.0")
 # rm("snap_002.1")
@@ -557,4 +557,4 @@ end
 # rm("snap_002.3.key")
 # rm("snap_002.key.index")
 
-# rm("snap_cutout_072")
+rm("snap_cutout_072")
