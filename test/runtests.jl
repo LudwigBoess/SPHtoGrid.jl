@@ -172,7 +172,7 @@ addprocs(2)
         GU = GadgetPhysical(xH=0.752)
 
         blocks = ["POS", "MASS", "HSML", "RHO", "U"]
-        data = Dict(block => read_snap(fi, block, parttype=0) for block in blocks)
+        data = Dict(block => read_block(fi, block, parttype=0) for block ∈ blocks)
 
         # convert to physical code units for mapping
         pos  = data["POS"]  .* GU.x_physical
