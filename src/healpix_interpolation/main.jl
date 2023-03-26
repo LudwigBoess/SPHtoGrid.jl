@@ -1,12 +1,12 @@
 using Statistics
 
 """
-    update_progress!(P, min_worker, show_progress)
+    update_progress!(P, show_progress, output_this_worker)
 
 Updates the progress bar if conditions are met.
 """
-function update_progress!(P, min_worker, show_progress)
-    if show_progress && myid() == min_worker
+function update_progress!(P, show_progress, output_this_worker)
+    if show_progress && output_this_worker
         next!(P)
     end
 end
@@ -79,12 +79,14 @@ end
 
 
 """
-    healpix_map(pos, hsml, m, rho, bin_q, weights;
+    healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
                 center::Vector{<:Real}=[0.0, 0.0, 0.0],
                 Nside::Integer=1024,
                 kernel::AbstractSPHKernel,
                 show_progress::Bool=true,
-                radius_limits::Vector{<:Real}=[0.0, Inf])
+                output_from_all_workers::Bool=false,
+                radius_limits::Vector{<:Real}=[0.0, Inf],
+                calc_mean::Bool=true)
 
 Calculate an allsky map from SPH particles.
 """
@@ -93,16 +95,22 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
     Nside::Integer=1024,
     kernel::AbstractSPHKernel,
     show_progress::Bool=true,
+    output_from_all_workers::Bool=false,
     radius_limits::Vector{<:Real}=[0.0, Inf],
     calc_mean::Bool=true)
 
-    # worker ID for output
-    min_worker = minimum(workers())
+
+    if output_from_all_workers
+        output_this_worker = true
+    else
+        # only give output for one worker
+        output_this_worker = myid() == minimum(workers())
+    end
 
     # Npart before filtering
     Npart_in = length(Hsml)
 
-    if show_progress && myid() == min_worker
+    if show_progress && output_this_worker
         println("filtering particles")
     end
 
@@ -112,7 +120,7 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
     # Npart after filtering 
     Npart = length(hsml)
 
-    if show_progress && myid() == min_worker
+    if show_progress && output_this_worker
         println("$Npart / $Npart_in in image")
     end
 
@@ -142,7 +150,7 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
 
         if !calc_mean
             if iszero(bin_q[ipart])
-                update_progress!(P, min_worker, show_progress)
+                update_progress!(P, show_progress, output_this_worker)
                 continue
             end
         end
@@ -153,7 +161,7 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
         # if the particle is closer than its smoothing length
         # we get too much noise in the map
         if Δx < hsml[ipart]
-            update_progress!(P, min_worker, show_progress)
+            update_progress!(P, show_progress, output_this_worker)
             continue
         end
 
@@ -183,10 +191,10 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
         part_mass += m[ipart]
 
         # update the progress meter
-        update_progress!(P, min_worker, show_progress)
+        update_progress!(P, show_progress, output_this_worker)
     end # loop over particles
 
-    if show_progress && myid() == min_worker
+    if show_progress && output_this_worker
         println()
         @info "Number of zero pixels in image: $(length(findall(iszero.(allsky_map))))"
         println()
