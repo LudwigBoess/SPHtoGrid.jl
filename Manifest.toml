@@ -2,7 +2,7 @@
 
 julia_version = "1.9.0-rc1"
 manifest_format = "2.0"
-project_hash = "8bcfdb039f17b7574996bcdf680a653e510721b8"
+project_hash = "c322a915204521f11b55e4f55745b4c2dd277e56"
 
 [[deps.AbstractTrees]]
 git-tree-sha1 = "faa260e4cb5aba097a73fab382dd4b5819d8ec8c"
@@ -76,14 +76,6 @@ deps = ["QuadGK", "Unitful", "UnitfulAstro"]
 git-tree-sha1 = "27996feb4391e8373417471feaa8638da773e589"
 uuid = "76746363-e552-5dba-9a5a-cef6fa9cc5ab"
 version = "1.0.2"
-
-[[deps.DSAModels]]
-deps = ["Test"]
-git-tree-sha1 = "a2abd9ec86b4fe8de73a40955cf25c6d8fa5e0d3"
-repo-rev = "main"
-repo-url = "https://github.com/LudwigBoess/DSAModels.jl"
-uuid = "c94b82ce-bc6a-4c64-9fc0-cb2d7d683713"
-version = "0.1.0"
 
 [[deps.DataAPI]]
 git-tree-sha1 = "e8119c1a33d267e16108be441a287a6981ba1630"
@@ -483,12 +475,6 @@ version = "1.9.0"
 deps = ["Artifacts", "Libdl", "Pkg", "libblastrampoline_jll"]
 uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
 version = "5.10.1+6"
-
-[[deps.SynchrotronKernel]]
-deps = ["Documenter", "DocumenterTools", "SpecialFunctions", "Test"]
-git-tree-sha1 = "9ffc16d6b7daf88aadcc2857e84580f223fa7562"
-uuid = "7c311715-997f-43ba-a0ee-db1ccfe8d7f2"
-version = "0.2.0"
 
 [[deps.TOML]]
 deps = ["Dates"]
