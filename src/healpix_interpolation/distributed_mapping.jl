@@ -34,7 +34,8 @@ end
 """
     distributed_allsky_map( allsky_filename::String, 
                             Nside::Integer, Nsubfiles::Integer, 
-                            mapping_function::Function)
+                            mapping_function::Function;
+                            reduce_image::Bool=true)
 
 Dynamically dispatches workers to compute one allsky map per subfile, sum up the results and save to a fits file.
 
@@ -43,10 +44,12 @@ Dynamically dispatches workers to compute one allsky map per subfile, sum up the
 - `Nside::Integer`: `Nside` for healpix map, must be a multiple of 2! `Nside = 2^N`.
 - `Nsubfiles::Integer`: Number of subfiles the snapshot is distributed over.
 - `mapping_function::Function`: The function to be executed per subfile. Must have a call to [`allsky_map`](@ref) as return value.
+- `reduce_image`: If the final image should be divided by the weight image set to `true`
 """
 function distributed_allsky_map(allsky_filename::String, 
                                 Nside::Integer, Nsubfiles::Integer, 
-                                mapping_function::Function)
+                                mapping_function::Function;
+                                reduce_image::Bool=true)
 
     println("starting workers")
 
@@ -89,11 +92,13 @@ function distributed_allsky_map(allsky_filename::String,
         Nsubfiles -= 1
     end
 
-    println("reducing image")
-    flush(stdout); flush(stderr)
-    @inbounds for i ∈ eachindex(sum_allsky)
-        if !isnan(sum_weights[i]) && !iszero(sum_weights[i]) && !isinf(sum_weights[i])
-            sum_allsky[i]  /= sum_weights[i]
+    if reduce_image
+        println("reducing image")
+        flush(stdout); flush(stderr)
+        @inbounds for i ∈ eachindex(sum_allsky)
+            if !isnan(sum_weights[i]) && !iszero(sum_weights[i]) && !isinf(sum_weights[i])
+                sum_allsky[i]  /= sum_weights[i]
+            end
         end
     end
 

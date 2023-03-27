@@ -72,8 +72,6 @@ fo_image = map_path * "rho.fits"
 write_fits_image(fo_image, quantitiy_map, par, snap = snap, units = "g/cm^2")
 ```
 
-### Units
-
 The units in this case are of course ``g/cm^2``.
 
 
@@ -144,8 +142,6 @@ fo_image = map_path * "Xray.fits"
 write_fits_image(fo_image, quantitiy_map, par, snap = snap, units = "erg/s")
 ```
 
-### Units
-
 This returns a map in the units ``erg/s``.
 
 ## Sunyaev-Z'eldovich Effect
@@ -189,10 +185,6 @@ fo_image = map_path * "ThermalSZ.fits"
 write_fits_image(fo_image, quantitiy_map, par, snap = snap, units = "")
 ```
 
-You can find the parameters for the [`thermal_SZ`](@ref) function here:
-```@docs
-thermal_SZ
-```
 
 ## Gamma Ray emission
 

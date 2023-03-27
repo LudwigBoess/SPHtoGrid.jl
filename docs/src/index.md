@@ -5,7 +5,8 @@
 Pages = [ "index.md", 
           "install.md", 
           "mapping.md",
-          "weights.md",
+          "healpix.md",
+          "effects.md",
           "rotating.md",
           "external.md", 
           "api.md"]
