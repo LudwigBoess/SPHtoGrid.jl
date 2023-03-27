@@ -69,7 +69,7 @@ Computes the Compton-Y parameter from electron density `n_cm3` and temperature `
 - `z`: Redshift.
 
 ## Mapping settings
-- weight function: [`part_weight_one`](@ref)
+- weight function: [`part_weight_physical`](@ref)
 - reduce image: `false`
 """
 function comptonY(n_cm3::Real, T_K::Real, z::Real)
