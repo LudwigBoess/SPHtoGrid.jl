@@ -107,7 +107,9 @@ export mappingParameters,                         # parameters for SPH mapping
     analytic_synchrotron_GS,
     spectral_synchrotron_emission,
     convert_Pnu_map_to_mJy_beam,
-    λγ_PE04,
+    λγ_PE04, jγ_PE04,
+    gamma_luminosity_pions_PE04,
+    gamma_flux_pions_PE04,
     # IO
     read_fits_image,
     read_allsky_fits_image,
