@@ -22,7 +22,17 @@ X-Ray emissivity for particles with temperature `T_keV` in ``keV``, mass `m_cgs`
 # Returns
 X-Ray emissivity in units of [erg/s].
 
-# Weights
+## Arguments:
+- `T_keV`: SPH particle temperature [keV]
+- `m_cgs`: SPH particle mass in [g]
+- `rho_cgs`: SPH particle density in [g/cm^3]
+- `E0`: Minimum photon energy for Xray spectrum [keV]
+- `E1`: Maximum photon energy for Xray spectrum [keV]
+- `xH`: Hydrogen mass fraction in the simulation
+
+## Mapping settings
+- weight function: [`part_weight_one`](@ref)
+- reduce image: `true`
 """
 function x_ray_emission(T_keV::Vector{<:Real}, 
                         m_cgs::Vector{<:Real}, 

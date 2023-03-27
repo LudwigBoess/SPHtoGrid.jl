@@ -5,7 +5,7 @@ using SPHKernels
 using Unitful
 using Printf
 using ProgressMeter
-using DSAModels
+#using DSAModels
 using SpecialFunctions
 using LinearAlgebra
 using Rotations
@@ -103,11 +103,13 @@ export mappingParameters,                         # parameters for SPH mapping
     thermal_SZ,
     x_ray_emission,
     get_T_keV,
-    analytic_synchrotron_emission,
-    analytic_synchrotron_GS,
-    spectral_synchrotron_emission,
+    #analytic_synchrotron_emission,
+    #analytic_synchrotron_GS,
+    #spectral_synchrotron_emission,
     convert_Pnu_map_to_mJy_beam,
-    λγ_PE04,
+    λγ_PE04, jγ_PE04,
+    gamma_luminosity_pions_PE04,
+    gamma_flux_pions_PE04,
     # IO
     read_fits_image,
     read_allsky_fits_image,
