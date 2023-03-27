@@ -2,19 +2,6 @@ using Downloads
 
 @info "downloading test data..."
 Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_sedov", "./snap_sedov")
-
-# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.0", "./snap_002.0")
-# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.1", "./snap_002.1")
-# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.2", "./snap_002.2")
-# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.3", "./snap_002.3")
-
-# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.0.key", "./snap_002.0.key")
-# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.1.key", "./snap_002.1.key")
-# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.2.key", "./snap_002.2.key")
-# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.3.key", "./snap_002.3.key")
-
-# Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_002.key.index", "./snap_002.key.index")
-
 Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_cutout_072", "./snap_cutout_072")
 
 @info "done"
@@ -29,9 +16,6 @@ addprocs(2)
     @testset "Smac utility" begin
 
         @test_nowarn write_smac1_par("./")
-
-
-        # @test_throws ErrorException("Read error: Incorrect image format!") read_smac1_binary_image(joinpath(dirname(@__FILE__), "snap_050"))
 
         filename = joinpath(dirname(@__FILE__), "Smac1.pix")
         info = read_smac1_binary_info(filename)
@@ -463,6 +447,9 @@ addprocs(2)
         weight = part_weight_physical(1, par)
         @test weight[1] ≈ par.pixelSideLength * 3.085678e21
 
+        weight = part_weight_physical(1)
+        @test weight[1] ≈ 3.085678e21
+
         weight = part_weight_emission([0.5, 0.5], [0.5, 0.5])
         @test weight[1] ≈ 0.1767766952966369
 
@@ -475,116 +462,119 @@ addprocs(2)
 
     end
 
-    # @testset "Effect functions" begin
+    @testset "Effect functions" begin
 
-    #     @testset "Density" begin
-    #         @test density_2D(1.0, 1.0) ≈ 6.769911178294544e-22
-    #     end
+        @testset "Density" begin
+            @test density_2D(1.0, 1.0) ≈ 6.769911178294544e-22
+        end
 
-    #     @testset "SZ-effect" begin
-    #         @test SPHtoGrid.Tcmb(0.0) ≈ 2.728
-    #         @test SPHtoGrid.Tcmb(10.0) ≈ 30.008000000000003
+        @testset "SZ-effect" begin
+            @test SPHtoGrid.Tcmb(0.0) ≈ 2.728
+            @test SPHtoGrid.Tcmb(10.0) ≈ 30.008000000000003
 
-    #         @test kinetic_SZ([1.0], [1.0])[1] ≈ -2.2190366589946296e-35
+            @test kinetic_SZ([1.0], [1.0])[1] ≈ -2.2190366589946296e-35
 
-    #         @test thermal_SZ([1.0], [1.0])[1] ≈ 3.876935843260665e-34
-    #     end
+            @test thermal_SZ([1.0], [1.0])[1] ≈ 3.876947202614958e-34
+        end
 
-    #     @testset "X-Ray" begin
-    #         # in spectral range
-    #         @test x_ray_emission([10.0], [1.989e38], [1.e-28])[1] ≈ 1.9479441169462751e34
-    #         # bolometric
-    #         @test x_ray_emission([10.0], [1.989e38], [1.e-28], E0=0.0, E1=Inf)[1] ≈ 9.575878609659925e34
-    #     end
+        @testset "X-Ray" begin
+            # in spectral range
+            @test x_ray_emission([10.0], [1.989e38], [1.e-28])[1] ≈ 1.9479441169462751e34
+            # bolometric
+            @test x_ray_emission([10.0], [1.989e38], [1.e-28], E0=0.0, E1=Inf)[1] ≈ 9.575878609659925e34
+        end
 
-    #     @testset "Synchrotron" begin
+        @testset "gamma" begin
+            # set up reference values
+            rho = 1.e-28
+            T_K = 1.e7
+            α_p = 2.235
+            m_cgs = 1.989e40
+            Mpc = 3.085678e24
 
-    #         @testset "Analytic" begin
-    #             @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0])[1] ≈ 6.424386277144697e-25
+            @test λγ_PE04(rho, T_K, α_p) ≈ 2.0962584497769528e-31
+            @test jγ_PE04(rho, T_K, α_p, 1.0) ≈ 3.610788768607327e-32
+            @test gamma_luminosity_pions_PE04(rho, m_cgs, T_K, α_p) ≈ 3.549481187521353e37
+            @test gamma_flux_pions_PE04(rho, m_cgs, T_K, α_p, Mpc) ≈ 3.484725208525935e-13
+        end
 
-    #             @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0], convert_to_mJy = true)[1] ≈ 6.424386277144697e1
+        # @testset "Synchrotron" begin
 
-    #             @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0])[1] == 0.0
+        #     @testset "Analytic" begin
+        #         @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0])[1] ≈ 6.424386277144697e-25
 
-    #             @test_throws ErrorException("Invalid DSA model selection!") analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0], dsa_model = 10)
-    #         end
+        #         @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0], convert_to_mJy = true)[1] ≈ 6.424386277144697e1
 
-    #         @testset "Spectrum" begin
+        #         @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0])[1] == 0.0
 
-    #             # # test thermal energy density - redundant!
-    #             # # acc_function = SPHtoGrid.KR13_acc
-    #             # # ϵ_th = SPHtoGrid.EpsNtherm(1.52606e-30, 4.75088e+08, xH=0.76)
-    #             # # ϵ_cr0 = 0.01 * SPHtoGrid.get_rel_energy_density(10.0, acc_function) * ϵ_th
-    #             # # @test ϵ_cr0 / ϵ_th ≈ 0.00244270822665505
+        #         @test_throws ErrorException("Invalid DSA model selection!") analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0], dsa_model = 10)
+        #     end
 
-    #             # @testset "ϵ_th" begin
-    #             #     # with pitch angle integration
-    #             #     j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model = 2,
-    #             #         integrate_pitch_angle = true)
+        #     @testset "Spectrum" begin
 
-    #             #     @test j_ν ≈ 1.8643638246341477e-55
+        #         # # test thermal energy density - redundant!
+        #         # # acc_function = SPHtoGrid.KR13_acc
+        #         # # ϵ_th = SPHtoGrid.EpsNtherm(1.52606e-30, 4.75088e+08, xH=0.76)
+        #         # # ϵ_cr0 = 0.01 * SPHtoGrid.get_rel_energy_density(10.0, acc_function) * ϵ_th
+        #         # # @test ϵ_cr0 / ϵ_th ≈ 0.00244270822665505
 
-    #             #     # without pitch angle integration
-    #             #     j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model = 2,
-    #             #         integrate_pitch_angle = false)
+        #         # @testset "ϵ_th" begin
+        #         #     # with pitch angle integration
+        #         #     j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model = 2,
+        #         #         integrate_pitch_angle = true)
 
-    #             #     @test j_ν ≈ 4.451252238469209e-55
+        #         #     @test j_ν ≈ 1.8643638246341477e-55
 
-    #             #     # conversion to mJy/cm
-    #             #     j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model = 2,
-    #             #         integrate_pitch_angle = false,
-    #             #         convert_to_mJy = true)
+        #         #     # without pitch angle integration
+        #         #     j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model = 2,
+        #         #         integrate_pitch_angle = false)
 
-    #             #     @test j_ν ≈ 4.4512522384692095e-29
+        #         #     @test j_ν ≈ 4.451252238469209e-55
 
-    #             # end
+        #         #     # conversion to mJy/cm
+        #         #     j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model = 2,
+        #         #         integrate_pitch_angle = false,
+        #         #         convert_to_mJy = true)
 
-    #             # @testset "pre-defined" begin
-    #             #     # test for pre-defined spectrum
-    #             #     Nbins = 128
-    #             #     q0 = 4.166666666666667
+        #         #     @test j_ν ≈ 4.4512522384692095e-29
 
-    #             #     # define spectrum
-    #             #     bounds = 10.0 .^ LinRange(-1.0, 6.0, Nbins + 1)
-    #             #     norm = Vector{Float64}(undef, Nbins)
-    #             #     # reference from previous test
-    #             #     norm[1] = 2.3141104241756675e-30
-    #             #     for Nbin = 2:Nbins-1
-    #             #         norm[Nbin] = norm[Nbin-1] * (bounds[Nbin] / bounds[Nbin-1])^(-q0)
-    #             #     end
+        #         # end
 
-    #             #     j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6,
-    #             #         integrate_pitch_angle = true)
+        #         # @testset "pre-defined" begin
+        #         #     # test for pre-defined spectrum
+        #         #     Nbins = 128
+        #         #     q0 = 4.166666666666667
 
-    #             #     @test j_ν ≈ 1.6530988606617404e-55
+        #         #     # define spectrum
+        #         #     bounds = 10.0 .^ LinRange(-1.0, 6.0, Nbins + 1)
+        #         #     norm = Vector{Float64}(undef, Nbins)
+        #         #     # reference from previous test
+        #         #     norm[1] = 2.3141104241756675e-30
+        #         #     for Nbin = 2:Nbins-1
+        #         #         norm[Nbin] = norm[Nbin-1] * (bounds[Nbin] / bounds[Nbin-1])^(-q0)
+        #         #     end
 
-    #             #     j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6,
-    #             #         integrate_pitch_angle = false)
+        #         #     j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6,
+        #         #         integrate_pitch_angle = true)
 
-    #             #     @test j_ν ≈ 4.2742001929052135e-55
+        #         #     @test j_ν ≈ 1.6530988606617404e-55
 
-    #             #     j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6,
-    #             #         integrate_pitch_angle = false,
-    #             #         convert_to_mJy = true)
+        #         #     j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6,
+        #         #         integrate_pitch_angle = false)
 
-    #             #     @test j_ν ≈ 4.2742001929052134e-29
-    #             # end # pre-fedined
-    #         end # Spectrum
-    #     end
-    # end
+        #         #     @test j_ν ≈ 4.2742001929052135e-55
+
+        #         #     j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6,
+        #         #         integrate_pitch_angle = false,
+        #         #         convert_to_mJy = true)
+
+        #         #     @test j_ν ≈ 4.2742001929052134e-29
+        #         # end # pre-fedined
+        #     end # Spectrum
+        # end
+    end
 end
 
 
 rm("snap_sedov")
-
-# rm("snap_002.0")
-# rm("snap_002.1")
-# rm("snap_002.2")
-# rm("snap_002.3")
-# rm("snap_002.0.key")
-# rm("snap_002.1.key")
-# rm("snap_002.2.key")
-# rm("snap_002.3.key")
-# rm("snap_002.key.index")
-
 rm("snap_cutout_072")
