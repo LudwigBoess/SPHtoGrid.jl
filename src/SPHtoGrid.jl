@@ -69,6 +69,9 @@ include("effects/sz_effect.jl")
 include("effects/x_ray.jl")
 include("effects/gamma.jl")
 
+# precompile step 
+include("precompile.jl")
+
 export mappingParameters,                         # parameters for SPH mapping
     sphMapping,                                # main function for mapping 
     map_it,
