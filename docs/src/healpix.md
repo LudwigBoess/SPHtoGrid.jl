@@ -3,7 +3,7 @@
 You can also use `SPHtoGrid.jl` to do allsky projections of your simulations.
 Here is an example of this for one of the simulations of the [LOCALIZATION](https://localization.ias.universite-paris-saclay.fr/) project [(Dolag et. al. 2023)](https://ui.adsabs.harvard.edu/abs/2023arXiv230210960D/abstract) :
 
-![allsky](allsky.png)
+![allsky](assets/allsky.png)
 
 ## Single core mapping
 

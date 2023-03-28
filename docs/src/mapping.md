@@ -10,7 +10,7 @@ end
 Mapping SPH particles to a grid instead of simply plotting color-coded particle positions shows the actual gas quantities as they are used in an SPH code: weighted with a kernel, according to their distance to each other.
 You can see this in the following plot, left are color-coded particle positions, right is the mean density in the SPH particles along the line of sight, interpolated to a grid.
 
-![galaxy](galaxy.png)
+![galaxy](assets/galaxy.png)
 
 You can map SPH data to a grid using the function [`sphMapping`](@ref), which comes in two flavors: [CIC](@ref) and [TSC](@ref).
 
