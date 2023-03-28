@@ -7,6 +7,7 @@
                 show_progress::Bool=true,
                 parallel::Bool=false,
                 reduce_image::Bool=true,
+                return_both_maps::Bool=false,
                 filter_particles::Bool=true,
                 dimensions::Int=2,
                 calc_mean::Bool=false)
@@ -15,19 +16,21 @@ Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 `param` and the kernel to be used in `kernel`.
 
 # Arguments
-- `Pos`: Matrix (3xNpart) with particle positions.
-- `HSML`: Array with particle hsml.
-- `M`: Array with particle masses.
-- `Rho`: Array with particle densities.
-- `Bin_Quant`: Array with particle quantity to be mapped.
-- `Weights`: Array with weights. Defaults to density-weighted.
-- `kernel::AbstractSPHKernel`: Kernel object to be used.
-- `show_progress::Bool=true`: Show progress bar.
-- `parallel::Bool=true`: Run on multiple processors.
-- `reduce_image::Bool=true`: If weights need to be applied or not. Set to `false` for [`part_weight_physical`](@ref).
-- `filter_particles::Bool=true`: Find the particles that are actually contained in the image.
-- `dimensions::Int=2`: Number of mapping dimensions (2 = to grid, 3 = to cube).
-- `calc_mean::Bool=false`: Calculates the mean value along the line of sight. If set to `false` the particle only contributes if its `Bin_Quant` is larger than 0.
+- `Pos`: Matrix (3xNpart) with particle positions
+- `HSML`: Array with particle hsml
+- `M`: Array with particle masses
+- `Rho`: Array with particle densities
+- `Bin_Quant`: Array with particle quantity to be mapped
+- `Weights`: Array with weights. Defaults to density-weighted
+- `param`: `mappingParameters` for this map
+- `kernel`: `AbstractSPHKernel` to be used for mapping
+- `show_progress`: Show progress bar
+- `parallel`: Run on multiple processors
+- `reduce_image`: If weights need to be applied or not. Set to `false` for [`part_weight_physical`](@ref)
+- `return_both_maps`: Returns the full image array. To be used with parallel mapping of subfiles
+- `filter_particles`: Find the particles that are actually contained in the image
+- `dimensions`: Number of mapping dimensions (2 = to grid, 3 = to cube)
+- `calc_mean`: Calculates the mean value along the line of sight. If set to `false` the particle only contributes if its `Bin_Quant` is larger than 0
 """
 function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real}, 
                     Rho::Array{<:Real}, Bin_Quant::Array{<:Real}, 
@@ -37,9 +40,10 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
                     show_progress::Bool=true,
                     parallel::Bool=false,
                     reduce_image::Bool=true,
-                    filter_particles::Bool=true,
+                    return_both_maps::Bool=false,
                     dimensions::Int=2,
-                    calc_mean::Bool=false)
+                    calc_mean::Bool=false,
+                    sort_z::Bool=false)
 
     
     # store number of input particles
@@ -50,7 +54,8 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
         @info "Centering on [0.0, 0.0, 0.0]"
         t1 = time_ns()
     end
-    Pos, par = check_center_and_move_particles(Pos, param)
+
+    Pos, par = center_particles(Pos, param)
 
     if show_progress
         t2 = time_ns()
@@ -63,11 +68,8 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
         t1 = time_ns()
     end
 
-    if filter_particles
-        p_in_image = filter_particles_in_image(Pos, HSML, param)
-    else
-        p_in_image = trues(N_in)
-    end
+    p_in_image = filter_particles_in_image(Pos, par)
+
 
     if show_progress
         t2 = time_ns()
@@ -134,12 +136,13 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
                 @info "  elapsed: $(output_time(t1,t2)) s"
             end
 
-            if !reduce_image 
-                image[:,2] .= 1.0
+            if return_both_maps
+                return image
             end
 
             return reduce_image_2D( image,
-                            param.Npixels[1], param.Npixels[2] )
+                            param.Npixels[1], param.Npixels[2],
+                            reduce_image)
         else
             @info "Running on $(nworkers()) cores."
 
@@ -170,12 +173,13 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
                 @info "  elapsed: $(output_time(t1,t2)) s"
             end
 
-            if !reduce_image 
-                image[:,2] .= 1.0
+            if return_both_maps
+                return image
             end
 
             return reduce_image_2D( image, 
-                        param.Npixels[1], param.Npixels[2] )
+                        param.Npixels[1], param.Npixels[2], 
+                        reduce_image)
         end
 
     elseif (dimensions == 3 )
@@ -236,28 +240,94 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
 end
 
 
+using Statistics
+using Printf
+
 """
-    map_it(pos_in, hsml, mass, rho, bin_q, weights, k, 
-           snap, units, image_path, reduce_image, param, 
-           filter_particles=true, parallel=true)
+    map_it( pos_in, hsml, mass, rho, bin_q, weights;
+            param::mappingParameters,
+            kernel::AbstractSPHKernel=WendlandC6(), 
+            snap::Integer=0, 
+            units::AbstractString="", 
+            image_prefix::String="dummy",
+            reduce_image::Bool=true, 
+            parallel=true,
+            calc_mean::Bool=true, 
+            show_progress::Bool=true,
+            sort_z::Bool=false,
+            projection="xy")
 
 Small helper function to copy positions, map particles and save the fits file.
-"""
-function map_it(pos_in, hsml, mass, rho, bin_q, weights, k, 
-                snap, units, image_path, reduce_image, param, 
-                filter_particles=true, parallel=true)
 
+# Arguments
+- `pos_in`: Matrix (3xNpart) with particle positions
+- `hsml`: Array with particle hsml
+- `mass`: Array with particle masses
+- `rho`: Array with particle densities
+- `bin_q`: Array with particle quantity to be mapped
+- `weights`: Array with weights. Defaults to density-weighted
+- `param`: `mappingParameters` for this map
+- `kernel`: `AbstractSPHKernel` to be used for mapping
+- `units`: Unit string will be saved to FITS file
+- `image_prefix`: Name of the file to save, withou `.fits` file-ending
+- `reduce_image`: If weights need to be applied or not. Set to `false` for [`part_weight_physical`](@ref)
+- `parallel`: Run on multiple processors.
+- `calc_mean`: Calculates the mean value along the line of sight. If set to `false` the particle only contributes if its `bin_q` is larger than 0.
+- `show_progress`: Show progress bar
+- `sort_z`: Sort the particles according to their line-of-sight direction. Needed for polarisation mapping (not used yet!)
+- `projection`: Which plane the position should be rotated in. Can also be an Array of 3 Euler angles (in [°]) (not used yet!)
+"""
+function map_it(pos_in, hsml, mass, rho, bin_q, weights;
+                param::mappingParameters,
+                kernel::AbstractSPHKernel=WendlandC6(2), 
+                snap::Integer=0, 
+                units::AbstractString="", 
+                image_prefix::String="dummy",
+                reduce_image::Bool=true, 
+                parallel=true,
+                calc_mean::Bool=true, show_progress::Bool=true,
+                sort_z::Bool=false,
+                projection="xy")
+
+    # copy the positions to new array to be able to shift particles 
+    # and also continue mapping with the same array
     pos = copy(pos_in)
 
+    if projection == "xy"
+        pos = pos
+    elseif projection == "xz"
+        pos = rotate_to_xz_plane!(pos)
+    elseif projection == "yz"
+        pos = rotate_to_yz_plane!(pos)
+    elseif typeof(projection) <: AbstractVector
+        pos = rotate_3D(pos, projection...)
+        projection = "alpha=$(@sprintf("%0.2f", projection[1]))beta=$(@sprintf("%0.2f", projection[2]))gamma=$(@sprintf("%0.2f", projection[3]))"
+    else
+        error("projection must be either along in 'xy', 'xz', or 'yz' plane of defined by a vector of Euler angles!")
+    end 
+
+    # get cic map
     quantitiy_map = sphMapping( pos, hsml, mass, rho,
-                                bin_q, weights, show_progress = true,
-                                param = param, kernel = k, parallel = parallel,
-                                reduce_image = reduce_image, filter_particles = filter_particles)
+                                bin_q, weights; show_progress,
+                                param, kernel, parallel,
+                                reduce_image,
+                                calc_mean,
+                                sort_z)
 
 
-    fo_image = image_path * ".fits"
+    fo_image = image_prefix * ".fits"
 
-    @info "map maximum: $(maximum(quantitiy_map))"
+    @info "Map Properties:"
+    @info "  Max:  $(maximum(quantitiy_map))"
+    @info "  Min:  $(minimum(quantitiy_map))"
+    @info "  Mean: $(mean(quantitiy_map))"
+    @info "  Sum:  $(sum(quantitiy_map))"
+    println()
+    Npixels = size(quantitiy_map,1) * size(quantitiy_map,2)
+    @info "  Nr. of pixels:     $Npixels"
+    @info "  Nr. of 0 pixels:   $(length(findall(iszero.(quantitiy_map))))"
+    @info "  Nr. of NaN pixels: $(length(findall(isnan.(quantitiy_map))))"
+    @info "  Nr. of Inf pixels: $(length(findall(isinf.(quantitiy_map))))"
 
     write_fits_image(fo_image, quantitiy_map, param, snap = snap, units = units)
 end

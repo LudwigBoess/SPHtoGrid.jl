@@ -1,1 +1,3 @@
 test/*.par
+test/sedov_rho.fits
+test/sedov_T.fits

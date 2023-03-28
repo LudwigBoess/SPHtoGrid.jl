@@ -5,11 +5,12 @@ using SPHKernels
 using Unitful
 using Printf
 using ProgressMeter
-using DSAModels
+#using DSAModels
 using SpecialFunctions
 using LinearAlgebra
 using Rotations
 using Base.Threads
+using Healpix
 
 function output_time(t1, t2)
     return @sprintf("%0.3e", Float64((t2 - t1)) * 1.e-9)
@@ -50,6 +51,14 @@ include("splash_interpolation/splash_2D.jl")
 include("splash_interpolation/splash_3D.jl")
 include("splash_interpolation/splash_interpolation.jl")
 
+# healpix interpolation
+include("healpix_interpolation/shared.jl")
+include("healpix_interpolation/filter_particles.jl")
+include("healpix_interpolation/constributing_pixels.jl")
+include("healpix_interpolation/pixel_weights.jl")
+include("healpix_interpolation/main.jl")
+include("healpix_interpolation/distributed_mapping.jl")
+
 # effect functions
 include("effects/constants.jl")
 include("effects/density.jl")
@@ -58,10 +67,17 @@ include("effects/synchrotron_spectrum.jl")
 include("effects/radio_beam.jl")
 include("effects/sz_effect.jl")
 include("effects/x_ray.jl")
+include("effects/gamma.jl")
+
+# precompile step 
+include("precompile.jl")
 
 export mappingParameters,                         # parameters for SPH mapping
     sphMapping,                                # main function for mapping 
     map_it,
+    healpix_map,
+    distributed_allsky_map,
+    reduce_image_healpix,
     filter_particles_in_image,                 # helper function to preselect particles
     get_map_grid_2D,
     get_map_grid_3D,
@@ -90,12 +106,16 @@ export mappingParameters,                         # parameters for SPH mapping
     thermal_SZ,
     x_ray_emission,
     get_T_keV,
-    analytic_synchrotron_emission,
-    analytic_synchrotron_GS,
-    spectral_synchrotron_emission,
+    #analytic_synchrotron_emission,
+    #analytic_synchrotron_GS,
+    #spectral_synchrotron_emission,
     convert_Pnu_map_to_mJy_beam,
+    λγ_PE04, jγ_PE04,
+    gamma_luminosity_pions_PE04,
+    gamma_flux_pions_PE04,
     # IO
     read_fits_image,
+    read_allsky_fits_image,
     write_fits_image
 
 

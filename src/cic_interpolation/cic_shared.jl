@@ -42,27 +42,10 @@ end
 
 Calculates `x, y, z` position in units of pixels and performs periodic mapping, if required.
 """
-function get_xyz( pos, hsml, k::Integer,
-                  par::mappingParameters)
-    
-    if par.periodic
+function get_xyz( pos::Array{T},
+                  par::mappingParameters) where T
 
-        # perform periodic mapping of particle
-        x, y, z = find_position_periodic(pos, k, par.boxsize)
-
-        # check if the particle is still contained in the image frame
-        # after the periodic mapping
-        if !particle_in_image(x, y, z, hsml, par.halfsize)
-
-            # if not return skip_particle as true
-            return x, y, z, true
-        end
-
-    else
-        # unpack array
-        x, y, z = pos
-    end
-
+    x, y, z = pos
     # convert from code units to pixels
     x *= par.len2pix
     y *= par.len2pix
@@ -72,7 +55,7 @@ function get_xyz( pos, hsml, k::Integer,
     y += 0.5 * par.Npixels[2]
     z += 0.5 * par.Npixels[3]
     
-    return x, y, z, false
+    return x, y, z
 
 end
 
@@ -86,11 +69,11 @@ end
 Applies the different contributions to the image and the weight image.
 """
 function update_image( image::Float64, w_image::Float64, 
-                        wk::Float64, bin_q::Float64, 
-                        geometry_norm::Float64 )
+                        wk::Float64, A::Float64, geometry_norm::Float64,
+                        bin_q::Float64 )
 
-    if wk > 0.0
-        pix_weight  = geometry_norm * wk
+    if wk > 0
+        pix_weight  = geometry_norm * wk * A
         image      += bin_q * pix_weight
         w_image    += pix_weight
     end

@@ -72,8 +72,6 @@ fo_image = map_path * "rho.fits"
 write_fits_image(fo_image, quantitiy_map, par, snap = snap, units = "g/cm^2")
 ```
 
-### Units
-
 The units in this case are of course ``g/cm^2``.
 
 
@@ -105,8 +103,13 @@ write_fits_image(fo_image, quantitiy_map, par, snap = snap, units = "muG")
 
 ## X-Ray emission
 
-To map the total Xray emission along the LOS you need to used `weights = ones(Npart)` and set `reduce_image=true`
+To map the total Xray emission along please use
 
+```@docs
+x_ray_emission
+```
+
+Here is an example code
 ```julia
 # you need to make a copy of the positions if you plan to re-use them
 # the mapping shifts them in place
@@ -139,17 +142,20 @@ fo_image = map_path * "Xray.fits"
 write_fits_image(fo_image, quantitiy_map, par, snap = snap, units = "erg/s")
 ```
 
-### Units
-
 This returns a map in the units ``erg/s``.
 
 ## Sunyaev-Z'eldovich Effect
 
-### Thermal
 
+You can compute compton-Y parameter, thermal and kinetic SZ effect with these functions:
 
-To map the total thermal SZ effect integrated along the LOS you need to used `part_weight_physical` and set `reduce_image=false`
+```@docs
+comptonY
+thermal_SZ
+kinetic_SZ
+```
 
+Example for the thermal SZ effect
 ```julia
 # you need to make a copy of the positions if you plan to re-use them
 # the mapping shifts them in place
@@ -179,21 +185,52 @@ fo_image = map_path * "ThermalSZ.fits"
 write_fits_image(fo_image, quantitiy_map, par, snap = snap, units = "")
 ```
 
-You can find the parameters for the [`thermal_SZ`](@ref) function here:
-```@docs
-thermal_SZ
-```
 
+## Gamma Ray emission
 
-### Kinetic
-
-To compute the contribution of each particle to the kinetic SZ-effect you can use
+You can compute gamma-ray related maps as in [Pfrommer & Enßlin (2004)](https://ui.adsabs.harvard.edu/abs/2004A%26A...413...17P/abstract) with:
 
 ```@docs
-kinetic_SZ
+jγ_PE04
+λγ_PE04
+gamma_luminosity_pions_PE04
+gamma_flux_pions_PE04
 ```
 
-every thing else stays the same as for the thermal SZ effect.
+Example for gamma-ray luminosity
+
+```julia
+# you need to make a copy of the positions if you plan to re-use them
+# the mapping shifts them in place
+pos_map = copy(pos)
+
+# convert density to physical cgs units
+rho_gcm3 = data["RHO"] .* GU.rho_cgs
+
+# convert mass to physical cgs units
+m_cgs = data["MASS"] .* GU.m_cgs
+
+# get temperature in keV
+T_keV = data["U"] .* GU.T_K
+
+# calculate Iγ-ray luminosity per particle in the energy band Emin = 0.1 GeV, Emax = 200 GeV
+# for proton spectra with slope 2.235
+Lγ = gamma_luminosity_pions_PE04.(T_keV, m_cgs, rho_cgs, 2.235)
+
+# weights ones means you sum up the values along the LOS
+weights = ones(length(Lγ))
+
+# actual mapping
+map = sphMapping(pos_map, hsml, mass, rho, Lγ, weights,
+                param = par, kernel = k,
+                reduce_image = true)
+
+# filename of the output image
+fo_image = map_path * "L_gamma.fits"
+
+# store the fits image
+write_fits_image(fo_image, quantitiy_map, par, snap = snap, units = "GeV/s")
+```
 
 
 ## Synchrotron Emission

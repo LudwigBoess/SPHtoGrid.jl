@@ -25,14 +25,24 @@ end
 
 """
     kinetic_SZ(n_cm3::Real, vel_y_cgs::Real, 
-                    ν::Real=1.e9, z::Real=0.0; 
-                    DI_over_I::Bool=false)
+               z::Real=0.0, ν::Real=1.e9;
+               DI_over_I::Bool=false)
 
 Computes the kinetic Sunyaev-Zel'dovich effect from electron density `n_cm3` and velocity in y-direction to the projection plane in cgs units `vel_y_cgs`.
 If `DI_over_I` is set to `true` you also need to provide an observation frequency `ν` and redshift `z`.
+
+## Arguments:
+- `n_cm3`: SPH particle density in [1/cm^3]
+- `vel_y_cgs`: SPH particle velocity in y-direction in [cm/s]
+- `z`: Redshift
+- `ν`: Observing frequency
+
+## Mapping settings
+- weight function: [`part_weight_physical`](@ref)
+- reduce image: `false`
 """
 function kinetic_SZ(n_cm3::Vector{<:Real}, vel_y_cgs::Vector{<:Real},
-                    ν::Real = 1.e9, z::Real = 0.0;
+                    z::Real=0.0, ν::Real=1.e9;
                     DI_over_I::Bool = false)
 
     # calculate prefator once
@@ -52,9 +62,45 @@ end
     comptonY(n_cm3::Real, T_K::Real, z::Real)
 
 Computes the Compton-Y parameter from electron density `n_cm3` and temperature `T` in Kelvin at redshift `z`.
+
+## Arguments:
+- `n_cm3`: SPH particle density in [1/cm^3]
+- `T_K`: SPH particle temperature [K]
+- `z`: Redshift.
+
+## Mapping settings
+- weight function: [`part_weight_physical`](@ref)
+- reduce image: `false`
 """
 function comptonY(n_cm3::Real, T_K::Real, z::Real)
     return yPrefac * n_cm3 * (T_K - Tcmb(z))
+end
+
+"""
+    comptonY(n_cm3::Vector{<:Real}, T_K::Vector{<:Real}, z::Real)
+
+Computes the Compton-Y parameter from electron density `n_cm3` and temperature `T` in Kelvin at redshift `z`.
+
+## Arguments:
+- `n_cm3`: SPH particle density in [1/cm^3]
+- `T_K`: SPH particle temperature [K]
+- `z`: Redshift
+
+## Mapping settings
+- weight function: [`part_weight_physical`](@ref)
+- reduce image: `false`
+"""
+function comptonY(n_cm3::Vector{<:Real}, T_K::Vector{<:Real}, z::Real)
+
+    T_cmb = Tcmb(z)
+
+    compton_y = Vector{Float64}(undef, length(T_K))
+
+    @threads for i ∈ eachindex(T_K)
+        compton_y[i] = yPrefac * n_cm3[i] * (T_K[i] - T_cmb)
+    end
+
+    return compton_y
 end
 
 """
@@ -81,9 +127,19 @@ end
 
 Computes the thermal Sunyaev-Zel'dovich effect for electron density `n_cm3` and temperature `T_K` in Kelvin at redshift `z` and observer frequency `ν`.
 `DI_over_I` outputs in units of ``dI/I`` if set to `true` and `dT/T` otherwise.
+
+## Arguments:
+- `n_cm3`: SPH particle density in [1/cm^3]
+- `T_K`: SPH particle temperature [K]
+- `z`: Redshift
+- `ν`: Observing frequency
+
+## Mapping settings
+- weight function: [`part_weight_physical`](@ref)
+- reduce image: `false`
 """
 function thermal_SZ(n_cm3::Vector{<:Real}, T_K::Vector{<:Real},
-                    z::Real = 0.0, ν::Real = 1.44e9;
+                    z::Real = 0.0, ν::Real = 1.4e9;
                     DI_over_I::Bool = false)
 
     # calculate prefator once

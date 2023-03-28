@@ -67,6 +67,24 @@ end
     read_smac1_binary_info(filename::String)
 
 Returns the image info in a `Smac1ImageInfo` struct.
+
+## `Smac1ImageInfo` fields
+
+- `snap::Int32`:             number of input snapshot
+- `z::Float32`:              redshift of snapshot
+- `m_vir::Float32`:          virial mass of halo
+- `r_vir::Float32`:          virial radius of halo
+- `xcm::Float32`:            x coordinate of image center
+- `ycm::Float32`:            y coordinate of image center
+- `zcm::Float32`:            z coordinate of image center
+- `z_slice_kpc::Float32`:    depth of the image in kpc
+- `boxsize_kpc::Float32`:    xy-size of the image in kpc
+- `boxsize_pix::Float32`:    xy-size of the image in pixels
+- `pixsize_kpc::Float32`:    size of one pixel in kpc
+- `xlim::Array{Float64,1}`:  x limits of image
+- `ylim::Array{Float64,1}`:  y limits of image
+- `zlim::Array{Float64,1}`:  z limits of image
+- `units::String`:           unitstring of image
 """
 function read_smac1_binary_info(filename::String)
 
@@ -296,8 +314,8 @@ function write_smac1_par( path="./"; kwargs...)
         #           (1) X_crp ( P_crp/P_th )
         #        (22) BP_CR Electrons
         #           (0) Pressure
-        #           (1) Number density
-        #           (2) Energy density
+        #           (1) Number in range given by [CR_Emin, CR_Emax]
+        #           (2) Energy in range given by [CR_Emin, CR_Emax]
         #           (3) Synchrotron Emission
         #          (31) Synchrotron Polarised Emission & Polarisation Angle
         #       (100) 3D DM density
@@ -366,8 +384,13 @@ function write_smac1_par( path="./"; kwargs...)
         CR_nbins = $( haskey(kwargs, :CR_nbins) ? kwargs[:CR_nbins] : 48 )
         CR_pmin = $( haskey(kwargs, :CR_pmin) ? kwargs[:CR_pmin] : 1.0 )
         CR_pmax = $( haskey(kwargs, :CR_pmax) ? kwargs[:CR_pmax] : 1.e6 )
-        CR_subsamples = $( haskey(kwargs, :CR_subsamples) ? kwargs[:CR_subsamples] : 10 )
         CR_DSlope = $( haskey(kwargs, :CR_DSlope) ? kwargs[:CR_DSlope] : 1.0e-6 )
+        CR_Emin = $( haskey(kwargs, :CR_Emin) ? kwargs[:CR_Emin] : 1.0 )
+        CR_Emax = $( haskey(kwargs, :CR_Emax) ? kwargs[:CR_Emax] : 1.0e6 )
+
+        #**** Magnetic field models (to be used with synchrotron emission)
+        Bfield_model = $( haskey(kwargs, :Bfield_model) ? kwargs[:Bfield_model] : 0 )   # default is intrinsic magnetic field 
+        PLASMA_BETA  = $( haskey(kwargs, :PLASMA_BETA) ? kwargs[:PLASMA_BETA] : 50.0 )
         
         
         #**** Set to 1 if you want additional statistical informations (L_x,T,...).
