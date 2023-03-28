@@ -61,22 +61,6 @@ function particle_area_and_depth(hsml::T, m::T, rho::T) where {T}
     return area, dz
 end
 
-"""
-    particle_area_and_depth(d, hsml, pix_radian)
-
-Computes the particle area and depth.
-Caution: This has to be represented as a cylinder instead of a sphere, which introduces an error by design.
-Also computes the pixel radius at the particle horizon.
-"""
-function particle_area_and_depth(hsml::T) where {T}
-
-    # general particle quantities
-    dz = 2hsml
-    area = π * hsml^2
-
-    return area, dz
-end
-
 
 """
     healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
@@ -153,9 +137,9 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
     # storage array for mapped area
     A = Vector{Float64}(undef, length(allsky_map))
 
-    # storage for grid and particle masses 
-    grid_mass = 0.0
-    part_mass = 0.0
+    # # storage for grid and particle masses 
+    # grid_mass = 0.0
+    # part_mass = 0.0
 
     # define progressmeter
     P = Progress(Npart)
@@ -187,7 +171,6 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
 
         # area of particle and length along line of sight
         area, dz = particle_area_and_depth(hsml[ipart], m[ipart], rho[ipart])
-        #area, dz = particle_area_and_depth(hsml[ipart])
 
         # calculate kernel weights and mapped area
         wk, A, N, weight_per_pix = calculate_weights(wk, A, pos[:, ipart], hsml[ipart],
@@ -200,9 +183,9 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
             A, N, weight_per_pix,
             weights[ipart], bin_q[ipart])
 
-        # store mass on grid and in particles 
-        grid_mass += rho[ipart] * sum(wk[1:length(pixidx)]) * sum(A[1:length(pixidx)]) * dz
-        part_mass += m[ipart]
+        # # store mass on grid and in particles 
+        # grid_mass += rho[ipart] * sum(wk[1:length(pixidx)]) * sum(A[1:length(pixidx)]) * dz
+        # part_mass += m[ipart]
 
         # update the progress meter
         update_progress!(P, show_progress, output_this_worker)
@@ -211,11 +194,11 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
     if show_progress && output_this_worker
         println()
         @info "Number of zero pixels in image: $(length(findall(iszero.(allsky_map))))"
-        println()
-        @info "Mass conservation:"
-        @info "\tMass on grid:      $(grid_mass*1.e10) Msun"
-        @info "\tMass in particles: $(part_mass*1.e10) Msun"
-        @info "\tRel. Error:        $(abs(part_mass-grid_mass)/part_mass)"
+        # println()
+        # @info "Mass conservation:"
+        # @info "\tMass on grid:      $(grid_mass*1.e10) Msun"
+        # @info "\tMass in particles: $(part_mass*1.e10) Msun"
+        # @info "\tRel. Error:        $(abs(part_mass-grid_mass)/part_mass)"
     end
 
     return allsky_map, weight_map

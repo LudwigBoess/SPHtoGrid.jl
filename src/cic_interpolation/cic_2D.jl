@@ -160,8 +160,8 @@ function cic_mapping_2D( Pos, HSML,
         P = Progress(N)
     end
 
-    grid_mass = 0.0
-    particle_mass = 0.0
+    # grid_mass = 0.0
+    # particle_mass = 0.0
 
     # loop over all particles
     @inbounds for p = 1:N
@@ -192,7 +192,7 @@ function cic_mapping_2D( Pos, HSML,
         kernel_norm = area / N
         area_norm = kernel_norm * weight_per_pix * los_weight * dz
 
-        grid_vol = 0.0
+        #grid_vol = 0.0
 
         # loop over all contributing pixels
         @inbounds for i = iMin:iMax, j = jMin:jMax
@@ -201,14 +201,14 @@ function cic_mapping_2D( Pos, HSML,
 
             image[idx,1], image[idx,2] = update_image(image[idx,1], image[idx,2], wk[idx], A[idx], area_norm, bin_q)
 
-            grid_vol += wk[idx] * A[idx] * dz
+            #grid_vol += wk[idx] * A[idx] * dz
             
         end # i, j    
 
-        grid_mass += Rho[p] * grid_vol
+        #grid_mass += Rho[p] * grid_vol
 
         # store mass of contributing particle 
-        particle_mass += M[p]
+        #particle_mass += M[p]
 
          # update for ProgressMeter
         if show_progress
@@ -216,12 +216,12 @@ function cic_mapping_2D( Pos, HSML,
         end
     end # p
 
-    if show_progress
-        @info "Mass conservation:"
-        @info "\tMass on grid:      $(grid_mass*1.e10) Msun"
-        @info "\tMass in particles: $(particle_mass*1.e10) Msun"
-        @info "\tRel. Error:        $(abs(particle_mass-grid_mass)/particle_mass)"
-    end
+    # if show_progress
+    #     @info "Mass conservation:"
+    #     @info "\tMass on grid:      $(grid_mass*1.e10) Msun"
+    #     @info "\tMass in particles: $(particle_mass*1.e10) Msun"
+    #     @info "\tRel. Error:        $(abs(particle_mass-grid_mass)/particle_mass)"
+    # end
 
     return image
 
