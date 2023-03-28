@@ -3,7 +3,8 @@ using SPHtoGrid
 
 makedocs(
     sitename = "SPHtoGrid.jl",
-    format = Documenter.HTML(),
+    doctest =false,
+    format=Documenter.HTML(),
     modules = [SPHtoGrid],
     pages = [
             "Table of Contents" => "index.md",
