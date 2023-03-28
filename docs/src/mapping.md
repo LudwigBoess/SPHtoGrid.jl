@@ -130,6 +130,14 @@ This means that the resulting images have the units:
 
 ` wimage = [Weights] * [pix^2] `
 
+### Helper Function
+
+If you're lazy like me and don't want to go through the entire process of image reduction and saving the fits file by hand you can use
+
+```@docs
+map_it
+```
+
 
 ## TSC
 
