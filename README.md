@@ -4,7 +4,7 @@
 
 # SPHtoGrid.jl
 
-This package maps SPH quantities to a cartesian grid. It is based on [Smac](https://ui.adsabs.harvard.edu/abs/2005MNRAS.363...29D/abstract) by [Klaus Dolag](https://www.usm.uni-muenchen.de/~dolag/) und [Smac2](https://github.com/jdonnert/Smac2) by Julius Donnert.
+This package maps SPH quantities to a cartesian grid or a healpix sphere. It is based on [Smac](https://ui.adsabs.harvard.edu/abs/2005MNRAS.363...29D/abstract) by [Klaus Dolag](https://www.usm.uni-muenchen.de/~dolag/) und [Smac2](https://github.com/jdonnert/Smac2) by Julius Donnert.
 
 Please see the [Documentation](https://LudwigBoess.github.io/SPHtoGrid.jl/dev) for details.
 
