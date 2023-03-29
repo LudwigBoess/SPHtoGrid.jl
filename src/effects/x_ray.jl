@@ -1,22 +1,60 @@
 """
-    x_ray_emission(n_cm3::Real, T_K::Real; 
-                   Emin::Real=5.e4, Emax::Real=1.e10, 
-                   xH::Real=0.76)
+    get_T_keV(U::Vector{<:Real}, mass::Vector{<:Real}, T_eV::Real)
 
-X-Ray emission of a particle with number density `n_cm3` in ``1/cm^3`` and temperature `T` in ``K``.
+Helper function to compute energy in keV used for Xray emission.
+Takes `U` and `mass` in code units and converts it with `T_eV` as the temperature->eV factor from `GadgetUnits`.
+"""
+function get_T_keV(U::Vector{<:Real}, mass::Vector{<:Real}, T_eV::Real)
+    @. U * T_eV * 1.e-3 * mass
+end
+
+"""
+    x_ray_emission(T_keV::Vector{<:Real}, 
+                    m_cgs::Vector{<:Real}, 
+                    rho_cgs::Vector{<:Real}; 
+                    E0::Real=0.1, E1::Real=2.4, 
+                    xH::Real = 0.76)
+
+X-Ray emissivity for particles with temperature `T_keV` in ``keV``, mass `m_cgs` in ``g`` and density `rho_cgs` in ``g/cm^3``.
 `Emin` and `Emax` give the minimum and maximum energy of the oberservation.
 `xH` gives the hydrogen fraction used in the simulation.
 
 # Returns
-X-Ray surface brightness contribution in units of [erg/cm^2/s/Hz].
+X-Ray emissivity in units of [erg/s].
+
+## Arguments:
+- `T_keV`: SPH particle temperature [keV]
+- `m_cgs`: SPH particle mass in [g]
+- `rho_cgs`: SPH particle density in [g/cm^3]
+- `E0`: Minimum photon energy for Xray spectrum [keV]
+- `E1`: Maximum photon energy for Xray spectrum [keV]
+- `xH`: Hydrogen mass fraction in the simulation
+
+## Mapping settings
+- weight function: [`part_weight_one`](@ref)
+- reduce image: `true`
 """
-function x_ray_emission(n_cm3::Real, T_K::Real; 
-                        Emin::Real=5.e4, Emax::Real=1.e10, 
-                        xH::Real=0.76)
+function x_ray_emission(T_keV::Vector{<:Real}, 
+                        m_cgs::Vector{<:Real}, 
+                        rho_cgs::Vector{<:Real}; 
+                        E0::Real=0.1, E1::Real=2.4, 
+                        xH::Real = 0.76)
 
-    prefac = 4.0 * 2.42e-24 / (1 + xH)
-    T_eV   = T_K * cgs2eV
+    mol  = 4 / (5 * xH + 3);
+    n2ne = (xH + 0.5 * (1 - xH)) /
+           (2xH + 0.75 * (1 - xH));
 
-    return prefac * sqrt( k_B * T_eV * 1.e-3 ) * n_cm3^2 *
-            ( exp( -Emin / (k_B * T_eV) ) - exp( -Emax / (k_B * T_eV) ) )
+    cutoff = @. exp(-E0 / T_keV) - exp(-E1 / T_keV)
+
+    """
+        Steinmetz & Bartelmann, based on Spizer 1968, gg = 1.0 (!?)
+    Beside the fact, that it is not clear which value they used for the Gaunt factor
+    it is the best formulation, as composition H/He (fr) and conversion from particle
+    number to electron number (n2ne) is explicite formulated.
+    """
+    Lxbol = @. m_cgs * rho_cgs *
+            √(T_keV) * 
+            4C_j * gg / (1 + xH) * (n2ne / (mol * m_p))^2
+
+    @. Lxbol * cutoff
 end

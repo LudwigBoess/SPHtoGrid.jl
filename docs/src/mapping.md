@@ -1,4 +1,4 @@
-# Mapping SPH Data
+# Mapping SPH Data to Cartesian Grids
 
 ```@meta
 CurrentModule = SPHtoGrid
@@ -7,12 +7,21 @@ DocTestSetup = quote
 end
 ```
 
+Mapping SPH particles to a grid instead of simply plotting color-coded particle positions shows the actual gas quantities as they are used in an SPH code: weighted with a kernel, according to their distance to each other.
+You can see this in the following plot, left are color-coded particle positions, right is the mean density in the SPH particles along the line of sight, interpolated to a grid.
+
+![galaxy](assets/galaxy.png)
+
 You can map SPH data to a grid using the function [`sphMapping`](@ref), which comes in two flavors: [CIC](@ref) and [TSC](@ref).
 
+## Define parameters for mapping
 
-# Define parameters for mapping
+To map the data you need to define the mapping parameters via the [`mappingParameters`](@ref) struct.
 
-To map the data you need to define the mapping parameters via the [`mappingParameters`](@ref) object.
+```@docs
+mappingParameters
+```
+
 One way to set this up is by defining the limits of the map as
 
 ```julia
@@ -45,29 +54,17 @@ par = mappingParameters(center=[x0, y0, z0],
                         Npixels=200)
 ```
 
-# CIC
+## CIC
 
 For "Counts in Cell" (CIC) interpolation use the function `sphMapping` with these input values:
 
-```julia
-function sphMapping(Pos, HSML, M, ρ, Bin_Quant,
-                    Weights=ρ;
-                    param::mappingParameters,
-                    kernel::SPHKernel [,
-                    show_progress::Bool=true,
-                    parallel::Bool=false,
-                    filter_particles::Bool=true,
-                    dimensions::Int=2])
-
-
-    [...]
-
-end
+```@docs
+sphMapping(::Array{<:Real}, ::Array{<:Real}, ::Array{<:Real}, ::Array{<:Real}, ::Array{<:Real})
 ```
 
-where `Pos` is the 3D positional data, `HSML` is the kernel support of each particle, `M` are the particle masses, `ρ` is the density of the particle, `Bin_Quant` is the qantity you want to bin and `Weights` is an array of weights. These weights can be calculated using one of the supplied [Weight functions](@ref). They default to density weighted.
 
-## Select Kernel
+
+### Select Kernel
 
 You also need to choose the kernel you used in the simulation. For this you need to install the package [SPHKernels.jl](https://github.com/LudwigBoess/SPHKernels.jl). You can currently use these kernels:
 
@@ -81,7 +78,7 @@ k = WendlandC8()
 
 Please see the SPHKernels [docs](https://ludwigboess.github.io/SPHKernels.jl/stable/) for more details.
 
-## Mapping
+### Mapping
 
 With the setup done you can now map (e.g.) density of your data using the function above as:
 
@@ -104,48 +101,46 @@ addprocs(8)
 using SPHtoGrid
 ```
 
-## Conserved quantities
+### Conserved quantities
 
-With the latest release the particles are mapped to a grid while also conserving the particle volume, following the algorithm described in [Dolag et. al. 2006](https://ui.adsabs.harvard.edu/link_gateway/2005MNRAS.363...29D/doi:10.1111/j.1365-2966.2005.09452.x).
+Particles are mapped to a grid while also conserving the particle volume, following the algorithm described in [Dolag et. al. 2006](https://ui.adsabs.harvard.edu/link_gateway/2005MNRAS.363...29D/doi:10.1111/j.1365-2966.2005.09452.x).
 
-## Weight functions
+### Weight functions
 
 With the mapping you may decide to use a specific weighting function. For this you can pass the optional variable `Weights` in [`sphMapping`](@ref).
 
 You can either use your own weight functions or use one of the built-in ones:
 
-[`part_weight_one`](@ref) just returns an `Array` of ones.
+```@docs
+part_weight_one
+part_weight_physical
+part_weight_emission
+part_weight_spectroscopic
+part_weight_XrayBand
+```
 
-[`part_weight_physical`](@ref) converts from pixel- to physical units.
-
-[`part_weight_emission`](@ref) weights the contribution due to density and temperature of the particle.
-
-[`part_weight_spectroscopic`](@ref) gives spectroscopic weighting, see Mazotta+ 04.
-
-[`part_weight_XrayBand`](@ref) weights the particle due to its Xray emission in the defined energy band.
-
-## Units
+### Units
 
 As you have to handle unit conversion yourself please note that internally the image contains two components: 
 `image` is the mapped pixel value and `wimage` is just the geometry weighting of the particle which will be applied if `reduce_image=true` in [`sphMapping`](@ref).
 
 This means that the resulting images have the units:
 
-`` image = [Bin_Quant] * [Weights] * [pix^2] ``
-`` wimage = [Weights] * [pix^2] ``
+` image = [Bin_Quant] * [Weights] * [pix^2] `
 
+` wimage = [Weights] * [pix^2] `
 
-# TSC
+### Helper Function
 
-A very simplistic approach to mapping SPH data is by using "Triangular Shaped Cloud" (TSC) interpolation. This has the advantage of only needing positional data to bin a quantity, so it works for mapping e.g. initial conditions that don't have values for `HSML` yet. To use this method call the [`sphMapping`](@ref) function with a reduced number of arguments:
+If you're lazy like me and don't want to go through the entire process of image reduction and saving the fits file by hand you can use
 
-```julia
-sphMapping( Pos::Array{<:Real}, Bin_Quant::Array{<:Real};
-            param::mappingParameters,
-            show_progress::Bool=true,
-            dimensions::Int=2)
+```@docs
+map_it
 ```
 
-Mapping then works the same as in the [CIC](@ref) case.
 
-This only runs on a single core and will likely stay that way, as it is a "quick-and-dirty" method anyway.
+## TSC
+
+!!! note 
+    Will be reworked for version 0.5!
+

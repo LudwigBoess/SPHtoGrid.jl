@@ -1,22 +1,30 @@
 | **Documentation**                                                 | **Build Status**                                                                                | **Licence**                                                                                |
 |:-----------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:| :-----------------------------------------------------------------------------------------------:|
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://LudwigBoess.github.io/SPHtoGrid.jl/stable) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://LudwigBoess.github.io/SPHtoGrid.jl/dev) | [![Build Status](https://github.com/LudwigBoess/SPHtoGrid.jl/workflows/Run%20CI%20on%20master/badge.svg)](https://travis-ci.org/LudwigBoess/SPHtoGrid.jl) [![codecov.io](https://codecov.io/gh/LudwigBoess/SPHtoGrid.jl/coverage.svg?branch=master)](https://codecov.io/gh/LudwigBoess/SPHtoGrid.jl?branch=master) | [![The MIT License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE.md) |
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://LudwigBoess.github.io/SPHtoGrid.jl/stable) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://LudwigBoess.github.io/SPHtoGrid.jl/dev) | [![Build Status](https://github.com/LudwigBoess/SPHtoGrid.jl/workflows/Run%20CI%20on%20master/badge.svg)](https://travis-ci.org/LudwigBoess/SPHtoGrid.jl) [![codecov.io](https://codecov.io/gh/LudwigBoess/SPHtoGrid.jl/coverage.svg?branch=master)](https://codecov.io/gh/LudwigBoess/SPHtoGrid.jl?branch=master) |  [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.md) | 
 
 # SPHtoGrid.jl
 
-This package maps SPH quantities to a cartesian grid.
+This package maps SPH quantities to a cartesian grid or a healpix sphere. It is based on [Smac](https://ui.adsabs.harvard.edu/abs/2005MNRAS.363...29D/abstract) by [Klaus Dolag](https://www.usm.uni-muenchen.de/~dolag/) und [Smac2](https://github.com/jdonnert/Smac2) by Julius Donnert.
+
+Please see the [Documentation](https://LudwigBoess.github.io/SPHtoGrid.jl/dev) for details.
+
+# Quickstart
 
 You can map SPH data to a grid using the function `sphMapping`:
 
 ```julia
-function sphMapping(Pos, HSML, M, ρ, Bin_Quant,
-                    Weights=ρ;
+function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real}, 
+                    Rho::Array{<:Real}, Bin_Quant::Array{<:Real}, 
+                    Weights::Array{<:Real}=Rho;
                     param::mappingParameters,
-                    kernel::SPHKernel [,
+                    kernel::AbstractSPHKernel,
                     show_progress::Bool=true,
                     parallel::Bool=false,
-                    filter_particles::Bool=true,
-                    dimensions::Int=2])
+                    reduce_image::Bool=true,
+                    return_both_maps::Bool=false,
+                    dimensions::Int=2,
+                    calc_mean::Bool=false,
+                    sort_z::Bool=false)
 
 
     [...]
@@ -96,22 +104,6 @@ addprocs(8)
 using SPHtoGrid
 ```
 
-### Conserved quantities
+## Conserved quantities
 
-With the latest release you can map the particles to a grid while also conserving the particle volume, following the algorithm described in [Dolag et. al. 2006](https://ui.adsabs.harvard.edu/link_gateway/2005MNRAS.363...29D/doi:10.1111/j.1365-2966.2005.09452.x).
-
-## Weight functions
-
-With the mapping you may decide to use a specivic weighting function. For this you can pass the optional variable `Weights` in `sphMapping`.
-
-You can either use your own weight functions or use one of the built-in ones:
-
-`part_weight_one` just returns an `Array` of ones.
-
-`part_weight_physical` converts from pixel- to physical units.
-
-`part_weight_emission` weights the contribution due to density and temperature of the particle.
-
-`part_weight_spectroscopic` gives spectroscopic weighting, see Mazotta+ 04.
-
-`part_weight_XrayBand` weights the particle due to its Xray emission in the defined energy band.
+Particles are mapped to a grid while also conserving the particle volume, following the algorithm described in [Dolag et. al. 2006](https://ui.adsabs.harvard.edu/link_gateway/2005MNRAS.363...29D/doi:10.1111/j.1365-2966.2005.09452.x).

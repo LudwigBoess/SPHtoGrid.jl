@@ -3,13 +3,15 @@ using SPHtoGrid
 
 makedocs(
     sitename = "SPHtoGrid.jl",
-    format = Documenter.HTML(),
+    doctest =false,
+    format=Documenter.HTML(),
     modules = [SPHtoGrid],
     pages = [
             "Table of Contents" => "index.md",
             "Install" => "install.md",
             "Mapping SPH Data" => "mapping.md",
-            "Effect maps" => "effects.md",
+            "HealPix maps" => "healpix.md",
+            "Examples" => "effects.md",
             "Rotating Images" => "rotating.md",
             "Saving/Loading Images" => "io.md",
             "External Programs" => "external.md",

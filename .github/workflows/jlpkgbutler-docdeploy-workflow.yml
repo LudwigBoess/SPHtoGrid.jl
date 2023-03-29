@@ -12,10 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - run: julia --color=yes -e 'import Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/LudwigBoess/LMBRegistry.git"))'
       - uses: julia-actions/julia-buildpkg@latest
         env:
           PYTHON: ""
       - uses: julia-actions/julia-docdeploy@releases/v1
         env:
-          DOCUMENTER_KEY: ${{ secrets.JLPKGBUTLER_TOKEN }}
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

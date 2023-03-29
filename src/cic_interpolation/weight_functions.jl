@@ -12,12 +12,23 @@ function part_weight_one(N::Integer)
 end
 
 """
-    part_weight_physical(N::Integer, par::mappingParameters)
+    part_weight_physical(N::Integer, par::mappingParameters, x_cgs::Real=3.085678e21)
 
-Physical weighting function in units of [cm/pix].
+Physical weighting function in units of [cm/pix]. 
+To be used with [`sphMapping`](@ref).
 """
 function part_weight_physical(N::Integer, par::mappingParameters, x_cgs::Real=3.085678e21)
     return ones(N) .* par.pixelSideLength .* x_cgs
+end
+
+"""
+    part_weight_physical(N::Integer, x_cgs::Real=3.085678e21)
+
+Physical weighting function in units of [cm]. 
+    To be used with [`healpix_map`](@ref).
+"""
+function part_weight_physical(N::Integer, x_cgs::Real=3.085678e21)
+    return ones(N) .* x_cgs
 end
 
 """
@@ -36,7 +47,7 @@ end
 Spectroscopic weighted mapping from Mazotta+ 04. Takes density and temperature and computes weights.
 """
 function part_weight_spectroscopic(rho::Array{<:Real}, T_K::Array{<:Real})
-    return @. rho^2 * T_K^(0.75 - 1.5)
+    return @. rho^2 / √(√(T_K))^3
 end
 
 """
