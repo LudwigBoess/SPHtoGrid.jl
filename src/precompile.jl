@@ -24,7 +24,6 @@ using SnoopPrecompile    # this is a small dependency
 
     Nside = 128
 
-
     cic_pos = 15.0 .* (rand(3, 100) .- 0.5)
     cic_hsml = 2.0 .* rand(100)
     cic_mass = rand(100)
@@ -56,6 +55,9 @@ using SnoopPrecompile    # this is a small dependency
             # healpix
             healpix_map(hp_pos, hp_hsml, hp_mass, hp_rho, hp_rho, hp_rho, show_progress=true;
                 center, kernel, Nside)
+
+            # delete dummy file 
+            rm("dummy.fits")
         end
     end
 end
