@@ -1,7 +1,7 @@
 {
     "license": "GPLv3", 
     "upload_type": "software",
-    "keywords": [ "simulations", "SPH"],
+    "keywords": [ "simulations" ],
     "language": "eng",
     "creators": [
         {
