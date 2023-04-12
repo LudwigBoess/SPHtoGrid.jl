@@ -23,6 +23,7 @@ include("shared/indices.jl")
 include("shared/distances.jl")
 include("shared/periodic_mapping.jl")
 include("shared/rotate_particles.jl")
+include("shared/rotate_parameters.jl")
 include("shared/io.jl")
 
 # multi-core functionality 

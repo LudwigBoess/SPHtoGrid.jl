@@ -82,3 +82,9 @@ function update_image( image::Float64, w_image::Float64,
 end
 
 
+
+
+function free_memory(x, hsml, m, rho, bin_q, weights)
+    x = hsml = m = rho = bin_q = weights = nothing
+    GC.gc()
+end
