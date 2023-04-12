@@ -56,8 +56,11 @@ using SnoopPrecompile    # this is a small dependency
             healpix_map(hp_pos, hp_hsml, hp_mass, hp_rho, hp_rho, hp_rho, show_progress=true;
                 center, kernel, Nside)
 
-            # delete dummy file 
-            rm("dummy.fits")
         end
+    end
+
+    if isfile("dummy.xy.fits")
+        # delete dummy file 
+        rm("dummy.xy.fits")
     end
 end
