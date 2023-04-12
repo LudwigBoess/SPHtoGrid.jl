@@ -226,18 +226,18 @@ addprocs(2)
                         reduce_image=false, parallel=false;
                         snap, image_prefix)
 
-                    image, par, snap, units = read_fits_image("sedov_rho.fits")
+                    image, par, snap, units = read_fits_image("sedov_rho.xy.fits")
 
                     @test image ≈ rho_ref
                 end
 
                 @testset "T" begin
                     image_prefix = "sedov_T"
-                    map_it(pos, hsml, mass, rho, T, rho, kernel=k, units="T", param=par,
+                    map_it(pos, hsml, mass, rho, T, rho, kernel=k, units="K", param=par,
                         reduce_image=true, parallel=false;
                         snap, image_prefix)
 
-                    image, par, snap, units = read_fits_image("sedov_T.fits")
+                    image, par, snap, units = read_fits_image("sedov_T.xy.fits")
 
                     @test image ≈ T_ref
                 end
@@ -253,18 +253,18 @@ addprocs(2)
                         reduce_image=false, parallel=true;
                         snap, image_prefix)
 
-                    image, par, snap, units = read_fits_image("sedov_rho.fits")
+                    image, par, snap, units = read_fits_image("sedov_rho.xy.fits")
 
                     @test image ≈ rho_ref
                 end
 
                 @testset "T" begin
                     image_prefix = "sedov_T"
-                    map_it(pos, hsml, mass, rho, T, rho, kernel=k, units="T", param=par,
+                    map_it(pos, hsml, mass, rho, T, rho, kernel=k, units="K", param=par,
                         reduce_image=true, parallel=true;
                         snap, image_prefix)
 
-                    image, par, snap, units = read_fits_image("sedov_T.fits")
+                    image, par, snap, units = read_fits_image("sedov_T.xy.fits")
 
                     @test image ≈ T_ref
                 end
