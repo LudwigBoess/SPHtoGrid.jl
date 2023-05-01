@@ -573,6 +573,28 @@ addprocs(2)
         #     end # Spectrum
         # end
     end
+
+    @testset "Image Functions" begin
+        @testset "Synchrotron Polarisation" begin
+            # set up reference images 
+            Npixels = 128
+            Q_image = zeros(Npixels, Npixels)
+            U_image = Matrix{Float64}(undef, Npixels, Npixels)
+            U_image .= 3.964929157902007e-28
+            Iν_image = Matrix{Float64}(undef, Npixels, Npixels)
+            Iν_image .= 5.4753081210232675e-28
+
+            @testset "Fraction" begin
+                Π = polarisation_fraction(Q_image, U_image, Iν_image)
+                @test Π[1] .≈ 0.7241472206245468
+            end
+
+            @testset "Angle" begin
+                ψ = polarisation_angle(Q_image, U_image, Iν_image)
+                @test ψ[1] .≈ 45.0
+            end
+        end
+    end
 end
 
 
