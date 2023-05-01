@@ -65,10 +65,14 @@ include("effects/constants.jl")
 include("effects/density.jl")
 include("effects/synchrotron_analytic.jl")
 include("effects/synchrotron_spectrum.jl")
-include("effects/radio_beam.jl")
 include("effects/sz_effect.jl")
 include("effects/x_ray.jl")
 include("effects/gamma.jl")
+
+# functions for existing images 
+include("image_functions/radio_beam.jl")
+include("image_functions/stokes_parameters.jl")
+
 
 # precompile step 
 include("precompile.jl")
@@ -110,10 +114,13 @@ export mappingParameters,                         # parameters for SPH mapping
     #analytic_synchrotron_emission,
     #analytic_synchrotron_GS,
     #spectral_synchrotron_emission,
-    convert_Pnu_map_to_mJy_beam,
     λγ_PE04, jγ_PE04,
     gamma_luminosity_pions_PE04,
     gamma_flux_pions_PE04,
+    # image functions
+    convert_Pnu_map_to_mJy_beam,
+    polarisation_fraction,
+    polarisation_angle,
     # IO
     read_fits_image,
     read_allsky_fits_image,
