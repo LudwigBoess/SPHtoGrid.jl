@@ -236,3 +236,10 @@ write_fits_image(fo_image, quantitiy_map, par, snap = snap, units = "GeV/s")
 ## Synchrotron Emission
 
 Under construction! Do not use!
+
+# Image Functions
+
+```@docs
+polarisation_fraction
+polarisation_angle
+```
