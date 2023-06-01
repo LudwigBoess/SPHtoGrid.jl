@@ -115,7 +115,8 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
     N_map = length(m)
 
     @info "Particles in image: $N_map / $N_in"
-    
+    @info "Sum of mapped Quantity: $(sum(bin_q))"
+  
 
     if show_progress
         @info "Mapping..."
