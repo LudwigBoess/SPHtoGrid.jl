@@ -1,6 +1,6 @@
-using SnoopPrecompile    # this is a small dependency
+using PrecompileTools    # this is a small dependency
 
-@precompile_setup begin
+@setup_workload begin
     # Putting some things in `setup` can reduce the size of the
     # precompile file and potentially make loading faster.
 
@@ -40,7 +40,7 @@ using SnoopPrecompile    # this is a small dependency
         Npixels=256)
     
 
-    @precompile_all_calls begin
+    @compile_workload begin
         # all calls in this block will be precompiled, regardless of whether
         # they belong to your package or not (on Julia 1.8 and higher)
 
