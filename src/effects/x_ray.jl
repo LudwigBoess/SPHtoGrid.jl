@@ -5,7 +5,7 @@ Helper function to compute energy in keV used for Xray emission.
 Takes `U` and `mass` in code units and converts it with `T_eV` as the temperature->eV factor from `GadgetUnits`.
 """
 function get_T_keV(U::Vector{<:Real}, mass::Vector{<:Real}, T_eV::Real)
-    @. U * T_eV * 1.e-3 * mass
+    @. U * T_eV * 1.e-3 #* mass
 end
 
 """
@@ -23,10 +23,11 @@ function interpolate_table(Qi, Q_table)
     return sel
 end
 
-function get_cooling_factors(T_keV, rho_cgs, metalicity; E0, E1)
+
+function get_cooling_Luminosity(T_keV, rho_cgs, metalicity; E0, E1)
 
     # read all cooling tables
-    Temp, Zmetal, ne_nH, mue, dLcool, E_low, E_high = read_tables()
+    Temp, Zmetal, ne_nH, mue, dLcool, E_low, E_high = read_cooling_tables()
 
     # get energy band indices
     iE_low  = interpolate_table(E0, E_low)
@@ -64,13 +65,16 @@ function get_cooling_factors(T_keV, rho_cgs, metalicity; E0, E1)
 end
 
 """
-    x_ray_emission(T_keV::Vector{<:Real}, 
-                    m_cgs::Vector{<:Real}, 
-                    rho_cgs::Vector{<:Real}; 
+    x_ray_emission( T_keV::Vector{<:Real}, 
+                    rho_cgs::Vector{<:Real},
+                    metalicity::Union{Vector{Float64, Nothing}}=nothing; 
                     E0::Real=0.1, E1::Real=2.4, 
-                    xH::Real = 0.76)
+                    xH::Real=0.752,
+                    cooling_function::Bool=false,
+                    z::Real=0.0)
 
-X-Ray emissivity for particles with temperature `T_keV` in ``keV``, mass `m_cgs` in ``g`` and density `rho_cgs` in ``g/cm^3``.
+X-Ray emissivity for particles with temperature `T_keV` in ``keV``, and density `rho_cgs` in ``g/cm^3``.
+If available you can also add the `metalicity` in the gas.
 `Emin` and `Emax` give the minimum and maximum energy of the oberservation.
 `xH` gives the hydrogen fraction used in the simulation.
 
@@ -90,21 +94,21 @@ X-Ray emissivity in units of [erg/s].
 - reduce image: `true`
 """
 function x_ray_emission(T_keV::Vector{<:Real}, 
-                        m_cgs::Vector{<:Real}, 
                         rho_cgs::Vector{<:Real},
-                        metalicity::Union{Vector{Float64, Nothing}}=nothing; 
+                        m_cgs::Vector{<:Real},
+                        metalicity::Union{Vector{Float64}, Nothing}=nothing; 
                         E0::Real=0.1, E1::Real=2.4, 
-                        xH::Real = 0.76,
+                        xH::Real=0.752,
                         cooling_function::Bool=false,
                         z::Real=0.0)
 
-    # shift from observer to rest-frameS
+    # shift from observer to rest-frame
     E0 *= (1 + z)
     E1 *= (1 + z)
 
     # apply cooling function if requested
     if cooling_function
-        Lx = get_cooling_Luminosity(T_keV, rho_cgs, metalicity)
+        Lx = get_cooling_Luminosity(T_keV, rho_cgs, metalicity; E0, E1)
     else
 
         mol  = 4 / (5 * xH + 3);
@@ -119,71 +123,14 @@ function x_ray_emission(T_keV::Vector{<:Real},
         it is the best formulation, as composition H/He (fr) and conversion from particle
         number to electron number (n2ne) is explicite formulated.
         """
-        Lxbol = @. m_cgs * rho_cgs *
-                √(T_keV) * 
-                4C_j * gg / (1 + xH) * (n2ne / (mol * m_p))^2
-
+        # Lxbol = @. m_cgs * rho_cgs * √(T_keV) * 
+        #         4C_j * gg / (1 + xH) * (n2ne / (mol * m_p))^2
+        Lxbol = @. 4C_j * gg * rho_cgs^2 * √(T_keV) /
+                 (1 + xH) #* (n2ne / (mol * m_p))^2
         
         Lx = Lxbol .* cutoff
 
     end
 
     return Lx
-end
-
-
-
-"""
-    Functions to read cooling tables
-"""
-
-using DelimitedFiles
-
-function read_metalicity_table(tables_path)
-    
-    # read the data
-    z_data = readdlm(joinpath(tables_path, "Z.data"))
-   
-    # assign to arrays
-    Zmetal = z_data[:, 1]
-    ne_nH = z_data[:, 2]
-    mue = z_data[:, 5]
-
-    return Zmetal, ne_nH, mue
-end
-
-function read_temperature_table(tables_path)
-    return readdlm(joinpath(tables_path, "T0_400.data"))[:, 1]
-end
-
-function read_energy_band_table(tables_path)
-    data = readdlm(joinpath(tables_path, "band.data")) .* 1.e-3 
-    return data[:,1], data[:,2]
-end
-
-function read_dLcool(tables_path)
-    dLcool = Array{Float64}(undef, 200, 400, 400)
-    open(joinpath(tables_path, "dLambda.bin.data"), "r") do file
-        read!(file, dLcool)
-    end
-    return dLcool
-end
-
-function read_tables()
-
-    tables_path = joinpath(@__DIR__, "..", "cooling_tables")
-
-    # read temperature table for interpolation
-    Temp = read_temperature_table(tables_path)
-
-    # Read Lambda.bin.data
-    dLcool = read_dLcool(tables_path)
-
-    # read metalicty table 
-    Zmetal, ne_nH, mue = read_metalicity_table(tables_path)
-
-    # read energy band table 
-    E_low, E_high = read_energy_band_table(tables_path)
-
-    return Temp, Zmetal, ne_nH, mue, dLcool, E_low, E_high
 end

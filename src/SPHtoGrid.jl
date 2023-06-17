@@ -16,6 +16,9 @@ function output_time(t1, t2)
     return @sprintf("%0.3e", Float64((t2 - t1)) * 1.e-9)
 end
 
+# read cooling tables for Xray emission 
+include("cooling_tables/read_ccoling_tables.jl")
+
 # shared functionality
 include("shared/parameters.jl")
 include("shared/reconstruct_grid.jl")
