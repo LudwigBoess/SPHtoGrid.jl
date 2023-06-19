@@ -10,17 +10,24 @@ function reduce_image_2D( image::Matrix{<:Real},
                                   reduce_image::Bool)
 
 
-    im_plot = zeros(y_pixels, x_pixels)
+    im_plot = zeros(y_pixels, x_pixels, size(image,2)-1)
     k = 1
     @inbounds for i = 1:y_pixels, j = 1:x_pixels
-        im_plot[j,i] = image[k,1]
-        if reduce_image && (image[k,2] > 0.0)
-            im_plot[j, i] /= image[k,2]
+        for Nimage = 1:size(image, 2)-1
+            # assign image to 
+            im_plot[j, i, Nimage] = image[k, Nimage]
+            if reduce_image && (image[k,end] > 0.0)
+                im_plot[j, i, Nimage] /= image[k,end]
+            end
         end
+        # count up pixels
         k += 1
     end
     # rotate to correct orientation
-    return copy(transpose(im_plot))
+    for Nimage = 1:size(image, 2)-1
+        im_plot[:, :, Nimage] = copy(transpose(im_plot[:, :, Nimage]))
+    end
+    return im_plot
 end
 
 """

@@ -50,7 +50,9 @@ function write_fits_image(filename::String, image::Array{<:Real},
     # write the FITS file
     f = FITS(filename, "w")
 
-    write(f, image, header = header)
+    for Nimage = 1:size(image,3)
+        write(f, image[:, :, Nimage], header=header)
+    end
 
     close(f)
 end
@@ -101,7 +103,7 @@ Read a FITS file and return the image, mappingParameters and the snapshot number
 # Example
 image, par, snap_nr, unit_string = read_fits_image(filename)
 """
-function read_fits_image(filename::String; verbose::Bool = false)
+function read_fits_image(filename::String, Nimage::Integer=1; verbose::Bool = false)
 
     if verbose
         @info "Reading image: $filename"
@@ -114,14 +116,14 @@ function read_fits_image(filename::String; verbose::Bool = false)
     end
 
     # read image
-    image = read(f[1])
+    image = read(f[Nimage])
 
     if verbose
         @info "Read Image"
     end
 
     # read the header
-    header = read_header(f[1])
+    header = read_header(f[Nimage])
 
     if verbose
         @info "Read Header"
