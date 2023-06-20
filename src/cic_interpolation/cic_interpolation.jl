@@ -34,7 +34,8 @@ Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 """
 function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real}, 
                     Rho::Array{<:Real}, Bin_Quant::Array{<:Real}, 
-                    Weights::Array{<:Real}=Rho;
+                    Weights::Array{<:Real}=Rho,
+                    RM::Array{<:Real}=nothing;
                     param::mappingParameters,
                     kernel::AbstractSPHKernel,
                     show_progress::Bool=true,
@@ -43,11 +44,11 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
                     return_both_maps::Bool=false,
                     dimensions::Int=2,
                     calc_mean::Bool=false,
+                    stokes::Bool=false,
                     sort_z::Bool=false)
-
     
     # store number of input particles
-    N_in = size(Bin_Quant,1)
+    N_in = length(M)
 
     # First check if all particles are centered around 0 and shift them if they are not
     if show_progress
@@ -68,7 +69,18 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
         t1 = time_ns()
     end
 
-    p_in_image = filter_particles_in_image(Pos, par)
+    # if we compute the stokes parameters we need to sort the particles 
+    # from back to front
+    if stokes
+        sort_z = true
+
+        if parallel 
+            @warn "Mapping stokes parameters only works in serial!"
+            parallel = false 
+        end
+    end
+
+    p_in_image = filter_particles_in_image(Pos, par, sort_z)
 
 
     if show_progress
@@ -103,8 +115,17 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
         hsml    = HSML[p_in_image]
         m       = M[p_in_image]
         rho     = Rho[p_in_image]
-        bin_q   = Bin_Quant[p_in_image]
+        if ndims(Bin_Quant) == 1
+            bin_q = Bin_Quant[p_in_image]
+        else
+            bin_q = Bin_Quant[:, p_in_image]
+        end
         weights = Weights[p_in_image]
+        if !isnothing(RM)
+            _rm = RM[p_in_image]
+        else
+            _rm = nothing
+        end
     end
 
     if show_progress
@@ -116,7 +137,7 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
 
     @info "Particles in image: $N_map / $N_in"
     @info "Sum of mapped Quantity: $(sum(bin_q))"
-  
+
 
     if show_progress
         @info "Mapping..."
@@ -127,7 +148,7 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
 
         if !parallel
 
-            image = cic_mapping_2D(x, hsml, m, rho, bin_q, weights;
+            image = cic_mapping_2D(x, hsml, m, rho, bin_q, weights, _rm;
                                 param=par, kernel=kernel,
                                 show_progress=show_progress,
                                 calc_mean=calc_mean)
@@ -161,9 +182,14 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
 
             # start remote processes
             for (i, id) in enumerate(workers())
+                if ndims(bin_q) == 1
+                    _bin_q = bin_q[batch[i]]
+                else
+                    _bin_q = bin_q[:,batch[i]]
+                end
                 futures[i] = @spawnat id cic_mapping_2D(x[:,batch[i]], hsml[batch[i]],
                                                         m[batch[i]], rho[batch[i]],
-                                                        bin_q[batch[i]], weights[batch[i]];
+                                                        _bin_q, weights[batch[i]];
                                                         param=par, kernel=kernel,
                                                         show_progress=false,
                                                         calc_mean=calc_mean)
@@ -286,7 +312,7 @@ Small helper function to copy positions, map particles and save the fits file.
 - `sort_z`: Sort the particles according to their line-of-sight direction. Needed for polarisation mapping (not used yet!)
 - `projection`: Which plane the position should be rotated in. Can also be an Array of 3 Euler angles (in [°]) (not used yet!)
 """
-function map_it(pos_in, hsml, mass, rho, bin_q, weights;
+function map_it(pos_in, hsml, mass, rho, bin_q, weights, RM=nothing;
                 param::mappingParameters,
                 kernel::AbstractSPHKernel=WendlandC6(2), 
                 snap::Integer=0, 
@@ -296,6 +322,7 @@ function map_it(pos_in, hsml, mass, rho, bin_q, weights;
                 parallel=true,
                 calc_mean::Bool=true, show_progress::Bool=true,
                 sort_z::Bool=false,
+                stokes::Bool=false,
                 projection="xy")
 
     # copy the positions to new array to be able to shift particles 
@@ -320,28 +347,31 @@ function map_it(pos_in, hsml, mass, rho, bin_q, weights;
 
     # get cic map
     quantitiy_map = sphMapping( pos, hsml, mass, rho,
-                                bin_q, weights,
-                                param=par; 
+                                bin_q, weights, RM; 
                                 show_progress,
-                                kernel, parallel,
+                                param, kernel, 
+                                parallel,
                                 reduce_image,
                                 calc_mean,
-                                sort_z)
+                                sort_z, stokes)
 
 
     fo_image = image_prefix * ".$(projection).fits"
 
-    @info "Map Properties:"
-    @info "  Max:  $(maximum(quantitiy_map)) $units"
-    @info "  Min:  $(minimum(quantitiy_map)) $units"
-    @info "  Mean: $(mean(quantitiy_map)) $units"
-    @info "  Sum:  $(sum(quantitiy_map)) $units"
-    println()
-    Npixels = size(quantitiy_map,1) * size(quantitiy_map,2)
-    @info "  Nr. of pixels:     $Npixels"
-    @info "  Nr. of 0 pixels:   $(length(findall(iszero.(quantitiy_map))))"
-    @info "  Nr. of NaN pixels: $(length(findall(isnan.(quantitiy_map))))"
-    @info "  Nr. of Inf pixels: $(length(findall(isinf.(quantitiy_map))))"
+
+    # print info on all maps
+    for Nimage = 1:size(quantitiy_map,3)
+        @info "Map $Nimage Properties:"
+        @info "  Max:  $(maximum(quantitiy_map[:, :, Nimage]))"
+        @info "  Min:  $(minimum(quantitiy_map[:, :, Nimage]))"
+        @info "  Mean: $(mean(quantitiy_map[:, :, Nimage]))"
+        @info "  Sum:  $(sum(quantitiy_map[:, :, Nimage]))"
+        Npixels = size(quantitiy_map[:, :, Nimage], 1) * size(quantitiy_map[:, :, Nimage], 2)
+        @info "  Nr. of pixels:     $Npixels"
+        @info "  Nr. of 0 pixels:   $(length(findall(iszero.(quantitiy_map[:, :, Nimage]))))"
+        @info "  Nr. of NaN pixels: $(length(findall(isnan.(quantitiy_map[:, :, Nimage]))))"
+        @info "  Nr. of Inf pixels: $(length(findall(isinf.(quantitiy_map[:, :, Nimage]))))"
+    end
 
     write_fits_image(fo_image, quantitiy_map, param, snap = snap, units = units)
 

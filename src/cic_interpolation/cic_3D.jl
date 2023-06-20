@@ -172,7 +172,12 @@ function cic_mapping_3D( Pos, HSML,
                                     param.Npixels[1],
                                     param.Npixels[2] )
 
-            image[idx,1], image[idx,2] = update_image(image[idx,1], image[idx,2], wk[idx], V[idx], volume_norm, bin_q)
+            # compute pixel weight 
+            pix_weight = wk[idx] * V[idx] * volume_norm
+
+            if !iszero(pix_weight)
+                update_image!(image, idx, pix_weight, bin_q)
+            end
 
             grid_mass += Rho[p] * wk[idx] * V[idx]
             

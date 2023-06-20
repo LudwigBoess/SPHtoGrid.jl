@@ -68,20 +68,55 @@ end
 
 Applies the different contributions to the image and the weight image.
 """
-function update_image( image::Float64, w_image::Float64, 
-                        wk::Float64, A::Float64, geometry_norm::Float64,
-                        bin_q::Float64 )
+function update_image!(image::Array{Float64}, idx::Integer,
+                        pix_weight::Float64,
+                        bin_q::Union{Float64, Vector{Float64}} )
 
-    if wk > 0
-        pix_weight  = geometry_norm * wk * A
-        image      += bin_q * pix_weight
-        w_image    += pix_weight
+    image[idx, end] += pix_weight
+    for i = 1:length(bin_q)
+        image[idx,i] += bin_q[i] * pix_weight
     end
-
-    return image, w_image
+    
+    return image
 end
 
+"""
+    faraday_rotate_pixel!(image::Array{Float64}, idx::Integer, 
+                          pRM::Float64, pix_weight::Float64)
 
+Faraday rotates the current pixel state based on the contribution from particle `p`.
+"""
+function faraday_rotate_pixel!(image::Array{Float64}, idx::Integer, 
+                                pRM::Float64, pix_weight::Float64,
+                                stokes::Bool)
+
+    # calculate contribution of particle RM to current pixel
+    _RM = pRM * pix_weight
+
+    # reduce to minimum angle
+    _RM = mod(_RM, π)
+
+    # reconstruct current polarisation angle
+    # if Stokes parameters are supposed to be mapped
+    if stokes
+        # convention: 1: stokes_Q 
+        #             2: stokes_U
+        Q = image[idx, 1]
+        U = image[idx, 2]
+
+        # construct total polarized emission in pixel
+        Ipol = √(Q^2 + U^2)
+
+        # construct polarisation angle in pixel 
+        ψ = 0.5atan(U / Q)
+
+        # save rotated pixel
+        image[idx, 1] = Ipol * cos(2(ψ + _RM))
+        image[idx, 2] = Ipol * sin(2(ψ + _RM))
+    end
+    
+    return image
+end
 
 
 function free_memory(x, hsml, m, rho, bin_q, weights)
