@@ -35,7 +35,7 @@ Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real}, 
                     Rho::Array{<:Real}, Bin_Quant::Array{<:Real}, 
                     Weights::Array{<:Real}=Rho,
-                    RM::Array{<:Real}=nothing;
+                    RM::Union{Array{<:Real}, Nothing}=nothing;
                     param::mappingParameters,
                     kernel::AbstractSPHKernel,
                     show_progress::Bool=true,
@@ -318,7 +318,8 @@ function map_it(pos_in, hsml, mass, rho, bin_q, weights, RM=nothing;
                 image_prefix::String="dummy",
                 reduce_image::Bool=true, 
                 parallel=true,
-                calc_mean::Bool=true, show_progress::Bool=true,
+                calc_mean::Bool=true, 
+                show_progress::Bool=true,
                 sort_z::Bool=false,
                 stokes::Bool=false,
                 projection="xy")
@@ -373,6 +374,7 @@ function map_it(pos_in, hsml, mass, rho, bin_q, weights, RM=nothing;
 
     write_fits_image(fo_image, quantitiy_map, param, snap = snap, units = units)
 
+    # de-allocate memory
     pos = nothing
     GC.gc()
 end
