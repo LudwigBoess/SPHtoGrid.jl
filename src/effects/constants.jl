@@ -17,3 +17,4 @@ global const mJy_factor = 1.e26       # conversion factor from [erg/cm^3/Hz/s] t
 global const f_p_prefac = 4π / c_light
 global const C_j        = 2.42e-24   # factor for X-ray emissivity (BS1996, eq.4)
 global const gg         = 1  # Gaunt factor used for X-ray emission
+const global faraday_prefac = q_e^3 / (2π * m_e^2 * c_light^4) # Dennison 1980 prefac = 2.6e-17 [cgs]
