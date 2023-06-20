@@ -71,6 +71,7 @@ include("effects/synchrotron_spectrum.jl")
 include("effects/sz_effect.jl")
 include("effects/x_ray.jl")
 include("effects/gamma.jl")
+include("effects/RM.jl")
 
 # functions for existing images 
 include("image_functions/radio_beam.jl")
@@ -114,6 +115,7 @@ export mappingParameters,                         # parameters for SPH mapping
     thermal_SZ,
     x_ray_emission,
     get_T_keV,
+    rotation_measure,
     #analytic_synchrotron_emission,
     #analytic_synchrotron_GS,
     #spectral_synchrotron_emission,
