@@ -103,10 +103,10 @@ write_fits_image(fo_image, quantitiy_map, par, snap = snap, units = "muG")
 
 ## X-Ray emission
 
-To map the total Xray emission along please use
+To map the Xray surface brightness please use
 
 ```@docs
-x_ray_emission
+x_ray_emissivity
 ```
 
 Here is an example code
@@ -121,14 +121,12 @@ T_keV = get_T_keV(data["U"], data["MASS"], GU.T_eV)
 # convert density to physical cgs units
 rho_gcm3 = data["RHO"] .* GU.rho_cgs
 
-# convert mass to physical cgs units
-m_cgs = data["MASS"] .* GU.m_cgs
-
 # calculate X-ray emission per particle in the energy band Emin = 0.1 keV, Emax = 2.4 keV
-Xray = x_ray_emission(T_keV, m_cgs, rho_cgs)
+Xray = x_ray_emissivity(T_keV, rho_cgs,
+                        E0=0.1, E1=2.4)
 
-# weights ones means you sum up the values along the LOS
-weights = ones(length(Xray))
+# to get the integrated values along the LOS you need physical weights and not reduce the image
+weights = part_weight_physical(length(hsml), par, GU.x_cgs)
 
 # actual mapping
 map = sphMapping(pos_map, hsml, mass, rho, Xray, weights,
@@ -139,10 +137,10 @@ map = sphMapping(pos_map, hsml, mass, rho, Xray, weights,
 fo_image = map_path * "Xray.fits"
 
 # store the fits image
-write_fits_image(fo_image, quantitiy_map, par, snap = snap, units = "erg/s")
+write_fits_image(fo_image, quantitiy_map, par, snap = snap, units = "erg/s/cm^2")
 ```
 
-This returns a map in the units ``erg/s``.
+This returns a map in the units ``erg/s/cm^2``.
 
 ## Sunyaev-Z'eldovich Effect
 
