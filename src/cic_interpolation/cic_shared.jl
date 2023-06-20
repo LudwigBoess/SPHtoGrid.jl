@@ -114,6 +114,12 @@ function faraday_rotate_pixel!(image::Array{Float64}, idx::Integer,
         image[idx, 1] = Ipol * cos(2(ψ + _RM))
         image[idx, 2] = Ipol * sin(2(ψ + _RM))
     end
-
+    
     return image
+end
+
+
+function free_memory(x, hsml, m, rho, bin_q, weights)
+    x = hsml = m = rho = bin_q = weights = nothing
+    GC.gc()
 end
