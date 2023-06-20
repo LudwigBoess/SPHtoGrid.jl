@@ -113,7 +113,7 @@ export mappingParameters,                         # parameters for SPH mapping
     comptonY,
     kinetic_SZ,
     thermal_SZ,
-    x_ray_emission,
+    x_ray_emissivity,
     get_T_keV,
     rotation_measure,
     #analytic_synchrotron_emission,

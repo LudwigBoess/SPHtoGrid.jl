@@ -24,7 +24,7 @@ function interpolate_table(Qi, Q_table)
 end
 
 
-function get_cooling_Luminosity(T_keV, rho_cgs, metalicity; E0, E1)
+function get_cooling_emissivity(T_keV, rho_cgs, metalicity; E0, E1)
 
     # read all cooling tables
     Temp, Zmetal, ne_nH, mue, dLcool, E_low, E_high = read_cooling_tables()
@@ -65,13 +65,13 @@ function get_cooling_Luminosity(T_keV, rho_cgs, metalicity; E0, E1)
 end
 
 """
-    x_ray_emission( T_keV::Vector{<:Real}, 
-                    rho_cgs::Vector{<:Real},
-                    metalicity::Union{Vector{Float64, Nothing}}=nothing; 
-                    E0::Real=0.1, E1::Real=2.4, 
-                    xH::Real=0.752,
-                    cooling_function::Bool=false,
-                    z::Real=0.0)
+    x_ray_emissivity(T_keV::Vector{<:Real}, 
+                     rho_cgs::Vector{<:Real},
+                     metalicity::Union{Vector{Float64, Nothing}}=nothing; 
+                     E0::Real=0.1, E1::Real=2.4, 
+                     xH::Real=0.752,
+                     cooling_function::Bool=false,
+                     z::Real=0.0)
 
 X-Ray emissivity for particles with temperature `T_keV` in ``keV``, and density `rho_cgs` in ``g/cm^3``.
 If available you can also add the `metalicity` in the gas.
@@ -79,7 +79,7 @@ If available you can also add the `metalicity` in the gas.
 `xH` gives the hydrogen fraction used in the simulation.
 
 # Returns
-X-Ray emissivity in units of [erg/s].
+X-Ray emissivity in units of [erg/s/cm^3].
 
 ## Arguments:
 - `T_keV`: SPH particle temperature [keV]
@@ -90,12 +90,11 @@ X-Ray emissivity in units of [erg/s].
 - `xH`: Hydrogen mass fraction in the simulation
 
 ## Mapping settings
-- weight function: [`part_weight_one`](@ref)
-- reduce image: `true`
+- weight function: [`part_weight_physical`](@ref)
+- reduce image: `false`
 """
-function x_ray_emission(T_keV::Vector{<:Real}, 
+function x_ray_emissivity(T_keV::Vector{<:Real}, 
                         rho_cgs::Vector{<:Real},
-                        m_cgs::Vector{<:Real},
                         metalicity::Union{Vector{Float64}, Nothing}=nothing; 
                         E0::Real=0.1, E1::Real=2.4, 
                         xH::Real=0.752,
@@ -108,7 +107,7 @@ function x_ray_emission(T_keV::Vector{<:Real},
 
     # apply cooling function if requested
     if cooling_function
-        Lx = get_cooling_Luminosity(T_keV, rho_cgs, metalicity; E0, E1)
+        q_x = get_cooling_emissivity(T_keV, rho_cgs, metalicity; E0, E1)
     else
 
         mol  = 4 / (5 * xH + 3);
@@ -118,19 +117,17 @@ function x_ray_emission(T_keV::Vector{<:Real},
         cutoff = @. exp(-E0 / T_keV) - exp(-E1 / T_keV)
 
         """
-            Steinmetz & Bartelmann, based on Spizer 1968, gg = 1.0 (!?)
+            Steinmetz & Bartelmann, based on Spizer 1968, gg = 1.2 (!?)
         Beside the fact, that it is not clear which value they used for the Gaunt factor
         it is the best formulation, as composition H/He (fr) and conversion from particle
         number to electron number (n2ne) is explicite formulated.
         """
-        # Lxbol = @. m_cgs * rho_cgs * √(T_keV) * 
-        #         4C_j * gg / (1 + xH) * (n2ne / (mol * m_p))^2
-        Lxbol = @. 4C_j * gg * rho_cgs^2 * √(T_keV) /
-                 (1 + xH) #* (n2ne / (mol * m_p))^2
+        q_xbol = @. 4C_j * gg * rho_cgs^2 * √(T_keV) /
+                 (1 + xH) * (n2ne / (mol * m_p))^2
         
-        Lx = Lxbol .* cutoff
+        q_x = q_xbol .* cutoff
 
     end
 
-    return Lx
+    return q_x
 end
