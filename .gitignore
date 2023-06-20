@@ -1,3 +1,5 @@
 test/*.par
 test/sedov_rho.fits
 test/sedov_T.fits
+test/sedov_rho.xy.fits
+test/sedov_T.xy.fits

@@ -136,6 +136,8 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
     N_map = length(m)
 
     @info "Particles in image: $N_map / $N_in"
+    @info "Sum of mapped Quantity: $(sum(bin_q))"
+
 
     if show_progress
         @info "Mapping..."
@@ -155,6 +157,8 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
                 t2 = time_ns()
                 @info "  elapsed: $(output_time(t1,t2)) s"
             end
+
+            free_memory(x, hsml, m, rho, bin_q, weights)
 
             if return_both_maps
                 return image
@@ -198,6 +202,8 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
                 @info "  elapsed: $(output_time(t1,t2)) s"
             end
 
+            free_memory(x, hsml, m, rho, bin_q, weights)
+
             if return_both_maps
                 return image
             end
@@ -217,6 +223,8 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
                 t2 = time_ns()
                 @info "  elapsed: $(output_time(t1,t2)) s"
             end
+
+            free_memory(x, hsml, m, rho, bin_q, weights)
 
             if !reduce_image
                 image[:,2] .= 1.0
@@ -250,6 +258,8 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
                 t2 = time_ns()
                 @info "  elapsed: $(output_time(t1,t2)) s"
             end
+
+            free_memory(x, hsml, m, rho, bin_q, weights)
 
             if !reduce_image 
                 image[:,2] .= 1.0
@@ -319,10 +329,13 @@ function map_it(pos_in, hsml, mass, rho, bin_q, weights, RM=nothing;
 
     if projection == "xy"
         pos = pos
+        par = param
     elseif projection == "xz"
         pos = rotate_to_xz_plane!(pos)
+        par = rotate_to_xz_plane(param)
     elseif projection == "yz"
         pos = rotate_to_yz_plane!(pos)
+        par = rotate_to_yz_plane(param)
     elseif typeof(projection) <: AbstractVector
         pos = rotate_3D(pos, projection...)
         projection = "alpha=$(@sprintf("%0.2f", projection[1]))beta=$(@sprintf("%0.2f", projection[2]))gamma=$(@sprintf("%0.2f", projection[3]))"
@@ -332,14 +345,17 @@ function map_it(pos_in, hsml, mass, rho, bin_q, weights, RM=nothing;
 
     # get cic map
     quantitiy_map = sphMapping( pos, hsml, mass, rho,
-                                bin_q, weights, RM; show_progress,
-                                param, kernel, parallel,
+                                bin_q, weights, RM; 
+                                show_progress,
+                                param, kernel, 
+                                parallel,
                                 reduce_image,
                                 calc_mean,
                                 sort_z, stokes)
 
 
-    fo_image = image_prefix * ".fits"
+    fo_image = image_prefix * ".$(projection).fits"
+
 
     # print info on all maps
     for Nimage = 1:size(quantitiy_map,3)
@@ -356,4 +372,7 @@ function map_it(pos_in, hsml, mass, rho, bin_q, weights, RM=nothing;
     end
 
     write_fits_image(fo_image, quantitiy_map, param, snap = snap, units = units)
+
+    pos = nothing
+    GC.gc()
 end
