@@ -28,10 +28,10 @@ function read_energy_band_table(tables_path)
 end
 
 function read_dLcool(tables_path)
-    dLcool = Array{Float64}(undef, 200, 400, 400)
-    open(joinpath(tables_path, "dLambda.bin.data"), "r") do file
-        read!(file, dLcool)
-    end
+    f = open(joinpath(tables_path, "dLambda.bin.data"), "r")
+    dummy = read(f, Int32)
+    dLcool = read!(f, Array{Float64}(undef, 200, 400, 400))
+    close(f)
     return dLcool
 end
 
