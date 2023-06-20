@@ -259,9 +259,6 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
                         param.Npixels[1], param.Npixels[2], param.Npixels[3] )
         end
     end
-
-
-
 end
 
 
@@ -269,18 +266,18 @@ using Statistics
 using Printf
 
 """
-    map_it( pos_in, hsml, mass, rho, bin_q, weights;
-            param::mappingParameters,
-            kernel::AbstractSPHKernel=WendlandC6(), 
-            snap::Integer=0, 
-            units::AbstractString="", 
-            image_prefix::String="dummy",
-            reduce_image::Bool=true, 
-            parallel=true,
-            calc_mean::Bool=true, 
-            show_progress::Bool=true,
-            sort_z::Bool=false,
-            projection="xy")
+    map_it(pos_in, hsml, mass, rho, bin_q, weights, RM=nothing;
+           param::mappingParameters,
+           kernel::AbstractSPHKernel=WendlandC6(2), 
+           snap::Integer=0, 
+           units::AbstractString="", 
+           image_prefix::String="dummy",
+           reduce_image::Bool=true, 
+           parallel=true,
+           calc_mean::Bool=true, show_progress::Bool=true,
+           sort_z::Bool=false,
+           stokes::Bool=false,
+           projection="xy")
 
 Small helper function to copy positions, map particles and save the fits file.
 
@@ -299,7 +296,8 @@ Small helper function to copy positions, map particles and save the fits file.
 - `parallel`: Run on multiple processors.
 - `calc_mean`: Calculates the mean value along the line of sight. If set to `false` the particle only contributes if its `bin_q` is larger than 0.
 - `show_progress`: Show progress bar
-- `sort_z`: Sort the particles according to their line-of-sight direction. Needed for polarisation mapping (not used yet!)
+- `sort_z`: Sort the particles according to their line-of-sight direction. Needed for polarisation mapping.
+- `stokes`: Set to `true` of you are mapping Stokes parameters to account for Faraday rotation of the polarisation angle.
 - `projection`: Which plane the position should be rotated in. Can also be an Array of 3 Euler angles (in [°]) (not used yet!)
 """
 function map_it(pos_in, hsml, mass, rho, bin_q, weights, RM=nothing;
