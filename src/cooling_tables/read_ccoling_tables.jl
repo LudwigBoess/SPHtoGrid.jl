@@ -12,8 +12,8 @@ function read_metalicity_table(tables_path)
 
     # assign to arrays
     Zmetal = z_data[:, 1]
-    ne_nH = z_data[:, 2]
-    mue = z_data[:, 5]
+    ne_nH  = z_data[:, 2]
+    mue    = z_data[:, 5]
 
     return Zmetal, ne_nH, mue
 end

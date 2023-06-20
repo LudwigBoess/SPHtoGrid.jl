@@ -37,7 +37,7 @@ function get_cooling_emissivity(T_keV, rho_cgs, metalicity; E0, E1)
     Npart = length(T_keV)
 
     # allocate storage arrays
-    Lx = Vector{Float64}(undef, Npart)
+    q_x = Vector{Float64}(undef, Npart)
 
     # fill in factors
     @threads for i = 1:Npart
@@ -58,10 +58,10 @@ function get_cooling_emissivity(T_keV, rho_cgs, metalicity; E0, E1)
             Lcool_band += dLcool[iMetal, iTemp, iE]
         end
 
-        Lx[i] = rho_cgs[i]^2 * Lcool_band / Lumfact
+        q_x[i] = rho_cgs[i]^2 * 1.e-21 * Lcool_band / Lumfact
     end
 
-    return Lx
+    return q_x
 end
 
 """
@@ -114,6 +114,8 @@ function x_ray_emissivity(T_keV::Vector{<:Real},
         n2ne = (xH + 0.5 * (1 - xH)) /
             (2xH + 0.75 * (1 - xH));
 
+        rho2ne = (1 + xH)^2 * (n2ne / (mol * m_p))^2
+        
         cutoff = @. exp(-E0 / T_keV) - exp(-E1 / T_keV)
 
         """
@@ -123,7 +125,7 @@ function x_ray_emissivity(T_keV::Vector{<:Real},
         number to electron number (n2ne) is explicite formulated.
         """
         q_xbol = @. 4C_j * gg * rho_cgs^2 * √(T_keV) /
-                 (1 + xH) * (n2ne / (mol * m_p))^2
+                    rho2ne
         
         q_x = q_xbol .* cutoff
 
