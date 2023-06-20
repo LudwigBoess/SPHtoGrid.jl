@@ -58,6 +58,7 @@ function filter_particles_in_image(pos::Array{T}, par::mappingParameters, sort_z
     end
 
     if sort_z
+        @info "Sorting particles..."
         sorted = reverse(sortperm(pos[3,:]))
         return sorted[p_in_image]
     else
