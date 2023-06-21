@@ -113,22 +113,21 @@ function x_ray_emissivity(T_keV::Vector{<:Real},
         mol  = 4 / (5 * xH + 3);
         n2ne = (xH + 0.5 * (1 - xH)) /
             (2xH + 0.75 * (1 - xH));
-
-        rho2ne = (1 + xH)^2 * (n2ne / (mol * m_p))^2
         
-        cutoff = @. exp(-E0 / T_keV) - exp(-E1 / T_keV)
-
+        xray_prefactor = 4C_j * gg * (1 + xH)^2 * (n2ne / (mol * m_p))^2
+        
         """
             Steinmetz & Bartelmann, based on Spizer 1968, gg = 1.2 (!?)
         Beside the fact, that it is not clear which value they used for the Gaunt factor
         it is the best formulation, as composition H/He (fr) and conversion from particle
         number to electron number (n2ne) is explicite formulated.
         """
-        q_xbol = @. 4C_j * gg * rho_cgs^2 * √(T_keV) /
-                    rho2ne
-        
-        q_x = q_xbol .* cutoff
+        q_x = Vector{Float64}(undef, length(rho_cgs))
 
+        @threads for i ∈ eachindex(q_x)
+            cutoff = exp(-E0 / T_keV[i]) - exp(-E1 / T_keV[i])
+            q_x[i] = xray_prefactor * cutoff * rho_cgs[i]^2 * √(T_keV[i])
+        end
     end
 
     return q_x
