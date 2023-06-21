@@ -346,9 +346,9 @@ function map_it(pos_in, hsml, mass, rho, bin_q, weights, RM=nothing;
 
     # get cic map
     quantitiy_map = sphMapping( pos, hsml, mass, rho,
-                                bin_q, weights, RM; 
-                                show_progress,
-                                param, kernel, 
+                                bin_q, weights, RM,
+                                param=par; 
+                                show_progress, kernel, 
                                 parallel,
                                 reduce_image,
                                 calc_mean,
