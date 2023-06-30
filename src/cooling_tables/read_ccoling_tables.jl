@@ -4,6 +4,19 @@
 """
 
 using DelimitedFiles
+using Downloads
+
+function download_cooling_tables(tables_path)
+    @info "Downloading band.data"
+    Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/band.data", joinpath(tables_path, "band.data"))
+    @info "Downloading dLambda.bin.data"
+    Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/dLambda.bin.data", joinpath(tables_path, "dLambda.bin.data"))
+    @info "Downloading T0_400.data"
+    Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/T0_400.data", joinpath(tables_path, "T0_400.data"))
+    @info "Downloading Z.data"
+    Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/Z.data", joinpath(tables_path, "Z.data"))
+    @info "Downloads complete!"
+end
 
 function read_metalicity_table(tables_path)
 
@@ -43,6 +56,11 @@ Reads the cooling tables into Arrays.
 function read_cooling_tables()
 
     tables_path = joinpath(@__DIR__)
+
+    if !isfile(joinpath(tables_path, "T0_400.data"))
+        @info "Downloading cooling tables"
+        download_cooling_tables(tables_path)
+    end
 
     # read temperature table for interpolation
     Temp = read_temperature_table(tables_path)
