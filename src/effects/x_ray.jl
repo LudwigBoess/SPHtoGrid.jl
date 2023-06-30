@@ -1,21 +1,11 @@
 """
-    get_T_keV(U::Vector{<:Real}, mass::Vector{<:Real}, T_eV::Real)
-
-Helper function to compute energy in keV used for Xray emission.
-Takes `U` and `mass` in code units and converts it with `T_eV` as the temperature->eV factor from `GadgetUnits`.
-"""
-function get_T_keV(U::Vector{<:Real}, mass::Vector{<:Real}, T_eV::Real)
-    @. U * T_eV * 1.e-3 #* mass
-end
-
-"""
     interpolate_table(Qi, Q_table)
 
 Finds the first position in the provided table where `Qi` is larger than a table entry.
 """
 function interpolate_table(Qi, Q_table)
 
-    sel = findfirst(Qi .>= Q_table)
+    sel = findfirst(Q_table .>= Qi)
     if isnothing(sel)
         sel = length(Q_table)
     end
@@ -24,6 +14,11 @@ function interpolate_table(Qi, Q_table)
 end
 
 
+"""
+    get_cooling_emissivity(T_keV, rho_cgs, metalicity; E0, E1)
+
+Computes the Xray emissivity from interpolating a cooling table.
+"""
 function get_cooling_emissivity(T_keV, rho_cgs, metalicity; E0, E1)
 
     # read all cooling tables
@@ -44,7 +39,7 @@ function get_cooling_emissivity(T_keV, rho_cgs, metalicity; E0, E1)
 
         # interpolate in the tables 
         if !isnothing(metalicity)
-            iMetal = interpolate_table(metals[i]/0.02, Zmetal)
+            iMetal = interpolate_table(metalicity[i], Zmetal)
         else 
             iMetal = 1
         end
@@ -58,7 +53,7 @@ function get_cooling_emissivity(T_keV, rho_cgs, metalicity; E0, E1)
             Lcool_band += dLcool[iMetal, iTemp, iE]
         end
 
-        q_x[i] = rho_cgs[i]^2 * 1.e-21 * Lcool_band / Lumfact
+        q_x[i] = rho_cgs[i]^2 * 1.e-23 * Lcool_band / Lumfact
     end
 
     return q_x
