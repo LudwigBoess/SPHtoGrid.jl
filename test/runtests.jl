@@ -478,10 +478,20 @@ addprocs(2)
         end
 
         @testset "X-Ray" begin
+            T_keV = [10.0]
+            rho_cgs = [1.e-28]
+            metalicity = [0.3]
+
             # in spectral range
-            @test x_ray_emission([10.0], [1.989e38], [1.e-28])[1] ≈ 1.9479441169462751e34
-            # bolometric
-            @test x_ray_emission([10.0], [1.989e38], [1.e-28], E0=0.0, E1=Inf)[1] ≈ 9.575878609659925e34
+            @test x_ray_emissivity(T_keV, rho_cgs, metalicity, E0=0.0, E1=Inf)[1] ≈ 3.092778619918078e-31
+            # in spectral range
+            @test x_ray_emissivity(T_keV, rho_cgs, metalicity)[1] ≈ 6.291391279343498e-32
+            # cooling function without metals
+            @test x_ray_emissivity(T_keV, rho_cgs, cooling_function=true)[1] ≈ 1.8440514708842878e-32
+            # cooling function with metals
+            @test x_ray_emissivity(T_keV, rho_cgs, metalicity, cooling_function=true)[1] ≈ 1.877220382159635e-32
+            # cooling function with metals bolometric
+            @test x_ray_emissivity(T_keV, rho_cgs, metalicity, cooling_function=true, E0=0.0, E1=Inf)[1] ≈ 5.741669221015086e-32
         end
 
         @testset "gamma" begin
