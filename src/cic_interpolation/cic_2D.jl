@@ -132,18 +132,33 @@ Underlying function to map SPH data to a 2D grid.
 """
 function cic_mapping_2D( Pos, HSML, 
                         M, Rho, 
-                        Bin_Q, Weights;
+                        Bin_Q, Weights, 
+                        RM=nothing;
                         param::mappingParameters, 
                         kernel::AbstractSPHKernel,
                         show_progress::Bool=false,
-                        calc_mean::Bool=true )
+                        calc_mean::Bool=true,
+                        stokes::Bool=false )
 
     N = size(M,1)  # number of particles
     
     # max number of pixels over which the particle can be distributed
     N_distr = param.Npixels[1] * param.Npixels[2]
 
-    image = zeros(Float64, N_distr, 2)
+    # check if Bin_Q is only one quantity or an array
+    if ndims(Bin_Q) == 1
+        N_images = 1
+    else
+        # if Bin_Q is an array we need to allocate more images
+        N_images = size(Bin_Q, 1)
+    end
+           
+    # allocate images and weight_image
+    image = zeros(Float64, N_distr, N_images+1)
+
+    if !isnothing(RM)
+        touched_pixel = falses(N_distr)
+    end
 
     if param.periodic
         k_start = 0
@@ -166,8 +181,18 @@ function cic_mapping_2D( Pos, HSML,
     # loop over all particles
     @inbounds for p = 1:N
 
-        bin_q = Float64(Bin_Q[p])
+        # assign bin quantity and convert to Float64
+        if N_images == 1
+            bin_q = Float64(Bin_Q[p])
+        else
+            bin_q = Float64.(Bin_Q[:,p])
 
+            if bin_q == zeros(length(bin_q))
+                bin_q = 0.0
+            end
+        end
+
+        # if the quantity is zero we can skip the particle
         if iszero(bin_q) && !calc_mean
             continue
         end
@@ -197,11 +222,32 @@ function cic_mapping_2D( Pos, HSML,
         # loop over all contributing pixels
         @inbounds for i = iMin:iMax, j = jMin:jMax
 
+            # get the current index in the image array
             idx = calculate_index(i, j, param.Npixels[1])
 
-            image[idx,1], image[idx,2] = update_image(image[idx,1], image[idx,2], wk[idx], A[idx], area_norm, bin_q)
+            # compute pixel weight 
+            pix_weight = wk[idx] * A[idx] * area_norm
 
-            #grid_vol += wk[idx] * A[idx] * dz
+            # if we map faraday rotation we need to rotate the previous emission
+            if !isnothing(RM) 
+                
+                # only rotate pixel if it has been processed
+                if touched_pixel[idx]
+                    # apply faraday rotation to pixel 
+                    faraday_rotate_pixel!(image, idx, RM[p], pix_weight, stokes)
+                end
+            end
+
+            if !iszero(pix_weight)
+                update_image!(image, idx, pix_weight, bin_q)
+
+                # pixel has been processed now
+                if !isnothing(RM)
+                    touched_pixel[idx] = true
+                end
+            end
+
+            #grid_vol += wk[idx] * A[idx] * dz #pix_weight
             
         end # i, j    
 

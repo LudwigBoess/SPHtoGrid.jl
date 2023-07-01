@@ -16,6 +16,9 @@ function output_time(t1, t2)
     return @sprintf("%0.3e", Float64((t2 - t1)) * 1.e-9)
 end
 
+# read cooling tables for Xray emission 
+include("cooling_tables/read_ccoling_tables.jl")
+
 # shared functionality
 include("shared/parameters.jl")
 include("shared/reconstruct_grid.jl")
@@ -68,6 +71,7 @@ include("effects/synchrotron_spectrum.jl")
 include("effects/sz_effect.jl")
 include("effects/x_ray.jl")
 include("effects/gamma.jl")
+include("effects/RM.jl")
 
 # functions for existing images 
 include("image_functions/radio_beam.jl")
@@ -109,8 +113,9 @@ export mappingParameters,                         # parameters for SPH mapping
     comptonY,
     kinetic_SZ,
     thermal_SZ,
-    x_ray_emission,
+    x_ray_emissivity,
     get_T_keV,
+    rotation_measure,
     #analytic_synchrotron_emission,
     #analytic_synchrotron_GS,
     #spectral_synchrotron_emission,

@@ -3,3 +3,7 @@ test/sedov_rho.fits
 test/sedov_T.fits
 test/sedov_rho.xy.fits
 test/sedov_T.xy.fits
+src/cooling_tables/band.data
+src/cooling_tables/dLambda.bin.data
+src/cooling_tables/T0_400.data
+src/cooling_tables/Z.data

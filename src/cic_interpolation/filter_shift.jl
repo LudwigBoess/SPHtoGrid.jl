@@ -37,7 +37,7 @@ end
 
 Checks if a particle is contained in the image and returns an array of `Bool`.
 """
-function filter_particles_in_image(pos::Array{T}, par::mappingParameters) where T
+function filter_particles_in_image(pos::Array{T}, par::mappingParameters, sort_z::Bool=false) where T
 
     N = size(pos,2)
 
@@ -57,5 +57,11 @@ function filter_particles_in_image(pos::Array{T}, par::mappingParameters) where 
         p_in_image[i] = in_image
     end
 
-    return p_in_image
+    if sort_z
+        @info "Sorting particles..."
+        sorted = reverse(sortperm(pos[3,:]))
+        return sorted[p_in_image]
+    else
+        return p_in_image
+    end
 end
