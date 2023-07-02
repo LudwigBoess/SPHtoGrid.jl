@@ -22,6 +22,7 @@ Returns synchrotron emissivity `j_nu` in units [erg/s/Hzcm^3].
 - `B_cgs::Array{<:Real}`:    Magnetic field in ``G``.
 - `T_keV::Array{<:Real}`:    Temperature in ``keV``.
 - `Mach::Array{<:Real}`:     Sonic Mach number.
+- `θ_B::Union{Nothing,Array{<:Real}}=nothing`: Shock obliquity (optional).
 
 ## Keyword Arguments
 - `xH::Float64 = 0.76`:        Hydrogen fraction of the simulation, if run without chemical model.
@@ -45,7 +46,8 @@ See [DSAModels.jl](https://github.com/LudwigBoess/DSAModels.jl) for details!
 - reduce image: `false`
 """
 function analytic_synchrotron_HB07(rho_cgs::Array{<:Real}, m_cgs::Array{<:Real}, hsml_cgs::Array{<:Real},
-                                    B_cgs::Array{<:Real}, T_keV::Array{<:Real}, Mach::Array{<:Real};
+                                    B_cgs::Array{<:Real}, T_keV::Array{<:Real}, Mach::Array{<:Real},
+                                    θ_B::Union{Nothing, Array{<:Real}}=nothing;
                                     xH::Real=0.752, ν0::Real=1.4e9, z::Real=0.0,
                                     dsa_model::Integer=1, ξe::Real = 0.01,
                                     show_progress::Bool=false )
@@ -105,9 +107,16 @@ function analytic_synchrotron_HB07(rho_cgs::Array{<:Real}, m_cgs::Array{<:Real},
         # scaling with magnetic field
         Bfactor = (B_cgs[i] * 1.e6)^(1 + 0.5 * s) / ((B_cmb(z) * 1.e6)^2 + (B_cgs[i] * 1.e6)^2)
 
+        if !isnothing(θ_B)
+            ηB = ηB_acc_e(θ_B[i])
+        else
+            ηB = 1.0
+        end
+
         # Wittor+17, Eq. 16, but in untis erg/s/Hz/cm^3
         j_nu[i] = j_ν_prefactor * A * ne * ξe_factor * (ν0/1.4e9)^(-0.5s) * 
-                  √(T_keV[i] / 7.0)^3 * Bfactor * η_Ms_acc(η_model, Mach[i]) / V
+                  √(T_keV[i] / 7.0)^3 * Bfactor / V *
+                  η_Ms_acc(η_model, Mach[i]) * ηB 
 
         # update progress meter
         if show_progress

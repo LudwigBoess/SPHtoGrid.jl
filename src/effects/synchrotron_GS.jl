@@ -52,6 +52,7 @@ Returns synchrotron emissivity `j_nu` in units [erg/s/Hzcm^3].
 - `B_cgs::Array{<:Real}`:   Magnetic field in Gauss.
 - `T_K::Array{<:Real}`:     Temperature in Kelvin.
 - `Mach::Array{<:Real}`:    Mach number.
+- `θ_B::Union{Nothing,Array{<:Real}}=nothing`: Shock obliquity (optional).
 
 ## Keyword Arguments
 - `xH::Float64 = 0.76`:        Hydrogen fraction of the simulation, if run without chemical model.
@@ -73,7 +74,8 @@ See [DSAModels.jl](https://github.com/LudwigBoess/DSAModels.jl) for details!
 - reduce image: `false`
 """
 function analytic_synchrotron_GS(rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
-                                 T_K::Array{<:Real}, Mach::Array{<:Real};
+                                 T_K::Array{<:Real}, Mach::Array{<:Real},
+                                 θ_B::Union{Nothing,Array{<:Real}}=nothing;
                                  xH::Real = 0.76,  ν0::Real = 1.4e9,
                                  dsa_model::Integer=1, K_ep::Real=0.01,
                                  show_progress::Bool=false)
@@ -106,7 +108,13 @@ function analytic_synchrotron_GS(rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
 
     @threads for i = 1:length(T_K)
 
-        n0 = K_ep / K_ep_default * cre_spec_norm_particle(η_model, Mach[i]) * EpsNtherm(rho_cgs[i], T_K[i], xH = xH)
+        if !isnothing(θ_B)
+            ηB = ηB_acc_e(θ_B[i])
+        else
+            ηB = 1.0
+        end
+
+        n0 = K_ep / K_ep_default * ηB * cre_spec_norm_particle(η_model, Mach[i]) * EpsNtherm(rho_cgs[i], T_K[i], xH=xH)
 
         if (n0 > 0.0) && (B_cgs[i] > 0.0)
 
