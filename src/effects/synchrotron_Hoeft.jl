@@ -30,7 +30,7 @@ Returns J_ν in units [erg/cm^3/Hz/s].
 """
 function analytic_synchrotron_HB07(rho_cgs::Array{<:Real}, m_cgs::Array{<:Real}, hsml_cgs::Array{<:Real},
                                     B_cgs::Array{<:Real}, T_keV::Array{<:Real}, Mach::Array{<:Real};
-                                    xH::Real = 0.76, ν0::Real = 1.4e9,
+                                    xH::Real = 0.752, ν0::Real = 1.4e9,
                                     ξe::Real = 0.01, z::Real=0.0,
                                     dsa_model::Integer=1)
 
