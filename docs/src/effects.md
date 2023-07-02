@@ -233,7 +233,10 @@ write_fits_image(fo_image, quantitiy_map, par, snap = snap, units = "GeV/s")
 
 ## Synchrotron Emission
 
-Under construction! Do not use!
+```@docs
+analytic_synchrotron_GS
+analytic_synchrotron_HB07
+```
 
 # Image Functions
 
