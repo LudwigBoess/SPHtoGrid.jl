@@ -5,7 +5,7 @@ using SPHKernels
 using Unitful
 using Printf
 using ProgressMeter
-#using DSAModels
+using DSAModels
 using SpecialFunctions
 using LinearAlgebra
 using Rotations
@@ -66,8 +66,8 @@ include("healpix_interpolation/distributed_mapping.jl")
 # effect functions
 include("effects/constants.jl")
 include("effects/density.jl")
-include("effects/synchrotron_analytic.jl")
-include("effects/synchrotron_spectrum.jl")
+include("effects/synchrotron_GS.jl")
+include("effects/synchrotron_Hoeft.jl")
 include("effects/sz_effect.jl")
 include("effects/x_ray.jl")
 include("effects/gamma.jl")
@@ -116,9 +116,8 @@ export mappingParameters,                         # parameters for SPH mapping
     x_ray_emissivity,
     get_T_keV,
     rotation_measure,
-    #analytic_synchrotron_emission,
-    #analytic_synchrotron_GS,
-    #spectral_synchrotron_emission,
+    analytic_synchrotron_HB07,
+    analytic_synchrotron_GS,
     λγ_PE04, jγ_PE04,
     gamma_luminosity_pions_PE04,
     gamma_flux_pions_PE04,
