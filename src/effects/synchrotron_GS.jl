@@ -35,129 +35,15 @@ function EpsNtherm(rho_cgs::Real, T_K::Real; xH::Real = 0.76)
 end
 
 
-"""
-    analytic_synchrotron_emission( rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
-                                   T_K::Array{<:Real}, Mach::Array{<:Real};
-                                   xH::Real=0.76, dsa_model::Integer=1, ν0::Real=1.44e9,
-                                   integrate_pitch_angle::Bool=true )
-
-Computes the analytic synchrotron emission with the simplified approach described in Longair Eq. 8.128.
-Returns J_ν in units [erg/cm^3/Hz/s].
-
-# Arguments
-- `rho_cgs::Array{<:Real}`: Density in ``g/cm^3``.
-- `B_cgs::Array{<:Real}`:   Magnetic field in Gauss.
-- `T_K::Array{<:Real}`:     Temperature in Kelvin.
-- `Mach::Array{<:Real}`:    Mach number.
-
-# Keyword Arguments
-- `xH::Float64 = 0.76`:               Hydrogen fraction of the simulation, if run without chemical model.
-- `dsa_model::Integer=1`:             Diffuse-Shock-Acceleration model. Takes values `0...4`, see next section.
-- `ν0::Real=1.44e9`:                  Observation frequency in ``Hz``.
-- `K_ep::Real=0.01`:                  Ratio of CR proton to electron energy density.
-- `integrate_pitch_angle::Bool=true`: Integrates over the pitch angle as in Longair Eq. 8.87.
-- `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz/s]`` to ``mJy/cm``.
-
-# DSA models imported from DSAModels.jl
-- `0`: Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1.
-- `1`: Efficiency model from Kang&Ryu 2013, doi:10.1088/0004-637X/764/1/95 .
-- `2`: Efficiency model from Ryu et al. 2019, https://arxiv.org/abs/1905.04476 .
-- `3`: Efficiency model from Caprioli&Spitkovsky 2015, doi: 10.1088/0004-637x/783/2/91 .
-- `4`: Constant efficiency as in Pfrommer+ 2016, doi: 10.1093/mnras/stw2941 .
-"""
-function analytic_synchrotron_emission(rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
-    T_K::Array{<:Real}, Mach::Array{<:Real};
-    xH::Real = 0.76, dsa_model::Integer = 1, ν0::Real = 1.44e9,
-    K_ep::Real = 0.01,
-    integrate_pitch_angle::Bool = true,
-    convert_to_mJy::Bool = false)
-
-    Npart = length(T_K)
-
-    # default ratio for electron to protons from Donnert+16.
-    K_ep_default = 0.01
-
-    # allocate storage array
-    J_ν = Vector{Float64}(undef, Npart)
-
-    if length(B_cgs[1, :]) == 1
-        B_1dim = true
-    else
-        B_1dim = false
-    end
-
-    # select DSA model
-    if dsa_model == 0
-        η_model = Kang07()
-    elseif dsa_model == 1
-        η_model = KR13()
-    elseif dsa_model == 2
-        η_model = Ryu19()
-    elseif dsa_model == 3
-        η_model = CS14()
-    elseif dsa_model == 4
-        η_model = P16()
-    else
-        error("Invalid DSA model selection!")
-    end
-
-    # bracket of Longair eq. 8128
-    nufac = (3q_e) / (m_e^3 * c_light * c_light * c_light * c_light * c_light * 2π * ν0)
-
-
-    @inbounds for i = 1:Npart
-        if B_1dim
-            B = B_cgs[i]
-        else
-            B = sqrt(B_cgs[1, i]^2 + B_cgs[2, i]^2 + B_cgs[3, i]^2)
-        end
-        n0 = K_ep / K_ep_default * cre_spec_norm_particle(η_model, Mach[i]) * EpsNtherm(rho_cgs[i], T_K[i], xH = xH)
-        s = dsa_spectral_index(Mach[i])
-    
-        if n0 > 0.0
-    
-            # Longair eq. 8.129
-            a_p = gamma(s / 4 + 19 / 12) * gamma(s / 4 - 1 / 12)
-    
-            if integrate_pitch_angle
-                # Longair eq 8.87
-                a_p *= 0.5*√(π) * gamma(s / 4.0 + 5.0 / 4.0) /
-                       gamma(s / 4.0 + 7.0 / 4.0)
-            end
-    
-            # Longair eq 8.128 prefactor
-            prefac = √(3) * q_e^3 / (m_e * c_light^2 * (s + 1))
-    
-            # Longair eq 8.128
-            J_ν[i] = prefac * n0 *
-                     nufac^(0.5 * (s - 1)) * B^(0.5 * (s + 1)) *
-                     a_p
-        else
-            J_ν[i] = 0.0
-        end
-    end
-
-    if convert_to_mJy
-        J_ν .*= mJy_factor
-    end
-
-    return J_ν
-end
-
-
-
 
 """
-    GS implementation
-"""
-
-"""
-    analytic_synchrotron( rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
-                                   T_K::Array{<:Real}, Mach::Array{<:Real};
-                                   xH::Real=0.76, dsa_model::Integer=1, ν0::Real=1.44e9,
-                                   integrate_pitch_angle::Bool=true )
+    analytic_synchrotron_GS( rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
+                             T_K::Array{<:Real}, Mach::Array{<:Real};
+                             xH::Real=0.76, dsa_model::Integer=1, ν0::Real=1.44e9,
+                             integrate_pitch_angle::Bool=true )
 
 Computes the analytic synchrotron emission with the simplified approach described in Ginzburg & Syrovatskii 1965, "Cosmic Magnetobremsstrahlung".
+Uses the implementaion from Donnert J. M. F., Stroe A., Brunetti G., Hoang D., Roettgering H., 2016, MNRAS, 462, 2014.
 Returns J_ν in units [erg/s/Hzcm^3].
 
 # Arguments
@@ -172,7 +58,6 @@ Returns J_ν in units [erg/s/Hzcm^3].
 - `ν0::Real=1.44e9`:                  Observation frequency in ``Hz``.
 - `K_ep::Real=0.01`:                  Ratio of CR proton to electron energy density.
 - `integrate_pitch_angle::Bool=true`: Integrates over the pitch angle as in Longair Eq. 8.87.
-- `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz/s]`` to ``mJy/cm``.
 
 # DSA models imported from DSAModels.jl
 - `0`: Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1.
@@ -184,19 +69,10 @@ Returns J_ν in units [erg/s/Hzcm^3].
 function analytic_synchrotron_GS(rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
                                  T_K::Array{<:Real}, Mach::Array{<:Real};
                                  xH::Real = 0.76, dsa_model::Integer = 1, ν0::Real = 1.4e9,
-                                 K_ep::Real = 0.01,
-                                 convert_to_mJy::Bool = false)
+                                 K_ep::Real = 0.01)
 
-    Npart = length(T_K)
-
-    # check if magnetic field is already in absolute values
-    B1dim = (size(B_cgs,1) == 1) ? true : false
-
-    # default ratio for electron to protons from Donnert+16.
+    # default ratio for electron to protons from Donnert+16, already accounted for in spectral norm
     K_ep_default = 0.01
-
-    # allocate storage array
-    J_ν = Vector{Float64}(undef, Npart)
 
     # select DSA model
     if dsa_model == 0
@@ -213,32 +89,28 @@ function analytic_synchrotron_GS(rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
         error("Invalid DSA model selection!")
     end
 
-    @threads for i = 1:Npart
+    # allocate storage array
+    J_ν = Vector{Float64}(undef, length(T_K))
 
-        if B1dim
-            B  = B_cgs[i]
-        else
-            B = @. √(B_cgs[1,i]^2 + B_cgs[2,i]^2 + B_cgs[3,i]^2)
-        end
+
+    @threads for i = 1:length(T_K)
 
         n0 = K_ep / K_ep_default * cre_spec_norm_particle(η_model, Mach[i]) * EpsNtherm(rho_cgs[i], T_K[i], xH = xH)
 
-        if (n0 > 0.0) && (B > 0.0)
+        if (n0 > 0.0) && (B_cgs[i] > 0.0)
 
+            # spectral index of the electron energy spectrum
             s  = dsa_spectral_index(Mach[i])
 
             agam = 2^(s / 2 - 1 / 2) * √(3) * gamma(s / 4 - 1 / 12) * gamma(s / 4 + 19 / 12) /
                     (8√(π) * (s + 1)) * gamma((s + 5) / 4) / gamma((s + 7) / 4) # GS eq 3.32
 
+            # GS, eq. 3.31 [erg/s/Hz/cm^3]
             J_ν[i] = agam * q_e^3 / (m_e * c_light^2) * (3 * q_e / (m_e^3 * c_light^3 * 4 * π))^((s - 1) / 2) *
-                    n0 * ν0^(-(s - 1) / 2) * B^((s + 1) / 2) # GS, eq. 3.31, erg/s/cm^3
+                n0 * ν0^(-(s - 1) / 2) * B_cgs[i]^((s + 1) / 2)
         else
             J_ν[i] = 0.0
         end
-    end
-
-    if convert_to_mJy
-        J_ν .*= mJy_factor
     end
 
     return J_ν
