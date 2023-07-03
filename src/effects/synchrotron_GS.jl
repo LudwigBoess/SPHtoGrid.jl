@@ -139,5 +139,5 @@ function analytic_synchrotron_GS(rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
         end
     end
 
-    return J_ν
+    return j_nu
 end
