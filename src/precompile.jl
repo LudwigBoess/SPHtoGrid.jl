@@ -44,16 +44,14 @@ using PrecompileTools    # this is a small dependency
         # all calls in this block will be precompiled, regardless of whether
         # they belong to your package or not (on Julia 1.8 and higher)
 
-        @info "Pre-compiling mapping functions"
-
         for kernel ∈ kernels 
             # cic 
             map_it(cic_pos, cic_hsml, cic_mass, cic_rho, cic_T, cic_rho, units="T", param=par,
-                reduce_image=true, parallel=false, show_progress=true;
+                reduce_image=true, parallel=false, show_progress=false;
                 snap, image_prefix, kernel)
 
             # healpix
-            healpix_map(hp_pos, hp_hsml, hp_mass, hp_rho, hp_rho, hp_rho, show_progress=true;
+            healpix_map(hp_pos, hp_hsml, hp_mass, hp_rho, hp_rho, hp_rho, show_progress=false;
                 center, kernel, Nside)
 
         end
