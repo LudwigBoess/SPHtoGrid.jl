@@ -1,10 +1,11 @@
 name = "SPHtoGrid"
 uuid = "8a806948-229a-4117-b79b-c12ac366026f"
 authors = ["LudwigBoess <lboess@usm.lmu.de>"]
-version = "0.4.3"
+version = "0.4.4"
 
 [deps]
 Cosmology = "76746363-e552-5dba-9a5a-cef6fa9cc5ab"
+DSAModels = "c94b82ce-bc6a-4c64-9fc0-cb2d7d683713"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
@@ -28,6 +29,7 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 Cosmology = "1"
+DSAModels = "0.1, 0.2"
 DelimitedFiles = "1"
 Documenter = "0.25, 0.26, 0.27"
 DocumenterTools = "0.1"

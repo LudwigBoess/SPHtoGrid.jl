@@ -508,80 +508,47 @@ addprocs(2)
             @test gamma_flux_pions_PE04(rho, m_cgs, T_K, α_p, Mpc) ≈ 3.484725208525935e-13
         end
 
-        # @testset "Synchrotron" begin
+        @testset "Synchrotron" begin
 
-        #     @testset "Analytic" begin
-        #         @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0])[1] ≈ 6.424386277144697e-25
+            @testset "Donnert+16" begin
+                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=0)[1] ≈ 1.099011790493482e-37
 
-        #         @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [10.0], convert_to_mJy = true)[1] ≈ 6.424386277144697e1
+                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=1)[1] ≈ 5.916257534114163e-39
 
-        #         @test analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0])[1] == 0.0
+                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=2)[1] ≈ 7.008208770348882e-39
 
-        #         @test_throws ErrorException("Invalid DSA model selection!") analytic_synchrotron_emission([1.0], [1.0], [1.0], [1.0], dsa_model = 10)
-        #     end
+                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=3)[1] ≈ 2.9581287670570815e-39
 
-        #     @testset "Spectrum" begin
+                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=4)[1] ≈ 4.930214611761853e-37
 
-        #         # # test thermal energy density - redundant!
-        #         # # acc_function = SPHtoGrid.KR13_acc
-        #         # # ϵ_th = SPHtoGrid.EpsNtherm(1.52606e-30, 4.75088e+08, xH=0.76)
-        #         # # ϵ_cr0 = 0.01 * SPHtoGrid.get_rel_energy_density(10.0, acc_function) * ϵ_th
-        #         # # @test ϵ_cr0 / ϵ_th ≈ 0.00244270822665505
+                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], [π / 4], dsa_model=1)[1] ≈ 2.9581287670570815e-39
 
-        #         # @testset "ϵ_th" begin
-        #         #     # with pitch angle integration
-        #         #     j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model = 2,
-        #         #         integrate_pitch_angle = true)
+                @test_throws ErrorException("Invalid DSA model selection!") analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=10)
+            end
 
-        #         #     @test j_ν ≈ 1.8643638246341477e-55
+            @testset "Hoeft&Brüggen (2007)" begin
+                @test analytic_synchrotron_HB07([1.e-28], [1.9890000000000002e39], [6.171355999999999e22],
+                    [5.0e-6], [8.618352059925092], [3.0], dsa_model=0)[1] ≈ 8.710630889115241e-38
 
-        #         #     # without pitch angle integration
-        #         #     j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model = 2,
-        #         #         integrate_pitch_angle = false)
+                @test analytic_synchrotron_HB07([1.e-28], [1.9890000000000002e39], [6.171355999999999e22],
+                    [5.0e-6], [8.618352059925092], [3.0], dsa_model=1)[1] ≈ 4.6891522065905656e-39
 
-        #         #     @test j_ν ≈ 4.451252238469209e-55
+                @test analytic_synchrotron_HB07([1.e-28], [1.9890000000000002e39], [6.171355999999999e22],
+                    [5.0e-6], [8.618352059925092], [3.0], dsa_model=2)[1] ≈ 5.554619187930485e-39
 
-        #         #     # conversion to mJy/cm
-        #         #     j_ν = spectral_synchrotron_emission(1.52606e-30, 5.0e-6, 4.75088e+08, 5.0, dsa_model = 2,
-        #         #         integrate_pitch_angle = false,
-        #         #         convert_to_mJy = true)
+                @test analytic_synchrotron_HB07([1.e-28], [1.9890000000000002e39], [6.171355999999999e22],
+                    [5.0e-6], [8.618352059925092], [3.0], dsa_model=3)[1] ≈ 2.3445761032952828e-39
 
-        #         #     @test j_ν ≈ 4.4512522384692095e-29
+                @test analytic_synchrotron_HB07([1.e-28], [1.9890000000000002e39], [6.171355999999999e22],
+                    [5.0e-6], [8.618352059925092], [3.0], dsa_model=4)[1] ≈ 3.907626838825512e-37
 
-        #         # end
+                @test analytic_synchrotron_HB07([1.e-28], [1.9890000000000002e39], [6.171355999999999e22],
+                    [5.0e-6], [8.618352059925092], [3.0], [π / 4])[1] ≈ 2.3445761032952828e-39
 
-        #         # @testset "pre-defined" begin
-        #         #     # test for pre-defined spectrum
-        #         #     Nbins = 128
-        #         #     q0 = 4.166666666666667
-
-        #         #     # define spectrum
-        #         #     bounds = 10.0 .^ LinRange(-1.0, 6.0, Nbins + 1)
-        #         #     norm = Vector{Float64}(undef, Nbins)
-        #         #     # reference from previous test
-        #         #     norm[1] = 2.3141104241756675e-30
-        #         #     for Nbin = 2:Nbins-1
-        #         #         norm[Nbin] = norm[Nbin-1] * (bounds[Nbin] / bounds[Nbin-1])^(-q0)
-        #         #     end
-
-        #         #     j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6,
-        #         #         integrate_pitch_angle = true)
-
-        #         #     @test j_ν ≈ 1.6530988606617404e-55
-
-        #         #     j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6,
-        #         #         integrate_pitch_angle = false)
-
-        #         #     @test j_ν ≈ 4.2742001929052135e-55
-
-        #         #     j_ν = spectral_synchrotron_emission(norm, bounds, 5.e-6,
-        #         #         integrate_pitch_angle = false,
-        #         #         convert_to_mJy = true)
-
-        #         #     @test j_ν ≈ 4.2742001929052134e-29
-        #         # end # pre-fedined
-        #     end # Spectrum
-        # end
+                @test_throws ErrorException("Invalid DSA model selection!") analytic_synchrotron_HB07([1.e-28], [1.9890000000000002e39], [6.171355999999999e22],
+                    [5.0e-6], [8.618352059925092], [3.0], dsa_model=10)
+            end
+        end
     end
 
     @testset "Image Functions" begin

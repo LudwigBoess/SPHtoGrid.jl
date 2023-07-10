@@ -1,8 +1,8 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.9.0"
+julia_version = "1.9.1"
 manifest_format = "2.0"
-project_hash = "5058b3d541db2a2578af818f9bf7eb3629751f3d"
+project_hash = "f0bf977bcfa131a937b0baf05e54724b9bad66c3"
 
 [[deps.ANSIColoredPrinters]]
 git-tree-sha1 = "574baf8110975760d391c710b6341da1afa48d8c"
@@ -81,6 +81,14 @@ deps = ["QuadGK", "Unitful", "UnitfulAstro"]
 git-tree-sha1 = "27996feb4391e8373417471feaa8638da773e589"
 uuid = "76746363-e552-5dba-9a5a-cef6fa9cc5ab"
 version = "1.0.2"
+
+[[deps.DSAModels]]
+deps = ["PrecompileTools", "Test"]
+git-tree-sha1 = "ab643977163036ad4c5c578508dd297122dccfcd"
+repo-rev = "main"
+repo-url = "https://github.com/LudwigBoess/DSAModels.jl"
+uuid = "c94b82ce-bc6a-4c64-9fc0-cb2d7d683713"
+version = "0.1.0"
 
 [[deps.DataAPI]]
 git-tree-sha1 = "8da84edb865b0b5b0100c0666a9bc9a0b71c553c"
@@ -550,7 +558,7 @@ version = "1.2.13+0"
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
-version = "5.7.0+0"
+version = "5.8.0+0"
 
 [[deps.libsass_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
