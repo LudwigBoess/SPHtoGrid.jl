@@ -114,8 +114,8 @@ function analytic_synchrotron_HB07(rho_cgs::Array{<:Real}, m_cgs::Array{<:Real},
         end
 
         # Wittor+17, Eq. 16, but in untis erg/s/Hz/cm^3
-        j_nu[i] = j_ν_prefactor * A * ne * ξe_factor * (ν0/1.4e9)^(-0.5s) * 
-                  √(T_keV[i] / 7.0)^3 * Bfactor / V *
+        j_nu[i] = j_ν_prefactor * A * ne * ξe_factor * (ν0/1.4e9)^(-s/2) * 
+                  √(T_keV[i] / 7)^3 * Bfactor / V *
                   η_Ms_acc(η_model, Mach[i]) * ηB 
 
         # update progress meter
