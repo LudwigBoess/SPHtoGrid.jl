@@ -29,7 +29,7 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 Cosmology = "1"
-DSAModels = "0.1, 1.0"
+DSAModels = "0.1, 0.2"
 DelimitedFiles = "1"
 Documenter = "0.25, 0.26, 0.27"
 DocumenterTools = "0.1"
