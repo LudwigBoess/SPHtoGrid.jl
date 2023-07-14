@@ -89,13 +89,13 @@ To reduce the image afterwards divide `image` by `weight_image`.
 - `output_from_all_workers`: Allow output from multiple workers. If set to false only the main process prints a progress bar.
 """
 function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
-    center::Vector{<:Real}=[0.0, 0.0, 0.0],
-    radius_limits::Vector{<:Real}=[0.0, Inf],
-    Nside::Integer=1024,
-    kernel::AbstractSPHKernel,
-    show_progress::Bool=true,
-    output_from_all_workers::Bool=false,
-    calc_mean::Bool=true)
+                    center::Vector{<:Real}=[0.0, 0.0, 0.0],
+                    radius_limits::Vector{<:Real}=[0.0, Inf],
+                    Nside::Integer=1024,
+                    kernel::AbstractSPHKernel,
+                    show_progress::Bool=true,
+                    output_from_all_workers::Bool=false,
+                    calc_mean::Bool=true)
 
 
     if output_from_all_workers
@@ -127,19 +127,17 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
     weight_map = HealpixMap{Float64,RingOrder}(Nside)
     res = Healpix.Resolution(Nside)
 
-    # maximum angular distance (in radians) between a pixel center 
-    # and any of its corners
-    #tan_pix_radian = tan(0.5√(4π/length(allsky_map)))
-    tan_pix_radian = tan(max_pixrad(res))
+    # approximate diameter of pixel (in radians)
+    ang_pix = √( 4π / length(allsky_map) )
 
     # storage array for kernel weights
     wk = Vector{Float64}(undef, length(allsky_map))
     # storage array for mapped area
     A = Vector{Float64}(undef, length(allsky_map))
 
-    # # storage for grid and particle masses 
-    # grid_mass = 0.0
-    # part_mass = 0.0
+    # storage for grid and particle masses 
+    grid_mass = 0.0
+    part_mass = 0.0
 
     # define progressmeter
     P = Progress(Npart)
@@ -156,25 +154,27 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
         # get distance to particle
         Δx = get_norm(pos[:, ipart])
 
+        # projected hsml at particle distance in radians 
+        proj_hsml = asin(hsml[ipart] / Δx)
+
         # if the particle is closer than its smoothing length
         # we get too much noise in the map
         if Δx < hsml[ipart]
-            update_progress!(P, show_progress, output_this_worker)
-            continue
+            proj_hsml = π
         end
 
-        # pixel radius at particle horizon
-        pix_radius = Δx * tan_pix_radian
-
         # find pixels to which particle contributes
-        pixidx = contributing_pixels(pos[:, ipart], hsml[ipart], Δx, res, allsky_map)
+        pixidx = contributing_pixels(pos[:, ipart], proj_hsml, res, allsky_map)
 
         # area of particle and length along line of sight
         area, dz = particle_area_and_depth(hsml[ipart], m[ipart], rho[ipart])
 
+        # correct particle depth for projection on unit sphere
+        dz /= (ang_pix * Δx)
+
         # calculate kernel weights and mapped area
-        wk, A, N, weight_per_pix = calculate_weights(wk, A, pos[:, ipart], hsml[ipart],
-            Δx, res, pixidx, pix_radius, kernel)
+        wk, A, N, weight_per_pix = calculate_weights(wk, A, pos[:, ipart], proj_hsml,
+            Δx, res, pixidx, ang_pix, kernel)
 
         # update the actual images
         update_image!(allsky_map, weight_map, wk,
@@ -183,9 +183,9 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
             A, N, weight_per_pix,
             weights[ipart], bin_q[ipart])
 
-        # # store mass on grid and in particles 
-        # grid_mass += rho[ipart] * sum(wk[1:length(pixidx)]) * sum(A[1:length(pixidx)]) * dz
-        # part_mass += m[ipart]
+        # store mass on grid and in particles
+        grid_mass += rho[ipart] * sum(wk[1:length(pixidx)]) * sum(A[1:length(pixidx)]) * dz
+        part_mass += m[ipart]
 
         # update the progress meter
         update_progress!(P, show_progress, output_this_worker)
@@ -194,11 +194,11 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
     if show_progress && output_this_worker
         println()
         @info "Number of zero pixels in image: $(length(findall(iszero.(allsky_map))))"
-        # println()
-        # @info "Mass conservation:"
-        # @info "\tMass on grid:      $(grid_mass*1.e10) Msun"
-        # @info "\tMass in particles: $(part_mass*1.e10) Msun"
-        # @info "\tRel. Error:        $(abs(part_mass-grid_mass)/part_mass)"
+        println()
+        @info "Mass conservation:"
+        @info "\tMass on grid:      $(grid_mass*1.e10) Msun"
+        @info "\tMass in particles: $(part_mass*1.e10) Msun"
+        @info "\tRel. Error:        $(abs(part_mass-grid_mass)/part_mass)"
     end
 
     return allsky_map, weight_map
