@@ -13,7 +13,7 @@ end
 
 Compute the distance between particle vector and pixel center in radians.
 """
-function distance_to_pixel_center(r::T, pos::Vector{T}, pixel_center::Vector{T}) where T<:Real
+function distance_to_pixel_center(r::T, pos::Vector{T}, pixel_center::Tuple{T,T,T}) where T<:Real
     d = 0.0
     @inbounds for i = eachindex(pos)
         d += pos[i] * pixel_center[i]
