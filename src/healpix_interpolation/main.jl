@@ -154,13 +154,14 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
         # get distance to particle
         Δx = get_norm(pos[:, ipart])
 
-        # projected hsml at particle distance in radians 
-        proj_hsml = asin(hsml[ipart] / Δx)
 
         # if the particle is closer than its smoothing length
         # we get too much noise in the map
         if Δx < hsml[ipart]
             proj_hsml = π
+        else
+            # projected hsml at particle distance in radians 
+            proj_hsml = asin(hsml[ipart] / Δx)
         end
 
         # find pixels to which particle contributes
