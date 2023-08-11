@@ -184,7 +184,7 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
             weights[ipart], bin_q[ipart])
 
         # store mass on grid and in particles
-        grid_mass += rho[ipart] * sum(wk[1:length(pixidx)]) * sum(A[1:length(pixidx)]) * dz
+        grid_mass += rho[ipart] * sum(wk[1:length(pixidx)]) * sum(A[1:length(pixidx)]) * dz * (ang_pix * Δx)^3
         part_mass += m[ipart]
 
         # update the progress meter
