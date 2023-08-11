@@ -125,7 +125,7 @@ function analytic_synchrotron_GS(rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
                     (8√(π) * (s + 1)) * gamma((s + 5) / 4) / gamma((s + 7) / 4) # GS eq 3.32
 
             # GS, eq. 3.31 [erg/s/Hz/cm^3]
-            j_nu[i] = agam * q_e^3 / (m_e * c_light^2) * (3 * q_e / (m_e^3 * c_light^3 * 4 * π))^((s - 1) / 2) *
+            j_nu[i] = agam * q_e^3 / (m_e * c_light^2) * (3 * q_e / (4π * m_e^3 * c_light^5))^((s - 1) / 2) *
                         n0 * ν0^(-(s - 1) / 2) * B_cgs[i]^((s + 1) / 2)
         else
             j_nu[i] = 0.0
