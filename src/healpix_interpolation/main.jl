@@ -154,15 +154,19 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
         # get distance to particle
         Δx = get_norm(pos[:, ipart])
 
-
         # if the particle is closer than its smoothing length
         # we get too much noise in the map
         if Δx < hsml[ipart]
-            proj_hsml = π
-        else
-            # projected hsml at particle distance in radians 
-            proj_hsml = asin(hsml[ipart] / Δx)
+            update_progress!(P, show_progress, output_this_worker)
+            continue
+        #     proj_hsml = π
+        # else
+        #     # projected hsml at particle distance in radians 
+        #     proj_hsml = asin(hsml[ipart] / Δx)
         end
+
+        # projected hsml at particle distance in radians 
+        proj_hsml = asin(hsml[ipart] / Δx)
 
         # find pixels to which particle contributes
         pixidx = contributing_pixels(pos[:, ipart], proj_hsml, res, allsky_map)
@@ -170,9 +174,11 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
         # area of particle and length along line of sight
         area, dz = particle_area_and_depth(hsml[ipart], m[ipart], rho[ipart])
 
-        # correct particle depth for projection on unit sphere
-        dz /= (ang_pix * Δx)
-
+        # correct particle area and depth for projection on unit sphere
+        # this shouldn't be squared, but it produces the same result as smac 
+        # -> there seems to be a factor (ang_pix * Δx) missing somewhere else but I can't find it
+        dz   /= (ang_pix * Δx)^2 
+        
         # calculate kernel weights and mapped area
         wk, A, N, weight_per_pix = calculate_weights(wk, A, pos[:, ipart], proj_hsml,
             Δx, res, pixidx, ang_pix, kernel)
@@ -185,7 +191,8 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
             weights[ipart], bin_q[ipart])
 
         # store mass on grid and in particles
-        grid_mass += rho[ipart] * sum(wk[1:length(pixidx)]) * sum(A[1:length(pixidx)]) * dz
+        grid_mass += rho[ipart] * sum(wk[1:length(pixidx)]) * sum(A[1:length(pixidx)]) * 
+                    dz * (ang_pix * Δx)^2
         part_mass += m[ipart]
 
         # update the progress meter

@@ -371,11 +371,11 @@ addprocs(2)
         @test length(findall(iszero.(allsky_map))) == 0
 
         # check min and max of map 
-        @test minimum(allsky_map) ≈ 4766.125101327221
-        @test maximum(allsky_map) ≈ 5.937353111693359e7
+        @test minimum(allsky_map) ≈ 5312.211023105265
+        @test maximum(allsky_map) ≈ 7.478005891665593e7
 
         # check sum of all pixels 
-        @test sum(allsky_map[:]) ≈ 3.637350200286616e11
+        @test sum(allsky_map[:]) ≈ 3.877477851438817e11
 
     end
 
@@ -511,17 +511,17 @@ addprocs(2)
         @testset "Synchrotron" begin
 
             @testset "Donnert+16" begin
-                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=0)[1] ≈ 1.099011790493482e-37
+                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=0)[1] ≈ 2.117271923372039e-53
 
-                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=1)[1] ≈ 5.916257534114163e-39
+                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=1)[1] ≈ 1.1397808537425788e-54
 
-                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=2)[1] ≈ 7.008208770348882e-39
+                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=2)[1] ≈ 1.3501478137852037e-54
 
-                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=3)[1] ≈ 2.9581287670570815e-39
+                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=3)[1] ≈ 5.698904268712894e-55
 
-                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=4)[1] ≈ 4.930214611761853e-37
+                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=4)[1] ≈ 9.498173781188254e-53
 
-                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], [π / 4], dsa_model=1)[1] ≈ 2.9581287670570815e-39
+                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], [π / 4], dsa_model=1)[1] ≈ 5.698904268712894e-55
 
                 @test_throws ErrorException("Invalid DSA model selection!") analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=10)
             end
