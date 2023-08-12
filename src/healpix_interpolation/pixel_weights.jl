@@ -1,10 +1,24 @@
 """
-    contributing_area(dx, hsml, pix_radius)
+    contributing_area(dx, hsml, ang_pix)
 
 Calculates the area of the pixel the particle contributes to.
 """
-function contributing_area(dx::T, hsml::T, pix_radius::T) where T
-    max(0.0, min((2pix_radius)^2, 2pix_radius * ( pix_radius + hsml - dx)))
+function contributing_area(r::T, proj_hsml::T, ang_pix::T) where {T}
+    max(0.0, min(ang_pix, abs(proj_hsml - (r - 0.5*ang_pix)))) / ang_pix
+end
+
+
+"""
+    distance_to_pixel_center(r::T, pos::Vector{T}, pixel_center::Vector{T}) where T<:Real
+
+Compute the distance between particle vector and pixel center in radians.
+"""
+function distance_to_pixel_center(r::T, pos::Vector{T}, pixel_center::Tuple{T,T,T}) where T<:Real
+    d = 0.0
+    @inbounds for i = eachindex(pos)
+        d += pos[i] * pixel_center[i]
+    end
+    acos( min(d/r, 1.0) )
 end
 
 """
@@ -12,7 +26,7 @@ end
                     _pixidx,
                     distr_area, distr_weight, 
                     n_tot_pix, n_distr_pix, 
-                    res, pix_radius,
+                    res, ang_pix,
                     kernel)
 
 Helper function to compute the weights for one pixel
@@ -21,19 +35,22 @@ function weight_per_index(_Δx::T, _pos::Vector{T}, _hsml::T, _hsml_inv::T,
                           _pixidx::Integer,
                           distr_area::T, distr_weight::T, 
                           n_tot_pix::Integer, n_distr_pix::Integer, 
-                          res, pix_radius::T,
+                          res, ang_pix::T,
                           kernel::AbstractSPHKernel) where T
 
-    # get vector to pixel center at horizon of particle
-    pixel_center = _Δx .* pix2vecRing(res, _pixidx)
+    # get vector to pixel center at horizon of unit sphere
+    pixel_center = pix2vecRing(res, _pixidx)
 
     # compute distance to pixel center 
-    dx = get_norm(_pos .- pixel_center)
+    dx = distance_to_pixel_center(_Δx, _pos, pixel_center)
     # convert in units of hsml
     u = dx * _hsml_inv
 
     # fraction of particle area in the pixel
-    _A = contributing_area(dx, _hsml, pix_radius)
+    _A = contributing_area(dx, _hsml, ang_pix)
+    # account for size of pixel on particle horizon 
+    _A /= (ang_pix * _Δx)^2
+
     # total area over which particle is distributed 
     distr_area += _A
 
@@ -62,7 +79,7 @@ end
     calculate_weights(wk::Vector{Float64}, A::Vector{Float64}, 
                     _pos::Vector{Float64}, _hsml::Float64,
                     _Δx::Float64, res::Resolution,
-                    pixidx::Vector{Int64}, pix_radius::Float64,
+                    pixidx::Vector{Int64}, ang_pix::Float64,
                     kernel::AbstractSPHKernel)
 
 
@@ -70,7 +87,7 @@ end
 function calculate_weights(wk::Vector{T}, A::Vector{T}, 
                             _pos::Vector{T}, _hsml::T,
                             _Δx::T, res::Resolution,
-                            pixidx::Vector{Int64}, pix_radius::T,
+                            pixidx::Vector{Int64}, ang_pix::T,
                             kernel::AbstractSPHKernel) where T
 
     # number of pixels to which the particle contributes
@@ -94,7 +111,7 @@ function calculate_weights(wk::Vector{T}, A::Vector{T},
                                                   pixidx[ipixel],
                                                   distr_area, distr_weight, 
                                                   n_tot_pix, n_distr_pix, 
-                                                  res, pix_radius,
+                                                  res, ang_pix,
                                                   kernel)
 
     end # loop over all relevant pixels
