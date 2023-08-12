@@ -166,7 +166,7 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
         end
 
         # projected hsml at particle distance in radians 
-        #proj_hsml = asin(hsml[ipart] / Δx)
+        proj_hsml = asin(hsml[ipart] / Δx)
 
         # find pixels to which particle contributes
         pixidx = contributing_pixels(pos[:, ipart], proj_hsml, res, allsky_map)
