@@ -138,9 +138,13 @@ If you're lazy like me and don't want to go through the entire process of image 
 map_it
 ```
 
+# Comparison to Smac
 
-## TSC
+As a reference for the mapping we use Smac [(Dolag et al. 2005)](https://ui.adsabs.harvard.edu/link_gateway/2005MNRAS.363...29D/doi:10.1111/j.1365-2966.2005.09452.x).
+You can see the comparison with the relative error in the following images.
+Differences in the LOS integration stem from a relative shift of the SPHtoGrid image by one pixel.
+The bulk of the error in the density weighted map stems from a slightly different calculation of the temperature.
 
-!!! note 
-    Will be reworked for version 0.5!
-
+Line-of-sight integration  | Density weighted
+:-------------------------:|:-------------------------:
+![rho_allsky](assets/rho_flat.png) |  ![T_allsky](assets/T_flat.png)

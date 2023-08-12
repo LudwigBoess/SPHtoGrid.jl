@@ -140,3 +140,14 @@ filename = "T_allsky.fits"
 # this function takes care of mapping, image reduction
 distributed_allsky_map(filename, Nside, Nsubfiles, T_maps_of_subfile, reduce_image=true)
 ```
+
+
+# Comparison to Smac
+
+As a reference for the mapping we use Smac [(Dolag et al. 2005)](https://ui.adsabs.harvard.edu/link_gateway/2005MNRAS.363...29D/doi:10.1111/j.1365-2966.2005.09452.x).
+You can see the comparison with the relative error in the following images.
+Please note that the bulk of the error in the density weighted map stems from a slightly different calculation of the temperature.
+
+Line-of-sight integration  | Density weighted
+:-------------------------:|:-------------------------:
+![rho_allsky](assets/rho_allsky.png) |  ![T_allsky](assets/T_allsky.png)
