@@ -1,36 +1,3 @@
-function get_weight_per_pixel( distr_area, distr_weight, 
-                            n_tot_pix, n_distr_pix, 
-                            dxdy, u, hsml_inv,
-                            kernel)
-
-    # store are of pixel the particle contributes to
-    _A          = dxdy
-    distr_area +=  dxdy
-
-    # count up total pixels 
-    n_tot_pix += 1
-
-    # if pixel center is within kernel
-    if u <= 1
-        # evaluate kernel
-        _wk = 𝒲(kernel, u, hsml_inv)
-
-        # count up distributed weigh
-        distr_weight += _wk * dxdy
-
-        # if pixel center is within the kernel
-        # count that pixel contributes to pixel
-        n_distr_pix  += 1
-    else
-        _wk = 0.0
-    end
-
-    return _A, _wk, 
-        distr_area, distr_weight, 
-        n_tot_pix, n_distr_pix
-end
-
-
 """
     function calculate_weights_2D(  wk::Array{<:Real,1}, 
                                     iMin::Integer, iMax::Integer, 
@@ -251,10 +218,10 @@ function cic_mapping_2D( Pos, HSML,
             
         end # i, j    
 
-        #grid_mass += Rho[p] * grid_vol
+        #grid_mass += Rho[p] * grid_vol / param.len2pix^3
 
         # store mass of contributing particle 
-        #particle_mass += M[p]
+        # particle_mass += M[p]
 
          # update for ProgressMeter
         if show_progress
