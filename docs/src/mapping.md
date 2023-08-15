@@ -138,7 +138,7 @@ If you're lazy like me and don't want to go through the entire process of image 
 map_it
 ```
 
-# Comparison to Smac
+## Comparison to Smac
 
 As a reference for the mapping we use Smac [(Dolag et al. 2005)](https://ui.adsabs.harvard.edu/link_gateway/2005MNRAS.363...29D/doi:10.1111/j.1365-2966.2005.09452.x).
 You can see the comparison with the relative error in the following images.

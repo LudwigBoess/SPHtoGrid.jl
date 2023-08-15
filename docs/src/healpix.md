@@ -142,7 +142,7 @@ distributed_allsky_map(filename, Nside, Nsubfiles, T_maps_of_subfile, reduce_ima
 ```
 
 
-# Comparison to Smac
+## Comparison to Smac
 
 As a reference for the mapping we use Smac [(Dolag et al. 2005)](https://ui.adsabs.harvard.edu/link_gateway/2005MNRAS.363...29D/doi:10.1111/j.1365-2966.2005.09452.x).
 You can see the comparison with the relative error in the following images.
