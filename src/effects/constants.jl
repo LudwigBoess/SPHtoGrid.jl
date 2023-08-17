@@ -12,8 +12,8 @@ global const eV2cgs     = 1.60218e-12
 global const cgs2eV     = 1.0/eV2cgs
 
 # synchrotron
-const global C_crit = 3qe / (4π * m_e^3 * cL^5) # Donnert+16, MNRAS 462, 2014–2032 (2016), Eg. 20 
-const global j_nu_prefac = √(3) * qe^3 / (m_e * cL^2)
+const global C_crit = 3q_e / (4π * m_e^3 * c_light^5) # Donnert+16, MNRAS 462, 2014–2032 (2016), Eg. 20 
+const global j_nu_prefac = √(3) * q_e^3 / (m_e * c_light^2)
 
 global const γ_th          = 5.0/3.0
 const global γ_cr = 4.0 / 3.0
