@@ -9,7 +9,7 @@ Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_cutout
 using Distributed
 addprocs(2)
 
-@everywhere using SPHtoGrid, Test, DelimitedFiles, SPHKernels, GadgetIO, GadgetUnits
+@everywhere using SPHtoGrid, Test, DelimitedFiles, SPHKernels, GadgetIO, GadgetUnits, DiffusiveShockAccelerationModels
 
 @testset "SPHtoGrid" begin
 
@@ -510,20 +510,34 @@ addprocs(2)
 
         @testset "Synchrotron" begin
 
-            @testset "Donnert+16" begin
-                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=0)[1] ≈ 2.117271923372039e-53
+            @testset "DSA model selection" begin
+                # integer based selection
+                @test SPHtoGrid.select_dsa_model(0) == Kang07()
+                @test SPHtoGrid.select_dsa_model(1) == KR13()
+                @test SPHtoGrid.select_dsa_model(2) == Ryu19()
+                @test SPHtoGrid.select_dsa_model(3) == CS14()
+                @test SPHtoGrid.select_dsa_model(4) == P16()
+                # pass-through
+                @test SPHtoGrid.select_dsa_model(Kang07()) == Kang07()
+                # error handling 
+                @test_throws ErrorException("Invalid DSA model selection!") SPHtoGrid.select_dsa_model(10)
+            end
 
+            @testset "Default" begin
+                @test analytic_synchrotron([2.e-20], [5.0e-6], [3.0], dsa_model=1)[1] ≈ 6.606912895256343e-51
+                @test analytic_synchrotron([2.e-20], [5.0e-6], [3.0], [π / 4], dsa_model=1)[1] ≈ 3.3069307682942575e-51
+                @test analytic_synchrotron([2.e-20], [5.0e-6], [3.0], dsa_model=1, integrate_pitch_angle=false)[1] ≈ 9.556961692634717e-51
+                @test analytic_synchrotron([2.e-20], [5.0e-6], [3.0], dsa_model=1, polarisation=true)[1] ≈ 4.784316234516861e-51
+            end
+
+            @testset "Ginzburg & Syrovatskii (1965)" begin
                 @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=1)[1] ≈ 1.1397808537425788e-54
-
-                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=2)[1] ≈ 1.3501478137852037e-54
-
-                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=3)[1] ≈ 5.698904268712894e-55
-
-                @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=4)[1] ≈ 9.498173781188254e-53
-
                 @test analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], [π / 4], dsa_model=1)[1] ≈ 5.698904268712894e-55
+            end
 
-                @test_throws ErrorException("Invalid DSA model selection!") analytic_synchrotron_GS([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=10)
+            @testset "Longair (2011)" begin
+                @test analytic_synchrotron_Longair([1.e-28], [5.0e-6], [1.0e8], [3.0], dsa_model=1)[1] ≈ 1.4322908627279946e-53
+                @test analytic_synchrotron_Longair([1.e-28], [5.0e-6], [1.0e8], [3.0], [π / 4], dsa_model=1)[1] ≈ 7.161454313639973e-54
             end
 
             @testset "Hoeft&Brüggen (2007)" begin
@@ -544,10 +558,9 @@ addprocs(2)
 
                 @test analytic_synchrotron_HB07([1.e-28], [1.9890000000000002e39], [6.171355999999999e22],
                     [5.0e-6], [8.618352059925092], [3.0], [π / 4])[1] ≈ 2.3445761032952828e-39
-
-                @test_throws ErrorException("Invalid DSA model selection!") analytic_synchrotron_HB07([1.e-28], [1.9890000000000002e39], [6.171355999999999e22],
-                    [5.0e-6], [8.618352059925092], [3.0], dsa_model=10)
             end
+
+    
         end
     end
 
