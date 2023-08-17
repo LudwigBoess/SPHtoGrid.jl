@@ -30,7 +30,8 @@ Numerical values correspond to:
 - `4`: [Pfrommer et. al. (2006)](https://ui.adsabs.harvard.edu/abs/2006MNRAS.367..113P/abstract)
 """
 function analytic_synchrotron_Longair(rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
-                                        T_K::Array{<:Real}, Mach::Array{<:Real};
+                                        T_K::Array{<:Real}, Mach::Array{<:Real},
+                                        θ_B::Union{Nothing,Array{<:Real}}=nothing;
                                         xH::Real=0.76, 
                                         dsa_model::Union{Integer,AbstractShockAccelerationEfficiency}=1,
                                         ν0::Real=1.4e9,
@@ -55,8 +56,13 @@ function analytic_synchrotron_Longair(rho_cgs::Array{<:Real}, B_cgs::Array{<:Rea
 
     @inbounds for i = 1:Npart
 
-        B = B_cgs[i]
-        n0 = K_ep / K_ep_default * cre_spec_norm_particle(η_model, Mach[i]) * EpsNtherm(rho_cgs[i], T_K[i], xH=xH)
+        if !isnothing(θ_B)
+            ηB = ηB_acc_e(θ_B[i])
+        else
+            ηB = 1.0
+        end
+
+        n0 = K_ep / K_ep_default * ηB * cre_spec_norm_particle(η_model, Mach[i]) * EpsNtherm(rho_cgs[i], T_K[i], xH=xH)
         s = dsa_spectral_index(Mach[i])
 
         if n0 > 0.0
@@ -75,7 +81,7 @@ function analytic_synchrotron_Longair(rho_cgs::Array{<:Real}, B_cgs::Array{<:Rea
 
             # Longair eq 8.128
             J_ν[i] = prefac * n0 *
-                     nufac^(0.5 * (s - 1)) * B^(0.5 * (s + 1)) *
+                    nufac^(0.5 * (s - 1)) * B_cgs[i]^(0.5 * (s + 1)) *
                      a_p
         else
             J_ν[i] = 0.0
