@@ -62,7 +62,7 @@ Returns synchrotron emissivity `j_nu` in units [erg/s/Hzcm^3].
 - `show_progress::Bool=false`: Enables a progress bar if set to true
 
 ## DSA Models
-See [DSAModels.jl](https://github.com/LudwigBoess/DSAModels.jl) for details!
+See [DiffusiveShockAccelerationModels.jl](https://github.com/LudwigBoess/DiffusiveShockAccelerationModels.jl) for details!
 - `0`: [Kang et. al. (2007)](https://ui.adsabs.harvard.edu/abs/2007ApJ...669..729K/abstract)
 - `1`: [Kang & Ryu (2013)](https://ui.adsabs.harvard.edu/abs/2013ApJ...764...95K/abstract)
 - `2`: [Ryu et. al. (2019)](https://ui.adsabs.harvard.edu/abs/2019ApJ...883...60R/abstract)
