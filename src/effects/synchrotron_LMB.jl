@@ -196,9 +196,11 @@ Returns synchrotron emissivity `j_nu` in units [erg/s/Hzcm^3].
 - `ν0::Real=1.4e9`:           Observation frequency in ``Hz``.
 - `dsa_model`:      Diffusive Shock Acceleration model. Takes values `0...4`, or custom model. See next section.
 - `K_ep::Real=0.01`:           Ratio of CR proton to electron energy acceleration.
-- `spectrum::Union{Nothing,Function}=nothing`: Spectrum function. Must be normalized so that the integral over it is 1.
 - `CR_Emin::Real=1`:           Injection energy of CR electron population in ``GeV``.
-- `show_progress::Bool=false`: Enables a progress bar if set to true
+- `spectrum::Union{Nothing,Function}=nothing`: Spectrum function. Must be normalized so that the integral over it is 1.
+- `integrate_pitch_angle::Bool=true`: Optional avoid pitch angle integration to reduce computational cost.
+- `polarisation::Bool=false`: Set to `true`` if you want to compute the polarized emission instead of the total intensity.
+- `show_progress::Bool=false`: Enables a progress bar if set to true.
 
 ## DSA Models
 Takes either your self-defined `AbstractShockAccelerationEfficiency` (see [DiffusiveShockAccelerationModels.jl](https://github.com/LudwigBoess/DiffusiveShockAccelerationModels.jl) for details!)
@@ -245,12 +247,14 @@ function analytic_synchrotron(P_cgs::Array{<:Real}, B_cgs::Array{<:Real},
     # loop over all particles
     @threads for i = 1:length(P_cgs)
 
+        # compute shock obliquity dependent acceleration efficiency if requested
         if !isnothing(θ_B)
             ηB = ηB_acc_e(θ_B[i])
         else
             ηB = 1.0
         end
 
+        # default to powerlaw spectrum if no user input is set
         if isnothing(spectrum)
             # slope of injected spectrum
             s = dsa_spectral_index(Mach[i])
@@ -261,7 +265,8 @@ function analytic_synchrotron(P_cgs::Array{<:Real}, B_cgs::Array{<:Real},
 
         # get emissivity in [erg/s/Hz/cm^3]
         j_nu[i] = get_synch_emissivity_integral(P_cgs[i], Mach[i], B_cgs[i], ηB; 
-                                                spectrum, K_ep, η_model, ν0, synch_F, integrate_pitch_angle)
+                                                spectrum, K_ep, η_model, ν0, 
+                                                synch_F, integrate_pitch_angle)
 
         # update progress meter
         if show_progress
