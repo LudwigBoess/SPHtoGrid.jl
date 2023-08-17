@@ -18,7 +18,7 @@ Returns J_ν in units [erg/cm^3/Hz/s].
 - `K_ep::Real=0.01`:                  Ratio of CR proton to electron energy density.
 - `integrate_pitch_angle::Bool=true`: Integrates over the pitch angle as in Longair Eq. 8.87.
 - `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz/s]`` to ``mJy/cm``.
-# DSA models imported from DSAModels.jl
+# DSA models imported from DiffusiveShockAccelerationModels.jl
 - `0`: Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1.
 - `1`: Efficiency model from Kang&Ryu 2013, doi:10.1088/0004-637X/764/1/95 .
 - `2`: Efficiency model from Ryu et al. 2019, https://arxiv.org/abs/1905.04476 .

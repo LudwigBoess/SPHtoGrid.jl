@@ -5,7 +5,7 @@ using SPHKernels
 using Unitful
 using Printf
 using ProgressMeter
-using DSAModels
+using DiffusiveShockAccelerationModels
 using SpecialFunctions
 using LinearAlgebra
 using Rotations
