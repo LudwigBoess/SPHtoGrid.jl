@@ -233,8 +233,13 @@ write_fits_image(fo_image, quantitiy_map, par, snap = snap, units = "GeV/s")
 
 ## Synchrotron Emission
 
+I implemented a number of different functions to compute synchrotron emissivity by shock accelerated electrons.
+Please use with caution as there are still some errors to be fixed!
+
 ```@docs
+analytic_synchrotron
 analytic_synchrotron_GS
+analytic_synchrotron_Longair
 analytic_synchrotron_HB07
 ```
 
