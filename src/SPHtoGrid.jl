@@ -66,13 +66,15 @@ include("healpix_interpolation/distributed_mapping.jl")
 # effect functions
 include("effects/constants.jl")
 include("effects/density.jl")
-include("effects/synchrotron_GS.jl")
-include("effects/synchrotron_Hoeft.jl")
-include("effects/synchrotron_Longair.jl")
 include("effects/sz_effect.jl")
 include("effects/x_ray.jl")
 include("effects/gamma.jl")
 include("effects/RM.jl")
+include("effects/synchrotron_shared.jl")
+include("effects/synchrotron_GS.jl")
+include("effects/synchrotron_Hoeft.jl")
+include("effects/synchrotron_Longair.jl")
+include("effects/synchrotron_LMB.jl")
 
 # functions for existing images 
 include("image_functions/radio_beam.jl")
@@ -117,6 +119,7 @@ export mappingParameters,                         # parameters for SPH mapping
     x_ray_emissivity,
     get_T_keV,
     rotation_measure,
+    analytic_synchrotron,
     analytic_synchrotron_HB07,
     analytic_synchrotron_GS,
     analytic_synchrotron_Longair,

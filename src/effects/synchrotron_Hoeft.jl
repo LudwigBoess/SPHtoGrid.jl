@@ -34,7 +34,9 @@ Returns synchrotron emissivity `j_nu` in units [erg/s/Hzcm^3].
 
 
 ## DSA Models
-See [DiffusiveShockAccelerationModels.jl](https://github.com/LudwigBoess/DiffusiveShockAccelerationModels.jl) for details!
+Takes either your self-defined `AbstractShockAccelerationEfficiency` (see [DiffusiveShockAccelerationModels.jl](https://github.com/LudwigBoess/DiffusiveShockAccelerationModels.jl) for details!)
+or a numerical value as input.
+Numerical values correspond to:
 - `0`: [Kang et. al. (2007)](https://ui.adsabs.harvard.edu/abs/2007ApJ...669..729K/abstract)
 - `1`: [Kang & Ryu (2013)](https://ui.adsabs.harvard.edu/abs/2013ApJ...764...95K/abstract)
 - `2`: [Ryu et. al. (2019)](https://ui.adsabs.harvard.edu/abs/2019ApJ...883...60R/abstract)
@@ -49,23 +51,12 @@ function analytic_synchrotron_HB07(rho_cgs::Array{<:Real}, m_cgs::Array{<:Real},
                                     B_cgs::Array{<:Real}, T_keV::Array{<:Real}, Mach::Array{<:Real},
                                     θ_B::Union{Nothing, Array{<:Real}}=nothing;
                                     xH::Real=0.752, ν0::Real=1.4e9, z::Real=0.0,
-                                    dsa_model::Integer=1, ξe::Real = 0.01,
+                                    dsa_model::Union{Integer,AbstractShockAccelerationEfficiency}=1,
+                                    ξe::Real=0.01,
                                     show_progress::Bool=false )
 
-    # select DSA model
-    if dsa_model == 0
-        η_model = Kang07()
-    elseif dsa_model == 1
-        η_model = KR13()
-    elseif dsa_model == 2
-        η_model = Ryu19()
-    elseif dsa_model == 3
-        η_model = CS14()
-    elseif dsa_model == 4
-        η_model = P16()
-    else
-        error("Invalid DSA model selection!")
-    end
+    # assign requested DSA model
+    η_model = select_dsa_model(dsa_model)
 
     # prefactor to HB07, Eq. 32
     j_ν_prefactor = 6.4e34 # erg/s/Hz
