@@ -176,30 +176,36 @@ function get_synch_emissivity_integral(ϵ_th::Real, Mach::Real, B::Real, etaB::R
 end
 
 """
-    analytic_synchrotron_JD( P_cgs::Array{<:Real}, B_cgs::Array{<:Real}, Mach::Array{<:Real}; 
-                             dsa_model::Integer=1, ν0::Real=1.4e9,
-                             integrate_pitch_angle::Bool=true )
+    analytic_synchrotron(P_cgs::Array{<:Real}, B_cgs::Array{<:Real}, 
+                         Mach::Array{<:Real}, θ_B::Union{Nothing,Array{<:Real}}=nothing;
+                         dsa_model::Union{Integer,AbstractShockAccelerationEfficiency}=1, 
+                         ν0::Real=1.4e9,
+                         K_ep::Real=0.01, CR_Emin::Real=1.0,
+                         spectrum::Union{Nothing,Function}=nothing,
+                         integrate_pitch_angle::Bool=true,
+                         polarisation::Bool=false,
+                         show_progress::Bool=false)
 
-Computes the analytic synchrotron emission from a powerlaw distribution of electrons by explicitly integrating over the distribution function.
-Uses the implementaion from [Donnert et. al. (2016)](https://ui.adsabs.harvard.edu/abs/2016MNRAS.462.2014D/abstract).
+Computes the analytic synchrotron emission from a spectrum of electrons by explicitly integrating over the distribution function.
+The integral over the spectrum must be normalized to 1.
+The total energy density of the relativistic electrons is given by the CR to thermal pressure ratio obtained by employing a DSA model and computing Xcr as in [Pfrommer et. al. (2017)](https://ui.adsabs.harvard.edu/abs/2017MNRAS.465.4500P/abstract).
 
-Returns synchrotron emissivity `j_nu` in units [erg/s/Hzcm^3].
+Returns synchrotron emissivity `j_nu` in units `[erg/s/Hz/cm^3]`.
 
 # Arguments
-- `P_cgs::Array{<:Real}`:   Thermal energy density in ``erg/cm^3``.
+- `P_cgs::Array{<:Real}`:   Thermal energy density in `erg/cm^3`.
 - `B_cgs::Array{<:Real}`:   Magnetic field in Gauss.
 - `Mach::Array{<:Real}`:    Mach number.
 - `θ_B::Union{Nothing,Array{<:Real}}=nothing`: Shock obliquity (optional).
 
 ## Keyword Arguments
-- `xH::Real = 0.76`:        Hydrogen fraction of the simulation, if run without chemical model.
-- `ν0::Real=1.4e9`:           Observation frequency in ``Hz``.
+- `ν0::Real=1.4e9`:           Observation frequency in `Hz`.
 - `dsa_model`:      Diffusive Shock Acceleration model. Takes values `0...4`, or custom model. See next section.
 - `K_ep::Real=0.01`:           Ratio of CR proton to electron energy acceleration.
-- `CR_Emin::Real=1`:           Injection energy of CR electron population in ``GeV``.
+- `CR_Emin::Real=1`:           Injection energy of CR electron population in `GeV`.
 - `spectrum::Union{Nothing,Function}=nothing`: Spectrum function. Must be normalized so that the integral over it is 1.
 - `integrate_pitch_angle::Bool=true`: Optional avoid pitch angle integration to reduce computational cost.
-- `polarisation::Bool=false`: Set to `true`` if you want to compute the polarized emission instead of the total intensity.
+- `polarisation::Bool=false`: Set to `true` if you want to compute the polarized emission instead of the total intensity.
 - `show_progress::Bool=false`: Enables a progress bar if set to true.
 
 ## DSA Models
@@ -218,8 +224,8 @@ Numerical values correspond to:
 """
 function analytic_synchrotron(P_cgs::Array{<:Real}, B_cgs::Array{<:Real}, 
                               Mach::Array{<:Real}, θ_B::Union{Nothing,Array{<:Real}}=nothing;
-                              dsa_model::Union{Integer,AbstractShockAccelerationEfficiency}=1, 
                               ν0::Real=1.4e9,
+                              dsa_model::Union{Integer,AbstractShockAccelerationEfficiency}=1, 
                               K_ep::Real=0.01, CR_Emin::Real=1.0,
                               spectrum::Union{Nothing,Function}=nothing,
                               integrate_pitch_angle::Bool=true,
