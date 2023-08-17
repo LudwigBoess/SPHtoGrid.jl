@@ -7,3 +7,4 @@ src/cooling_tables/band.data
 src/cooling_tables/dLambda.bin.data
 src/cooling_tables/T0_400.data
 src/cooling_tables/Z.data
+Manifest.toml
