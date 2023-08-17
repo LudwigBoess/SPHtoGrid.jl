@@ -55,12 +55,62 @@ function X_cr(Mach::Real, ξ::Real)
     return 𝒳 / (ys + 𝒳)
 end
 
+
+"""
+    integrate_θ(x_in::Real, synch_F::Function, θ_steps::Integer=50)
+
+Pitch angle integration in Donnert+16, Eq. 17.
+`synch_F` can be either the first or second synchrotron function.
+"""
+function integrate_θ(x_in::Real, synch_F::Function, θ_steps::Integer=50)
+
+    dθ = 0.5π / θ_steps
+    θ = 0.0
+
+    # first half step: sin(0) = 0
+    K = 0.0
+
+    # actual integration
+    @inbounds for i ∈ 1:θ_steps-1
+        θ += dθ
+        sinθ = sin(θ)
+        x = x_in / sinθ
+        K += sinθ^2 * synch_F(x)
+    end
+
+    # last step: sin(0.5π) = 1
+    K += 0.5 * synch_F(x_in)
+
+    # multiply by step length
+    K *= dθ
+
+    return K
+end
+
+
+"""
+    solve_synchrotron_function( x::Real, synch_F::Function, 
+                                integrate_pitch_angle::Bool)
+
+Helper function for solving the pitch angle integration.
+"""
+function solve_synchrotron_function(x::Real, synch_F::Function,
+    integrate_pitch_angle::Bool)
+    if integrate_pitch_angle
+        return integrate_θ(x, synch_F)
+    else
+        return synch_F(x)
+    end
+end
+
 """
 
 """
 function get_synch_emissivity_integral(ϵ_th::Real, Mach::Real, B::Real, etaB::Real; 
                                         spectrum::Function, K_ep::Real, ν0::Real, 
                                         η_model::AbstractShockAccelerationEfficiency,
+                                        synch_F::Function,
+                                        integrate_pitch_angle::Bool,
                                         N_steps=128)
 
     # combined acceleration efficiency coefficient
@@ -92,7 +142,7 @@ function get_synch_emissivity_integral(ϵ_th::Real, Mach::Real, B::Real, etaB::R
     di = log(E_max / E_min) / (N_steps - 1)
 
     # initial step by itself
-    x[1] = X_MAX
+    x[1] = 70.0
     E[1] = E_min
     dE[1] = E[1] - E_min * exp(-1 * di)
 
@@ -109,14 +159,14 @@ function get_synch_emissivity_integral(ϵ_th::Real, Mach::Real, B::Real, etaB::R
     @inbounds for i = 2:N_steps
         # beginning of bin
         N_E = ϵ_cr * spectrum(E[i])
-        F[i] = N_E * ℱ(x[i])
+        F[i] = N_E * solve_synchrotron_function(x[i], synch_F, integrate_pitch_angle)
 
         # middle of bin 
         x_mid = 0.5 * (x[i-1] + x[i])
         e_mid = 0.5 * (E[i-1] + E[i])
 
         N_E_mid = ϵ_cr * spectrum(e_mid)
-        Fmid[i] = N_E_mid * ℱ(x_mid)
+        Fmid[i] = N_E_mid * solve_synchrotron_function(x_mid, synch_F, integrate_pitch_angle)
 
         # simpson rule 
         j_nu += dE[i] / 6 * (F[i] + F[i-1] + 4 * Fmid[i])
@@ -170,7 +220,16 @@ function analytic_synchrotron(P_cgs::Array{<:Real}, B_cgs::Array{<:Real},
                               ν0::Real=1.4e9,
                               K_ep::Real=0.01, CR_Emin::Real=1.0,
                               spectrum::Union{Nothing,Function}=nothing,
+                              integrate_pitch_angle::Bool=true,
+                              polarisation::Bool=false,
                               show_progress::Bool=false)
+
+    # check if intensity or polarisation should be computed
+    if !polarisation
+        synch_F = ℱ
+    else
+        synch_F = 𝒢
+    end
 
     # assign requested DSA model
     η_model = select_dsa_model(dsa_model)
@@ -201,7 +260,8 @@ function analytic_synchrotron(P_cgs::Array{<:Real}, B_cgs::Array{<:Real},
         end
 
         # get emissivity in [erg/s/Hz/cm^3]
-        j_nu[i] = get_synch_emissivity_integral(P_cgs[i], Mach[i], B_cgs[i], ηB; spectrum, K_ep, η_model, ν0)
+        j_nu[i] = get_synch_emissivity_integral(P_cgs[i], Mach[i], B_cgs[i], ηB; 
+                                                spectrum, K_ep, η_model, ν0, synch_F, integrate_pitch_angle)
 
         # update progress meter
         if show_progress
