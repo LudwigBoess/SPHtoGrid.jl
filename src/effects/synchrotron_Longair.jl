@@ -11,23 +11,30 @@ Returns J_ν in units [erg/cm^3/Hz/s].
 - `B_cgs::Array{<:Real}`:   Magnetic field in Gauss.
 - `T_K::Array{<:Real}`:     Temperature in Kelvin.
 - `Mach::Array{<:Real}`:    Mach number.
-# Keyword Arguments
+## Keyword Arguments
 - `xH::Float64 = 0.76`:               Hydrogen fraction of the simulation, if run without chemical model.
 - `dsa_model::Integer=1`:             Diffuse-Shock-Acceleration model. Takes values `0...4`, see next section.
 - `ν0::Real=1.44e9`:                  Observation frequency in ``Hz``.
 - `K_ep::Real=0.01`:                  Ratio of CR proton to electron energy density.
 - `integrate_pitch_angle::Bool=true`: Integrates over the pitch angle as in Longair Eq. 8.87.
 - `convert_to_mJy::Bool=false`:       Convert the result from ``[erg/cm^3/Hz/s]`` to ``mJy/cm``.
-# DSA models imported from DiffusiveShockAccelerationModels.jl
-- `0`: Efficiency model from Kang, Ryu, Cen, Ostriker 2007, http://arxiv.org/abs/0704.1521v1.
-- `1`: Efficiency model from Kang&Ryu 2013, doi:10.1088/0004-637X/764/1/95 .
-- `2`: Efficiency model from Ryu et al. 2019, https://arxiv.org/abs/1905.04476 .
-- `3`: Efficiency model from Caprioli&Spitkovsky 2015, doi: 10.1088/0004-637x/783/2/91 .
-- `4`: Constant efficiency as in Pfrommer+ 2016, doi: 10.1093/mnras/stw2941 .
+
+## DSA Models
+Takes either your self-defined `AbstractShockAccelerationEfficiency` (see [DiffusiveShockAccelerationModels.jl](https://github.com/LudwigBoess/DiffusiveShockAccelerationModels.jl) for details!)
+or a numerical value as input.
+Numerical values correspond to:
+- `0`: [Kang et. al. (2007)](https://ui.adsabs.harvard.edu/abs/2007ApJ...669..729K/abstract)
+- `1`: [Kang & Ryu (2013)](https://ui.adsabs.harvard.edu/abs/2013ApJ...764...95K/abstract)
+- `2`: [Ryu et. al. (2019)](https://ui.adsabs.harvard.edu/abs/2019ApJ...883...60R/abstract)
+- `3`: [Caprioli & Spitkovsky (2014)](https://ui.adsabs.harvard.edu/abs/2014ApJ...783...91C/abstract)
+- `4`: [Pfrommer et. al. (2006)](https://ui.adsabs.harvard.edu/abs/2006MNRAS.367..113P/abstract)
 """
 function analytic_synchrotron_Longair(rho_cgs::Array{<:Real}, B_cgs::Array{<:Real},
-                                        T_K::Array{<:Real}, Mach::Array{<:Real};
-                                        xH::Real=0.76, dsa_model::Integer=1, ν0::Real=1.44e9,
+                                        T_K::Array{<:Real}, Mach::Array{<:Real},
+                                        θ_B::Union{Nothing,Array{<:Real}}=nothing;
+                                        xH::Real=0.76, 
+                                        dsa_model::Union{Integer,AbstractShockAccelerationEfficiency}=1,
+                                        ν0::Real=1.4e9,
                                         K_ep::Real=0.01,
                                         integrate_pitch_angle::Bool=true,
                                         convert_to_mJy::Bool=false)
@@ -40,20 +47,8 @@ function analytic_synchrotron_Longair(rho_cgs::Array{<:Real}, B_cgs::Array{<:Rea
     # allocate storage array
     J_ν = Vector{Float64}(undef, Npart)
 
-    # select DSA model
-    if dsa_model == 0
-        η_model = Kang07()
-    elseif dsa_model == 1
-        η_model = KR13()
-    elseif dsa_model == 2
-        η_model = Ryu19()
-    elseif dsa_model == 3
-        η_model = CS14()
-    elseif dsa_model == 4
-        η_model = P16()
-    else
-        error("Invalid DSA model selection!")
-    end
+    # assign requested DSA model
+    η_model = select_dsa_model(dsa_model)
 
     # bracket of Longair eq. 8.128
     nufac = (3q_e) / (m_e^3 * c_light * c_light * c_light * c_light * c_light * 2π * ν0)
@@ -61,8 +56,13 @@ function analytic_synchrotron_Longair(rho_cgs::Array{<:Real}, B_cgs::Array{<:Rea
 
     @inbounds for i = 1:Npart
 
-        B = B_cgs[i]
-        n0 = K_ep / K_ep_default * cre_spec_norm_particle(η_model, Mach[i]) * EpsNtherm(rho_cgs[i], T_K[i], xH=xH)
+        if !isnothing(θ_B)
+            ηB = ηB_acc_e(θ_B[i])
+        else
+            ηB = 1.0
+        end
+
+        n0 = K_ep / K_ep_default * ηB * cre_spec_norm_particle(η_model, Mach[i]) * EpsNtherm(rho_cgs[i], T_K[i], xH=xH)
         s = dsa_spectral_index(Mach[i])
 
         if n0 > 0.0
@@ -81,7 +81,7 @@ function analytic_synchrotron_Longair(rho_cgs::Array{<:Real}, B_cgs::Array{<:Rea
 
             # Longair eq 8.128
             J_ν[i] = prefac * n0 *
-                     nufac^(0.5 * (s - 1)) * B^(0.5 * (s + 1)) *
+                    nufac^(0.5 * (s - 1)) * B_cgs[i]^(0.5 * (s + 1)) *
                      a_p
         else
             J_ν[i] = 0.0
