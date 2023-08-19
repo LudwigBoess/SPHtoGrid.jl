@@ -135,9 +135,10 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
     
     N_map = length(m)
 
-    @info "Particles in image: $N_map / $N_in"
-    @info "Sum of mapped Quantity: $(sum(bin_q))"
-
+    if show_progress
+        @info "Particles in image: $N_map / $N_in"
+        @info "Sum of mapped Quantity: $(sum(bin_q))"
+    end
 
     if show_progress
         @info "Mapping..."
@@ -358,20 +359,21 @@ function map_it(pos_in, hsml, mass, rho, bin_q, weights, RM=nothing;
     fo_image = image_prefix * ".$(projection).fits"
 
 
-    # print info on all maps
-    for Nimage = 1:size(quantitiy_map,3)
-        @info "Map $Nimage Properties:"
-        @info "  Max:  $(maximum(quantitiy_map[:, :, Nimage]))"
-        @info "  Min:  $(minimum(quantitiy_map[:, :, Nimage]))"
-        @info "  Mean: $(mean(quantitiy_map[:, :, Nimage]))"
-        @info "  Sum:  $(sum(quantitiy_map[:, :, Nimage]))"
-        Npixels = size(quantitiy_map[:, :, Nimage], 1) * size(quantitiy_map[:, :, Nimage], 2)
-        @info "  Nr. of pixels:     $Npixels"
-        @info "  Nr. of 0 pixels:   $(length(findall(iszero.(quantitiy_map[:, :, Nimage]))))"
-        @info "  Nr. of NaN pixels: $(length(findall(isnan.(quantitiy_map[:, :, Nimage]))))"
-        @info "  Nr. of Inf pixels: $(length(findall(isinf.(quantitiy_map[:, :, Nimage]))))"
+    # print info on all maps if requested
+    if show_progress
+        for Nimage = 1:size(quantitiy_map,3)
+            @info "Map $Nimage Properties:"
+            @info "  Max:  $(maximum(quantitiy_map[:, :, Nimage]))"
+            @info "  Min:  $(minimum(quantitiy_map[:, :, Nimage]))"
+            @info "  Mean: $(mean(quantitiy_map[:, :, Nimage]))"
+            @info "  Sum:  $(sum(quantitiy_map[:, :, Nimage]))"
+            Npixels = size(quantitiy_map[:, :, Nimage], 1) * size(quantitiy_map[:, :, Nimage], 2)
+            @info "  Nr. of pixels:     $Npixels"
+            @info "  Nr. of 0 pixels:   $(length(findall(iszero.(quantitiy_map[:, :, Nimage]))))"
+            @info "  Nr. of NaN pixels: $(length(findall(isnan.(quantitiy_map[:, :, Nimage]))))"
+            @info "  Nr. of Inf pixels: $(length(findall(isinf.(quantitiy_map[:, :, Nimage]))))"
+        end
     end
-
     write_fits_image(fo_image, quantitiy_map, param, snap = snap, units = units)
 
     # de-allocate memory

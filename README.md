@@ -56,16 +56,6 @@ par = mappingParameters(center=[x0, y0, z0],
 
 Instead of Npixels you can also give the keyword argument `pixelSideLength` if you prefer to define your image that way.
 
-If you are mapping a periodic box you also can give the keyword `boxsize` to enable periodic mapping.
-
-```julia
-par = mappingParameters(center=[x0, y0, z0], 
-                        x_size=x_size, 
-                        y_size=y_size,
-                        z_size=z_size,
-                        boxsize=boxsize,
-                        Npixels=200)
-```
 
 ## Select Kernel
 
