@@ -92,10 +92,10 @@ function mappingParameters( T::DataType=Float64;
         pixelSideLength = max_size/Npixels
     elseif (pixelSideLength != -1.0) & (Npixels == 0)
         Npixels = floor(Int64, max_size/pixelSideLength)
-        # recalculate pixelSideLenght to account for rounding
+        # recalculate pixelSideLength to account for rounding
         pixelSideLength = max_size/Npixels
     else
-        error("Please specify pixelSideLenght or number of pixels!")
+        error("Please specify pixelSideLength or number of pixels!")
     end
 
     # area of a pixel in code units
