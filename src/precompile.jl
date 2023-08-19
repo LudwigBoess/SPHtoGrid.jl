@@ -39,6 +39,12 @@ using PrecompileTools    # this is a small dependency
         z_size=10.0,
         Npixels=256)
     
+    Npixels = 128
+    Q_image = zeros(Npixels, Npixels)
+    U_image = Matrix{Float64}(undef, Npixels, Npixels)
+    U_image .= 3.964929157902007e-28
+    Iν_image = Matrix{Float64}(undef, Npixels, Npixels)
+    Iν_image .= 5.4753081210232675e-28
 
     @compile_workload begin
         # all calls in this block will be precompiled, regardless of whether
@@ -55,6 +61,21 @@ using PrecompileTools    # this is a small dependency
                 center, kernel, Nside)
 
         end
+
+        # effects 
+        kinetic_SZ([1.0], [1.0])
+        thermal_SZ([1.0], [1.0])
+        x_ray_emissivity([10.0], [1.e-28])
+        gamma_luminosity_pions_PE04(1.e-28, 1.989e40, 1.e7, 2.235)
+        gamma_flux_pions_PE04(1.e-28, 1.989e40, 1.e7, 2.235, 3.085678e24)
+        analytic_synchrotron([2.e-20], [5.0e-6], [3.0], dsa_model=1)
+        analytic_synchrotron([2.e-20], [5.0e-6], [3.0], [π / 4], dsa_model=1)
+        analytic_synchrotron_HB07([1.e-28], [1.9890000000000002e39], [6.171355999999999e22],
+            [5.0e-6], [8.618352059925092], [3.0], dsa_model=1)
+
+        # image functions 
+        polarisation_fraction(Q_image, U_image, Iν_image)
+        polarisation_angle(Q_image, U_image, Iν_image)
     end
 
     if isfile("dummy.xy.fits")
