@@ -79,7 +79,8 @@ include("effects/synchrotron_LMB.jl")
 # functions for existing images 
 include("image_functions/radio_beam.jl")
 include("image_functions/stokes_parameters.jl")
-
+include("image_functions/synchrotron_luminosity.jl")
+include("image_functions/surface_brightness.jl")
 
 # precompile step 
 include("precompile.jl")
@@ -127,9 +128,13 @@ export mappingParameters,                         # parameters for SPH mapping
     gamma_luminosity_pions_PE04,
     gamma_flux_pions_PE04,
     # image functions
+    beam_in_kpc,
     convert_Pnu_map_to_mJy_beam,
     polarisation_fraction,
     polarisation_angle,
+    surface_brightness_to_luminosity,
+    synchrotron_SB_to_luminosity,
+    total_synch_luminosity_from_SB,
     # IO
     read_fits_image,
     read_allsky_fits_image,

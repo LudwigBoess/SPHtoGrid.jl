@@ -245,7 +245,19 @@ analytic_synchrotron_HB07
 
 # Image Functions
 
+## General
+
 ```@docs
+surface_brightness_to_luminosity
+```
+
+## Synchrotron Specific
+
+```@docs
+synchrotron_SB_to_luminosity
+total_synch_luminosity_from_SB
+beam_in_kpc
+convert_Pnu_map_to_mJy_beam
 polarisation_fraction
 polarisation_angle
 ```

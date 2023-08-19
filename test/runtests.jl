@@ -38,7 +38,7 @@ addprocs(2)
 
         @test_throws ErrorException("Giving a center position requires extent in x, y and z direction.") mappingParameters()
 
-        @test_throws ErrorException("Please specify pixelSideLenght or number of pixels!") mappingParameters(center = [0.0, 0.0, 0.0],
+        @test_throws ErrorException("Please specify pixelSideLength or number of pixels!") mappingParameters(center = [0.0, 0.0, 0.0],
             x_lim = [-1.0, 1.0],
             y_lim = [-1.0, 1.0],
             z_lim = [-1.0, 1.0])
@@ -135,7 +135,7 @@ addprocs(2)
             1.0 0.0 1.0]))
     end
 
-    @testset "indices" begin 
+    @testset "Indices" begin 
 
         Npixels = 128
 
@@ -273,34 +273,54 @@ addprocs(2)
 
         end
 
-        # @testset "3D" begin
+        @testset "3D" begin
 
-        #     kernel = WendlandC6(3)
+            # sedov reference snapshot
+            fi = "snap_sedov"
 
-        #     par = mappingParameters(center = [3.0, 3.0, 3.0],
-        #                     x_size = 6.0, y_size = 6.0, z_size = 6.0,
-        #                     Npixels = 10,
-        #                     boxsize = 6.0)
+            # read header and find units
+            h = read_header(fi)
+            GU = GadgetPhysical()
+
+            blocks = ["POS", "MASS", "HSML", "RHO", "U"]
+            data = Dict(block => read_block(fi, block, parttype=0) for block ∈ blocks)
+
+            pos = data["POS"] .* GU.x_physical
+            hsml = data["HSML"] .* GU.x_physical
+            rho = data["RHO"] .* GU.rho_physical
+            mass = data["MASS"] .* GU.m_physical
+
+            kernel = WendlandC6(3)
+
+            par = mappingParameters(center = [3.0, 3.0, 3.0],
+                            x_size = 6.0, y_size = 6.0, z_size = 6.0,
+                            Npixels = 10)
             
-        #     @testset "Single core" begin
-        #         d = sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
-        #                             param=par, kernel=kernel,
-        #                             parallel = false,
-        #                             show_progress=true,
-        #                             dimensions=3)
+            @testset "Single core" begin
+                d = sphMapping(pos, hsml, mass, rho, rho, ones(length(rho)),
+                                    param=par, kernel=kernel,
+                                    parallel = false,
+                                    show_progress=true,
+                                    dimensions=3)
 
-        #         @test !isnan(d[1,1,1])
-        #     end
+                @test !isnan(d[1,1,1])
+                @test d[1, 1, 1] ≈ 0.002470815089339027
+            end
 
-        #     @testset "Multi core" begin
-        #         # @test_nowarn sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho,1)),
-        #         #                     param=par, kernel=kernel,
-        #         #                     parallel = true,
-        #         #                     show_progress=false,
-        #         #                     dimensions=3)
-        #     end
+            pos = data["POS"] .* GU.x_physical
 
-        # end # 3D
+            @testset "Multi core" begin
+                d = sphMapping(pos, hsml, mass, rho, rho, ones(length(rho)),
+                                    param=par, kernel=kernel,
+                                    parallel = true,
+                                    show_progress=false,
+                                    dimensions=3)
+
+                @test !isnan(d[1, 1, 1])
+                @test d[1, 1, 1] ≈ 0.002470815089339027
+            end
+
+        end # 3D
 
     end
 
@@ -379,50 +399,60 @@ addprocs(2)
 
     end
 
-    # @testset "FITS io" begin
+    @testset "FITS io" begin
 
-    #     # map data
-    #     fi = joinpath(dirname(@__FILE__), "bin_q.txt")
-    #     bin_quantity = Float32.(readdlm(fi))[:, 1]
+        # sedov reference snapshot
+        fi = "snap_sedov"
 
-    #     fi = joinpath(dirname(@__FILE__), "x.txt")
-    #     x = copy(transpose(Float32.(readdlm(fi))))
+        # kernel definition
+        k = WendlandC4(2)
 
-    #     fi = joinpath(dirname(@__FILE__), "rho.txt")
-    #     rho = Float32.(readdlm(fi))[:, 1]
+        # read header and find units
+        h = read_header(fi)
+        GU = GadgetPhysical(xH=0.752)
 
-    #     fi = joinpath(dirname(@__FILE__), "hsml.txt")
-    #     hsml = Float32.(readdlm(fi))[:, 1]
+        blocks = ["POS", "MASS", "HSML", "RHO", "U"]
+        data = Dict(block => read_block(fi, block, parttype=0) for block ∈ blocks)
 
-    #     fi = joinpath(dirname(@__FILE__), "m.txt")
-    #     m = Float32.(readdlm(fi))[:, 1]
+        # convert to physical code units for mapping
+        pos = data["POS"] .* GU.x_physical
+        hsml = data["HSML"] .* GU.x_physical
+        rho = data["RHO"] .* GU.rho_physical
+        mass = data["MASS"] .* GU.m_physical
 
-    #     kernel = WendlandC6(2)
+        T = data["U"] .* GU.T_K
 
-    #     par = mappingParameters(center = [3.0, 3.0, 3.0],
-    #         x_size = 6.0, y_size = 6.0, z_size = 6.0,
-    #         Npixels = 200,
-    #         boxsize = 6.0)
+        Npart = length(T)
 
-    #     d = sphMapping(x, hsml, m, rho, bin_quantity, ones(Float32, size(rho, 1)),
-    #         param = par, kernel = kernel,
-    #         parallel = false,
-    #         show_progress = false)
+        center = ones(3) .* 0.5h.boxsize * GU.x_physical
+        xy_size = 0.9h.boxsize * GU.x_physical
+        z_size = 0.9h.boxsize * GU.x_physical
 
-    #     # store image in a file
-    #     fits_file = joinpath(dirname(@__FILE__), "image.fits")
+        # define mapping parameters
+        par = mappingParameters(center=center .* GU.x_physical,
+            x_size=xy_size,
+            y_size=xy_size,
+            z_size=z_size,
+            Npixels=256,
+            boxsize=h.boxsize * GU.x_physical)
 
-    #     @test_nowarn write_fits_image(fits_file, d, par)
+        d = sphMapping(pos, hsml, mass, rho, T, rho,
+            param = par, kernel = k,
+            parallel = false,
+            show_progress = false)
 
-    #     # read image back into memory and compare
-    #     # image, fits_par, snap = read_fits_image(fits_file)
+        # store image in a file
+        fits_file = joinpath(dirname(@__FILE__), "image.fits")
 
-    #     # @test image ≈ d 
-    #     # @test par.boxsize == fits_par.boxsize
-    #     # @test par.center == fits_par.center
+        @test_nowarn write_fits_image(fits_file, d, par)
 
+        # read image back into memory and compare
+        image, fits_par, snap = read_fits_image(fits_file)
 
-    # end
+        @test image ≈ d 
+        @test par.boxsize == fits_par.boxsize
+        @test par.center == fits_par.center
+    end
 
     @testset "Reconstructing Grid" begin
         par = mappingParameters(center = [3.0, 3.0, 3.0],
@@ -565,6 +595,46 @@ addprocs(2)
     end
 
     @testset "Image Functions" begin
+
+        @testset "Surface Brightness to Luminosity" begin
+            par = mappingParameters(center=[0.0, 0.0, 0.0],
+                x_size=1.0,
+                y_size=1.0,
+                z_size=1.0,
+                Npixels=10)
+
+            jnu_image = 1.e-20 .* ones(10, 10)
+
+            @test surface_brightness_to_luminosity(jnu_image, par)[1] ≈ 9.521408719683998e20
+            @test surface_brightness_to_luminosity(jnu_image, par.pixelSideLength)[1] ≈ 9.521408719683998e20
+        end
+
+        @testset "Synchrotron Surface Brightness to Luminosity" begin
+            par = mappingParameters(center=[0.0, 0.0, 0.0],
+                x_size=1.0,
+                y_size=1.0,
+                z_size=1.0,
+                Npixels=10)
+
+            jnu_image = 1.e-20 .* ones(10, 10)
+
+            @test synchrotron_SB_to_luminosity(jnu_image, par)[1] ≈ 9.521408719683998e13
+            @test synchrotron_SB_to_luminosity(jnu_image, par.pixelSideLength)[1] ≈ 9.521408719683998e13
+        end
+
+        @testset "Total Synchrotron Luminosity" begin
+            par = mappingParameters(center=[0.0, 0.0, 0.0],
+                x_size=1.0,
+                y_size=1.0,
+                z_size=1.0,
+                Npixels=10)
+
+            jnu_image = 1.e-20 .* ones(10, 10)
+
+            @test total_synch_luminosity_from_SB(jnu_image, par) ≈ 9.521408719683998e15
+
+        end
+
         @testset "Synchrotron Polarisation" begin
             # set up reference images 
             Npixels = 128
@@ -590,3 +660,6 @@ end
 
 rm("snap_sedov")
 rm("snap_cutout_072")
+rm("image.fits")
+rm("sedov_rho.xy.fits")
+rm("sedov_T.xy.fits")
