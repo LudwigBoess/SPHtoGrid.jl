@@ -1,4 +1,44 @@
 """
+    get_weight_per_pixel(distr_area, distr_weight,
+                                n_tot_pix, n_distr_pix,
+                                dxdy, u, hsml_inv,
+                                kernel)
+
+Computes the area/volume contribution for each pixel and evaluates the kernel at the pixel center.
+"""
+function get_weight_per_pixel(distr_area, distr_weight,
+                                n_tot_pix, n_distr_pix,
+                                dxdy, u, hsml_inv,
+                                kernel)
+
+    # store are of pixel the particle contributes to
+    _A = dxdy
+    distr_area += dxdy
+
+    # count up total pixels 
+    n_tot_pix += 1
+
+    # if pixel center is within kernel
+    if u <= 1
+        # evaluate kernel
+        _wk = 𝒲(kernel, u, hsml_inv)
+
+        # count up distributed weigh
+        distr_weight += _wk * dxdy
+
+        # if pixel center is within the kernel
+        # count that pixel contributes to pixel
+        n_distr_pix += 1
+    else
+        _wk = 0.0
+    end
+
+    return _A, _wk,
+    distr_area, distr_weight,
+    n_tot_pix, n_distr_pix
+end
+
+"""
     function pix_index_min_max(x::T, hsml::T, n_pixels::Int64) where T
 
 Calculates the minimum and maximum pixel to which a particle contributes.

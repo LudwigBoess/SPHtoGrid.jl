@@ -45,7 +45,7 @@ function calculate_weights( wk::Vector{Float64}, V::Vector{Float64},
 
                 V[idx], wk[idx], 
                 distr_volume, distr_weight, 
-                n_tot_pix, n_distr_pix = get_weight_per_pixel(V[idx], wk[idx], distr_volume, distr_weight, 
+                n_tot_pix, n_distr_pix = get_weight_per_pixel(distr_volume, distr_weight, 
                                                               n_tot_pix, n_distr_pix, 
                                                               dxdydz, u, hsml_inv, kernel)
             end # k
@@ -179,7 +179,8 @@ function cic_mapping_3D( Pos, HSML,
                 update_image!(image, idx, pix_weight, bin_q)
             end
 
-            grid_mass += Rho[p] * wk[idx] * V[idx]
+            # store mass computed from grid cells
+            grid_mass += Rho[p] * wk[idx] * V[idx] / param.len2pix^3
             
         end # i, j, k
 
