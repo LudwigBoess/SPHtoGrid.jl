@@ -113,7 +113,8 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
     end
 
     # filter and sort the particles, return arrays with only relevant particles
-    pos, hsml, m, rho, bin_q, weights = filter_sort_particles(Pos, Hsml,  M, Rho, Bin_q, Weights, center, radius_limits)
+    pos, hsml, m, rho, bin_q, weights = filter_sort_particles(Pos, Hsml,  M, Rho, Bin_q, Weights, 
+                                                    center, radius_limits, calc_mean)
 
     # Npart after filtering 
     Npart = length(hsml)

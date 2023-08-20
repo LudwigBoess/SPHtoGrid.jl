@@ -14,7 +14,7 @@ end
 Filters the particles that are in the shell that should be mapped and sorts them by according to their position along the line of sight.
 Returns arrays with only relevant particles
 """
-function filter_sort_particles(Pos, Hsml, M, Rho, Bin_q, Weights, center, radius_limits)
+function filter_sort_particles(Pos, Hsml, M, Rho, Bin_q, Weights, center, radius_limits, calc_mean)
 
     # subtract center
     Pos .-= center
@@ -24,6 +24,10 @@ function filter_sort_particles(Pos, Hsml, M, Rho, Bin_q, Weights, center, radius
 
     # select contributing particles
     sel = find_in_shell(Δx, radius_limits)
+
+    if !calc_mean
+        sel = sel[Bin_q[sel] .> 0.0]
+    end
 
     # sort particles by radial distance
     sorted = reverse(sortperm(Δx))
