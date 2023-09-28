@@ -260,19 +260,27 @@ function analytic_synchrotron(P_cgs::Array{<:Real}, B_cgs::Array{<:Real},
             ηB = 1.0
         end
 
-        # default to powerlaw spectrum if no user input is set
-        if isnothing(spectrum)
-            # slope of injected spectrum
-            s = dsa_spectral_index(Mach[i])
+        η_tot = η_Ms_acc(η_model, Mach[i]) * ηB 
 
-            # default to simple powerlaw spectrum
-            spectrum(E::Real) = powerlaw_spectrum(E, s, CR_Emin * eV2cgs*1.e9)
+        if η_tot > 0.0
+
+            # default to powerlaw spectrum if no user input is set
+            if isnothing(spectrum)
+                # slope of injected spectrum
+                s = dsa_spectral_index(Mach[i])
+
+                # default to simple powerlaw spectrum
+                spectrum(E::Real) = powerlaw_spectrum(E, s, CR_Emin * eV2cgs*1.e9)
+            end
+
+            # get emissivity in [erg/s/Hz/cm^3]
+            j_nu[i] = get_synch_emissivity_integral(P_cgs[i], Mach[i], B_cgs[i], ηB; 
+                                                    spectrum, K_ep, η_model, ν0, 
+                                                    synch_F, integrate_pitch_angle)
+
+        else
+            j_nu[i] = 0.0
         end
-
-        # get emissivity in [erg/s/Hz/cm^3]
-        j_nu[i] = get_synch_emissivity_integral(P_cgs[i], Mach[i], B_cgs[i], ηB; 
-                                                spectrum, K_ep, η_model, ν0, 
-                                                synch_F, integrate_pitch_angle)
 
         # update progress meter
         if show_progress

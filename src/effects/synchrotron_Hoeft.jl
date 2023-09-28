@@ -80,40 +80,64 @@ function analytic_synchrotron_HB07(rho_cgs::Array{<:Real}, m_cgs::Array{<:Real},
 
     @threads for i = 1:length(rho_cgs)
 
-        # particle depth in [cm]
-        dz = get_dz(m_cgs[i], rho_cgs[i], hsml_cgs[i])
-
-        # particle volume in [cm^3]
-        V = m_cgs[i] / rho_cgs[i]
-
-        # particle area in [Mpc^2]
-        A = V / dz / (1.e3 * kpc)^2
-
-        # spectral index of electrons
-        s = dsa_spectral_index(Mach[i])
-
-        # electron density
-        ne = rho2ne * rho_cgs[i] * 1.e4
-
-        # scaling with magnetic field
-        Bfactor = (B_cgs[i] * 1.e6)^(1 + 0.5 * s) / ((B_cmb(z) * 1.e6)^2 + (B_cgs[i] * 1.e6)^2)
-
         if !isnothing(θ_B)
             ηB = ηB_acc_e(θ_B[i])
         else
             ηB = 1.0
         end
 
-        # Wittor+17, Eq. 16, but in untis erg/s/Hz/cm^3
-        j_nu[i] = j_ν_prefactor * A * ne * ξe_factor * (ν0/1.4e9)^(-s/2) * 
-                  √(T_keV[i] / 7)^3 * Bfactor / V *
-                  η_Ms_acc(η_model, Mach[i]) * ηB 
+        η_tot = η_Ms_acc(η_model, Mach[i]) * ηB 
+
+        if η_tot > 0
+
+            # particle depth in [cm]
+            dz = get_dz(m_cgs[i], rho_cgs[i], hsml_cgs[i])
+
+            # particle volume in [cm^3]
+            V = m_cgs[i] / rho_cgs[i]
+
+            # particle area in [Mpc^2]
+            A = V / dz / (1.e3 * kpc)^2
+
+            # spectral index of electrons
+            s = dsa_spectral_index(Mach[i])
+
+            # electron density
+            ne = rho2ne * rho_cgs[i] * 1.e4
+
+            # scaling with magnetic field
+            Bfactor = (B_cgs[i] * 1.e6)^(1 + 0.5 * s) / ((B_cmb(z) * 1.e6)^2 + (B_cgs[i] * 1.e6)^2)
+
+            # Wittor+17, Eq. 16, but in untis erg/s/Hz/cm^3
+            j_nu[i] = j_ν_prefactor * A * ne * ξe_factor * (ν0/1.4e9)^(-s/2) * 
+                    √(T_keV[i] / 7)^3 * Bfactor / V *
+                    η_tot
+
+        else
+            j_nu[i] = 0.0
+        end
 
         # update progress meter
         if show_progress
             next!(p)
             flush(stdout)
             flush(stderr)
+        end
+
+        if isnan(j_nu[i])
+            error("NaN!\nA = $A 
+                    ne = $ne 
+                    s = $s
+                    ξe_factor = $ξe_factor
+                    (ν0/1.4e9)^(-s/2) = $((ν0/1.4e9)^(-s/2))
+                    T = $(T_keV[i]) 
+                    √(T_keV[i] / 7)^3 = $(√(T_keV[i] / 7)^3)
+                    Bfactor = $Bfactor 
+                    V = $V
+                    etaM = $(η_Ms_acc(η_model, Mach[i])) 
+                    etaB = $ηB
+                    j_ν_prefactor = $j_ν_prefactor
+                    ")
         end
     end
 
