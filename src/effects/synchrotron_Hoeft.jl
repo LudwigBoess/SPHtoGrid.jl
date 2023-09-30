@@ -1,3 +1,5 @@
+using Interpolations
+
 """
     B_cmb(z::Real)
 
