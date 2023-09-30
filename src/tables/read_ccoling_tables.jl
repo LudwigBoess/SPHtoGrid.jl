@@ -55,8 +55,6 @@ Reads the cooling tables into Arrays.
 """
 function read_cooling_tables()
 
-    tables_path = joinpath(@__DIR__)
-
     if !isfile(joinpath(tables_path, "T0_400.data"))
         @info "Downloading cooling tables"
         download_cooling_tables(tables_path)
