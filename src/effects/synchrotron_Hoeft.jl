@@ -19,9 +19,9 @@ function init_Ψ_interpolation()
     Ψ_table = readdlm(joinpath(tables_path, "HB07_Psi.txt"))
 
     # setup interplotaion. returns 0 if outside of range.
-    return LinearInterpolation((Ψ_table[2:end, 1], Ψ_table[1, 2:end]), 
-                                Ψ_table[2:end, 2:end], 
-                                extrapolation_bc=0.0)
+    return linear_interpolation((Ψ_table[2:end, 1], Ψ_table[1, 2:end]),
+                                 Ψ_table[2:end, 2:end], 
+                                 extrapolation_bc=0.0)
 end
 
 
