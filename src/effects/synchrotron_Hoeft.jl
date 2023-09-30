@@ -5,19 +5,40 @@ Magnetic field equivalent of the CMB for a given redshift `z` in `[G]`.
 """
 B_cmb(z::Real) = 3.2e-6*(1 + z)^2
 
+
 """
-    analytic_synchrotron_HB07(rho_cgs::Array{<:Real}, m_cgs::Array{<:Real}, hsml_cgs::Array{<:Real},
-                              B_cgs::Array{<:Real}, T_keV::Array{<:Real}, Mach::Array{<:Real};
-                              xH::Real=0.752, ν0::Real=1.4e9, z::Real=0.0,
-                              dsa_model::Integer=1, ξe::Real = 0.01 )
+    init_Ψ_interpolation()
+
+Read the `Ψ` table and initialize a linear inzerpolation for the values.
+"""
+function init_Ψ_interpolation()
+
+    # read the file with the table
+    Ψ_table = readdlm(joinpath(tables_path, "HB07_Psi.txt"))
+
+    # setup interplotaion. returns 0 if outside of range.
+    return LinearInterpolation((Ψ_table[2:end, 1], Ψ_table[1, 2:end]), 
+                                Ψ_table[2:end, 2:end], 
+                                extrapolation_bc=0.0)
+end
+
+
+"""
+    analytic_synchrotron_HB07( rho_cgs::Array{<:Real}, m_cgs::Array{<:Real}, hsml_cgs::Array{<:Real},
+                               B_cgs::Array{<:Real}, T_keV::Array{<:Real}, Mach::Array{<:Real},
+                               θ_B::Union{Nothing, Array{<:Real}}=nothing;
+                               xH::Real=0.752, ν0::Real=1.4e9, z::Real=0.0,
+                               dsa_model::Union{Nothing,Integer,AbstractShockAccelerationEfficiency}=nothing,
+                               ξe::Real=1.e-5,
+                               show_progress::Bool=false )
 
 Computes the analytic synchrotron emission with the simplified approach described in [Hoeft&Brüggen (2007)](https://ui.adsabs.harvard.edu/abs/2007MNRAS.375...77H/abstract), following approach by [Wittor et. al. (2017)](https://ui.adsabs.harvard.edu/abs/2017MNRAS.464.4448W/abstract).
 
-Returns synchrotron emissivity `j_nu` in units [erg/s/Hzcm^3].
+Returns synchrotron emissivity `j_nu` in units [erg/s/Hz/cm^3].
 
 ## Arguments
 - `rho_cgs::Array{<:Real}`:  Density in ``g/cm^3``.
-- `m_cgs::Array{<:Real}`:    Mass in ``g``.
+- `m_cgs::Array{<:Real}`:    Particle mass in ``g``.
 - `hsml_cgs::Array{<:Real}`: `HSML` block in ``cm``.
 - `B_cgs::Array{<:Real}`:    Magnetic field in ``G``.
 - `T_keV::Array{<:Real}`:    Temperature in ``keV``.
@@ -28,9 +49,10 @@ Returns synchrotron emissivity `j_nu` in units [erg/s/Hzcm^3].
 - `xH::Float64 = 0.76`:        Hydrogen fraction of the simulation, if run without chemical model.
 - `ν0::Real=1.44e9`:           Observation frequency in ``Hz``.
 - `z::Real=0.0`:               Redshift of the simulation.
-- `dsa_model::Integer=1`:      Diffusive Shock Acceleration model. Takes values `0...4`, see next section.
-- `ξe::Real=0.01`:             Ratio of CR proton to electron energy acceleration.
-- `show_progress::Bool=false`: Enables a progress bar if set to true
+- `dsa_model=nothing`:         Diffusive Shock Acceleration model. If set to a value overwrites the default Hoeft&Brüggen acceleration model. See next section.
+- `ξe::Real=1.e-5`:            Ratio of CR proton to electron energy acceleration. Given as a fraction of thermal gas, essenitally `Xcr * Kep`. 
+                               Default value from Nuza+2017. For `dsa_model != nothing` use something like `ξe = 1.e-4`.
+- `show_progress::Bool=false`: Enables a progress bar if set to true.
 
 
 ## DSA Models
@@ -51,12 +73,18 @@ function analytic_synchrotron_HB07(rho_cgs::Array{<:Real}, m_cgs::Array{<:Real},
                                     B_cgs::Array{<:Real}, T_keV::Array{<:Real}, Mach::Array{<:Real},
                                     θ_B::Union{Nothing, Array{<:Real}}=nothing;
                                     xH::Real=0.752, ν0::Real=1.4e9, z::Real=0.0,
-                                    dsa_model::Union{Integer,AbstractShockAccelerationEfficiency}=1,
-                                    ξe::Real=0.01,
+                                    dsa_model::Union{Nothing,Integer,AbstractShockAccelerationEfficiency}=nothing,
+                                    ξe::Real=1.e-5, # from Nuza+2017
                                     show_progress::Bool=false )
 
-    # assign requested DSA model
-    η_model = select_dsa_model(dsa_model)
+    # check if DSA model is requested
+    if isnothing(dsa_model)
+        # use default Hoeft&Brüggen (2007) efficiency
+        Ψ = init_Ψ_interpolation()
+    else
+        # assign requested DSA model
+        η_model = select_dsa_model(dsa_model)
+    end
 
     # prefactor to HB07, Eq. 32
     j_ν_prefactor = 6.4e34 # erg/s/Hz
@@ -80,14 +108,21 @@ function analytic_synchrotron_HB07(rho_cgs::Array{<:Real}, m_cgs::Array{<:Real},
 
     @threads for i = 1:length(rho_cgs)
 
-        if !isnothing(θ_B)
-            ηB = ηB_acc_e(θ_B[i])
-        else
+        if isnothing(θ_B)
             ηB = 1.0
+        else
+            ηB = ηB_acc_e(θ_B[i])
         end
 
-        η_tot = η_Ms_acc(η_model, Mach[i]) * ηB 
+        if isnothing(dsa_model)
+            # interpolate Ψ
+            η_tot = ηB * Ψ[Mach[i], T_keV[i]]
+        else
+            # evaluate DSA model
+            η_tot = ηB * η_Ms_acc(η_model, Mach[i])
+        end
 
+        # only compute of CRs are accelerated
         if η_tot > 0
 
             # particle depth in [cm]
@@ -112,7 +147,6 @@ function analytic_synchrotron_HB07(rho_cgs::Array{<:Real}, m_cgs::Array{<:Real},
             j_nu[i] = j_ν_prefactor * A * ne * ξe_factor * (ν0/1.4e9)^(-s/2) * 
                     √(T_keV[i] / 7)^3 * Bfactor / V *
                     η_tot
-
         else
             j_nu[i] = 0.0
         end
@@ -122,22 +156,6 @@ function analytic_synchrotron_HB07(rho_cgs::Array{<:Real}, m_cgs::Array{<:Real},
             next!(p)
             flush(stdout)
             flush(stderr)
-        end
-
-        if isnan(j_nu[i])
-            error("NaN!\nA = $A 
-                    ne = $ne 
-                    s = $s
-                    ξe_factor = $ξe_factor
-                    (ν0/1.4e9)^(-s/2) = $((ν0/1.4e9)^(-s/2))
-                    T = $(T_keV[i]) 
-                    √(T_keV[i] / 7)^3 = $(√(T_keV[i] / 7)^3)
-                    Bfactor = $Bfactor 
-                    V = $V
-                    etaM = $(η_Ms_acc(η_model, Mach[i])) 
-                    etaB = $ηB
-                    j_ν_prefactor = $j_ν_prefactor
-                    ")
         end
     end
 
