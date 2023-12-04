@@ -8,6 +8,7 @@ Updates the progress bar if conditions are met.
 function update_progress!(P, show_progress, output_this_worker)
     if show_progress && output_this_worker
         next!(P)
+        flush(stdout); flush(stderr)
     end
 end
 
@@ -105,11 +106,26 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
         output_this_worker = myid() == minimum(workers())
     end
 
+    # allocate arrays
+    allsky_map = HealpixMap{Float64,RingOrder}(Nside)
+    weight_map = HealpixMap{Float64,RingOrder}(Nside)
+    res = Healpix.Resolution(Nside)
+
+    if !calc_mean && iszero(sum(Bin_q))
+        if show_progress && output_this_worker
+            println()
+            @info "Number of zero pixels in image: $(length(findall(iszero.(allsky_map))))"
+            flush(stdout); flush(stderr)
+        end
+        return allsky_map, weight_map
+    end
+
     # Npart before filtering
     Npart_in = length(Hsml)
 
     if show_progress && output_this_worker
         println("filtering particles")
+        flush(stdout); flush(stderr)
     end
 
     # filter and sort the particles, return arrays with only relevant particles
@@ -120,12 +136,8 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
 
     if show_progress && output_this_worker
         println("$Npart / $Npart_in in image")
+        flush(stdout); flush(stderr)
     end
-
-    # allocate arrays
-    allsky_map = HealpixMap{Float64,RingOrder}(Nside)
-    weight_map = HealpixMap{Float64,RingOrder}(Nside)
-    res = Healpix.Resolution(Nside)
 
     # approximate diameter of pixel (in radians)
     ang_pix = √( 4π / length(allsky_map) )
@@ -207,6 +219,7 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
         @info "\tMass on grid:      $(grid_mass*1.e10) Msun"
         @info "\tMass in particles: $(part_mass*1.e10) Msun"
         @info "\tRel. Error:        $(abs(part_mass-grid_mass)/part_mass)"
+        flush(stdout); flush(stderr)
     end
 
     return allsky_map, weight_map
