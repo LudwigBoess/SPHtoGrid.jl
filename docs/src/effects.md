@@ -131,7 +131,7 @@ weights = part_weight_physical(length(hsml), par, GU.x_cgs)
 # actual mapping
 map = sphMapping(pos_map, hsml, mass, rho, Xray, weights,
                 param = par, kernel = k,
-                reduce_image = true)
+                reduce_image = false)
 
 # filename of the output image
 fo_image = map_path * "Xray.fits"
