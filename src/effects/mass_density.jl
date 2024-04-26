@@ -4,7 +4,7 @@
                  Nneighbors::Integer=32,
                  verbose::Bool=false)
 
-Compute the density of particles using the SPH method. 
+Compute the density of an arbitrary particle distribution using the SPH method. 
 The density is computed in input units, so additional unit conversion to cgs units is required, if input units are not cgs.
 
 ## Arguments:
@@ -23,19 +23,27 @@ The density is computed in input units, so additional unit conversion to cgs uni
 function mass_density(pos::Matrix{<:Real}, mass::Vector{<:Real}; 
                       kernel::AbstractSPHKernel=Cubic(Float64, 3),
                       Nneighbors::Integer=32,
+                      boxsize::Vector{<:Real}=zeros(3),
                       verbose::Bool=false)
 
     # initialize arrays for density and smoothing length
     rho = Vector{Float64}(undef, length(mass))
     hsml = Vector{Float64}(undef, length(mass))
 
+    # define metric 
+    if boxsize == zeros(3)
+        metric = Euclidean()
+    else
+        metric = PeriodicEuclidean(boxsize)
+    end
+
     # build tree
     if verbose
-        println("Building KDTree")
+        println("Building BallTree")
     end
-    tree = KDTree(pos)
+    tree = BallTree(pos)
     if verbose
-        println("KDTree built")
+        println("BallTree built")
     end
 
     if verbose
