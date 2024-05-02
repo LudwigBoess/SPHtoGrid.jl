@@ -12,6 +12,8 @@ using Rotations
 using Base.Threads
 using Healpix
 using NearestNeighbors
+using Distances
+
 
 function output_time(t1, t2)
     return @sprintf("%0.3e", Float64((t2 - t1)) * 1.e-9)
