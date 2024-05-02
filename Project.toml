@@ -1,7 +1,7 @@
 name = "SPHtoGrid"
 uuid = "8a806948-229a-4117-b79b-c12ac366026f"
 authors = ["LudwigBoess <lboess@usm.lmu.de>"]
-version = "0.4.5"
+version = "0.4.6"
 
 [deps]
 Cosmology = "76746363-e552-5dba-9a5a-cef6fa9cc5ab"
