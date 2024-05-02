@@ -32,8 +32,10 @@ function mass_density(pos::Matrix{<:Real}, mass::Vector{<:Real};
 
     # define metric 
     if boxsize == zeros(3)
+        println("Non-periodic box")
         metric = Euclidean()
     else
+        println("Periodic box")
         metric = PeriodicEuclidean(boxsize)
     end
 
@@ -41,7 +43,7 @@ function mass_density(pos::Matrix{<:Real}, mass::Vector{<:Real};
     if verbose
         println("Building BallTree")
     end
-    tree = BallTree(pos)
+    tree = BallTree(pos, metric)
     if verbose
         println("BallTree built")
     end
@@ -67,8 +69,7 @@ function mass_density(pos::Matrix{<:Real}, mass::Vector{<:Real};
         rho[i] = 0.0
 
         # loop over neighbors to compute density
-        # please note that j = 1 is the particle itself
-        @inbounds for j = 2:length(rᵢⱼ)
+        @inbounds for j = 1:length(rᵢⱼ)
             # SPH density estimate
             rho[i] += mass[idxs[j]] * 𝒲(kernel, rᵢⱼ[j] * h_inv, h_inv)
         end
