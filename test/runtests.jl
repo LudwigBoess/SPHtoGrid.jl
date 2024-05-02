@@ -1,4 +1,5 @@
 using Downloads
+using Statistics
 
 @info "downloading test data..."
 Downloads.download("http://www.usm.uni-muenchen.de/~lboess/SPHtoGrid/snap_sedov", "./snap_sedov")
@@ -598,6 +599,31 @@ addprocs(2)
             end
 
     
+        end
+
+        @testset "Mass Density" begin
+            fi = "snap_sedov"
+            pos = read_block(fi, "POS")
+            mass = read_block(fi, "MASS")
+            rho_gadget = read_block(fi, "RHO")
+
+            k = WendlandC4(Float64, 3)
+
+            rho, hsml = mass_density(pos, mass,
+                                    kernel=k,
+                                    Nneighbors=195,
+                                    boxsize=6.0 .* ones(3),
+                                    verbose=true)
+
+            # compute L1 erros of density compared to Gadget
+            L1 = @. abs(rho - rho_gadget) / rho_gadget
+
+            # check if the median density error is within 0.1% of the Gadget density
+            @test median(L1) < 0.001
+            # check if the mean density error is within 0.2% of the Gadget density
+            @test mean(L1) < 0.002
+            # check if the maximum density error is within 20% of the Gadget density
+            @test maximum(L1) < 0.2
         end
     end
 
