@@ -11,6 +11,9 @@ using LinearAlgebra
 using Rotations
 using Base.Threads
 using Healpix
+using NearestNeighbors
+using Distances
+
 
 function output_time(t1, t2)
     return @sprintf("%0.3e", Float64((t2 - t1)) * 1.e-9)
@@ -77,6 +80,7 @@ include("effects/synchrotron_GS.jl")
 include("effects/synchrotron_Hoeft.jl")
 include("effects/synchrotron_Longair.jl")
 include("effects/synchrotron_LMB.jl")
+include("effects/mass_density.jl")
 
 # functions for existing images 
 include("image_functions/radio_beam.jl")
@@ -129,6 +133,7 @@ export mappingParameters,                         # parameters for SPH mapping
     λγ_PE04, jγ_PE04,
     gamma_luminosity_pions_PE04,
     gamma_flux_pions_PE04,
+    mass_density,
     # image functions
     beam_in_kpc,
     convert_Pnu_map_to_mJy_beam,

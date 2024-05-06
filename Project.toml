@@ -1,12 +1,13 @@
 name = "SPHtoGrid"
 uuid = "8a806948-229a-4117-b79b-c12ac366026f"
 authors = ["LudwigBoess <lboess@usm.lmu.de>"]
-version = "0.4.5"
+version = "0.4.6"
 
 [deps]
 Cosmology = "76746363-e552-5dba-9a5a-cef6fa9cc5ab"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 DiffusiveShockAccelerationModels = "66fc4661-a670-4cc2-b407-bfd81989e880"
+Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterTools = "35a29f4d-8980-5a13-9543-d66fff28ecb8"
@@ -17,6 +18,7 @@ GadgetUnits = "08630afb-492b-4c1a-9729-2a116101b53a"
 Healpix = "9f4e344d-96bc-545a-84a3-ae6b9e1b672b"
 Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+NearestNeighbors = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
