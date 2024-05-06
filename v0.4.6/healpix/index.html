@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>HealPix maps · SPHtoGrid.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">SPHtoGrid.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Table of Contents</a></li><li><a class="tocitem" href="../install/">Install</a></li><li><a class="tocitem" href="../mapping/">Mapping SPH Data</a></li><li class="is-active"><a class="tocitem" href>HealPix maps</a><ul class="internal"><li><a class="tocitem" href="#Single-core-mapping"><span>Single core mapping</span></a></li><li><a class="tocitem" href="#Multi-core-mapping"><span>Multi core mapping</span></a></li><li><a class="tocitem" href="#Comparison-to-Smac"><span>Comparison to Smac</span></a></li></ul></li><li><a class="tocitem" href="../effects/">Examples</a></li><li><a class="tocitem" href="../rotating/">Rotating Images</a></li><li><a class="tocitem" href="../io/">Saving/Loading Images</a></li><li><a class="tocitem" href="../external/">External Programs</a></li><li><a class="tocitem" href="../api/">API reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>HealPix maps</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>HealPix maps</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/LudwigBoess/SPHtoGrid.jl/blob/master/docs/src/healpix.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Mapping-SPH-Data-to-an-allsky-HealPix-map"><a class="docs-heading-anchor" href="#Mapping-SPH-Data-to-an-allsky-HealPix-map">Mapping SPH Data to an allsky HealPix map</a><a id="Mapping-SPH-Data-to-an-allsky-HealPix-map-1"></a><a class="docs-heading-anchor-permalink" href="#Mapping-SPH-Data-to-an-allsky-HealPix-map" title="Permalink"></a></h1><p>You can also use <code>SPHtoGrid.jl</code> to do allsky projections of your simulations. Here is an example of this for one of the simulations of the <a href="https://localization.ias.universite-paris-saclay.fr/">LOCALIZATION</a> project <a href="https://ui.adsabs.harvard.edu/abs/2023arXiv230210960D/abstract">(Dolag et. al. 2023)</a> :</p><p><img src="../assets/allsky.png" alt="allsky"/></p><h2 id="Single-core-mapping"><a class="docs-heading-anchor" href="#Single-core-mapping">Single core mapping</a><a id="Single-core-mapping-1"></a><a class="docs-heading-anchor-permalink" href="#Single-core-mapping" title="Permalink"></a></h2><p>You can construct healpix maps on a single core with</p><article class="docstring"><header><a class="docstring-binding" id="SPHtoGrid.healpix_map" href="#SPHtoGrid.healpix_map"><code>SPHtoGrid.healpix_map</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia hljs">healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
+            center::Vector{&lt;:Real}=[0.0, 0.0, 0.0],
+            radius_limits::Vector{&lt;:Real}=[0.0, Inf],
+            Nside::Integer=1024,
+            kernel::AbstractSPHKernel,
+            calc_mean::Bool=true
+            show_progress::Bool=true,
+            output_from_all_workers::Bool=false)</code></pre><p>Calculate an allsky map from SPH particles. Returns two <code>HealpixMap</code>s: <code>(image, weight_image)</code>. To reduce the image afterwards divide <code>image</code> by <code>weight_image</code>. </p><p><strong>Arguments:</strong></p><ul><li><code>Pos</code>: Positions of particles in physical code units</li><li><code>HSML</code>: hsml of particles in physical code units </li><li><code>M</code>: Mass of particles in physical code units </li><li><code>Bin_Q</code>: Quantitiy for binning in arb. units</li><li><code>Weights</code>: Weights for map</li><li><code>center</code>: Position from which projection is looking outwards in physical code units </li><li><code>radius_limits</code>: Inner and outer radius of the shell that should be mapped</li><li><code>Nside</code>: Nside for healpix map, has to be a power of 2</li><li><code>calc_mean</code>: Calculate the mean along the line of sight. If set to <code>false</code> only particles with <code>Bin_Q &gt; 0</code> contribute to the map.</li><li><code>show_progress</code>: Print a progress bar </li><li><code>output_from_all_workers</code>: Allow output from multiple workers. If set to false only the main process prints a progress bar.</li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/LudwigBoess/SPHtoGrid.jl/blob/bf7c53e7d45e847fd1ef668ca3b4b99588e23623/src/healpix_interpolation/main.jl#L66-L91">source</a></section></article><p>Example:</p><pre><code class="language-julia hljs">using GadgetIO, GadgetUnits
+using SPHtoGrid, SPHKernels
+
+# helper function to get maps
+function T_maps_of_file(snap_file)
+
+    # read all data
+    blocks = [&quot;POS&quot;, &quot;MASS&quot;, &quot;HSML&quot;, &quot;RHO&quot;, &quot;U&quot;]
+    data = Dict( block =&gt; read_block(snap_file, block, parttype=0) for block ∈ blocks )
+
+    # convert to physical code units
+    h = GadgetIO.read_header(snap_file)
+    GU = GadgetPhysical(h)
+
+    pos = data[&quot;POS&quot;] .* GU.x_physical
+    hsml = data[&quot;HSML&quot;] .* GU.x_physical
+    rho = data[&quot;RHO&quot;] .* GU.rho_physical
+    mass = data[&quot;MASS&quot;] .* GU.m_physical
+
+    # convert to cgs units
+    T_K = data[&quot;U&quot;] .* GU.T_K
+
+    # define map parameters
+    kernel = WendlandC4(2)
+    Nside = 1024
+
+    # position the observer at the center of the box
+    center = 0.5h.boxsize .* ones(3) .* GU.x_physical
+    # map a 10 Mpc slide at a distance of 5 Mpc
+    radius_limits = [5_000.0, 15_000.0]
+
+    map, w_map = healpix_map(pos, hsml, mass, rho, T_K, rho, show_progress=true;
+        center, kernel, Nside, radius_limits)
+
+    return map, w_map
+end
+
+# run the map making
+allsky, weights = mapping_function()
+
+# reduce the image 
+@inbounds for i ∈ eachindex(allsky)
+    if !isnan(weights[i]) &amp;&amp; !iszero(weights[i]) &amp;&amp; !isinf(weights[i])
+        allsky[i] /= weights[i]
+    end
+end
+
+# save the map
+saveToFITS(allsky, allsky_filename)</code></pre><h2 id="Multi-core-mapping"><a class="docs-heading-anchor" href="#Multi-core-mapping">Multi core mapping</a><a id="Multi-core-mapping-1"></a><a class="docs-heading-anchor-permalink" href="#Multi-core-mapping" title="Permalink"></a></h2><p>Usually these allsky maps are performed over whole boxes that may consist of multiple sub-snapshots. To allow for a parallel execution there&#39;s a helper function</p><article class="docstring"><header><a class="docstring-binding" id="SPHtoGrid.distributed_allsky_map" href="#SPHtoGrid.distributed_allsky_map"><code>SPHtoGrid.distributed_allsky_map</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia hljs">distributed_allsky_map( allsky_filename::String, 
+                        Nside::Integer, Nsubfiles::Integer, 
+                        mapping_function::Function;
+                        reduce_image::Bool=true)</code></pre><p>Dynamically dispatches workers to compute one allsky map per subfile, sum up the results and save to a fits file.</p><p><strong>Arguments</strong></p><ul><li><code>allsky_filename::String</code>: Name of the file under which the image should be saved</li><li><code>Nside::Integer</code>: <code>Nside</code> for healpix map, must be a power of 2! <code>Nside = 2^N</code>.</li><li><code>Nsubfiles::Integer</code>: Number of subfiles the snapshot is distributed over.</li><li><code>mapping_function::Function</code>: The function to be executed per subfile. Must have a call to <a href="@ref"><code>allsky_map</code></a> as return value.</li><li><code>reduce_image</code>: If the final image should be divided by the weight image set to <code>true</code></li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/LudwigBoess/SPHtoGrid.jl/blob/bf7c53e7d45e847fd1ef668ca3b4b99588e23623/src/healpix_interpolation/distributed_mapping.jl#L34-L48">source</a></section></article><p>Example:</p><pre><code class="language-julia hljs"># we run this example on a SLURM cluster
+using Distributed, ClusterManagers
+addprocs_slurm(parse(Int64, ENV[&quot;SLURM_NTASKS&quot;]))
+
+@everywhere using GadgetIO, GadgetUnits
+@everywhere using SPHKernels, SPHtoGrid
+@everywhere using Base.Threads
+
+# helper function for the mapping
+@everywhere function T_maps_of_subfile(subfile)
+
+    println(&quot;T: subfile $subfile running on $(nthreads()) threads&quot;)
+    flush(stdout); flush(stderr)
+
+    # read data and convert units
+    h = GadgetIO.read_header(snap_file)
+    GU = GadgetPhysical(h)
+
+    hsml = read_block(snap_base * &quot;.$subfile&quot;, &quot;HSML&quot;, parttype=0) .* GU.x_physical
+    rho = read_block(snap_base * &quot;.$subfile&quot;, &quot;RHO&quot;, parttype=0) .* GU.rho_physical
+    mass = read_block(snap_base * &quot;.$subfile&quot;, &quot;RHO&quot;, parttype=0) .* GU.rho_physical
+    T_K   = read_block(snap_base * &quot;.$subfile&quot;, &quot;U&quot;, parttype=0) .* GU.T_K
+    pos  = read_block(snap_base * &quot;.$subfile&quot;, &quot;POS&quot;, parttype=0) .* GU.x_physical
+
+    # define map parameters
+    kernel = WendlandC4(2)
+    Nside = 1024
+
+    # position the observer at the center of the box
+    center = 0.5h.boxsize .* ones(3) .* GU.x_physical
+    # map a 10 Mpc slide at a distance of 5 Mpc
+    radius_limits = [5_000.0, 15_000.0]
+
+    # run the mapping
+    allsky, weights  = healpix_map(pos, hsml, mass, rho, T_K, rho, show_progress=true; 
+                        center, kernel, Nside, radius_limits)
+
+    # important! de-allocate data to avoid memory overflow!
+    pos = nothing
+    hsml = nothing
+    rho = nothing
+    mass = nothing
+    T_K = nothing
+    kernel = nothing
+    Nside = nothing
+    center = nothing
+    radius_limits = nothing
+    # manually run garbage collector
+    GC.gc()
+
+    # return map
+    return allsky, weights
+end
+
+Nside = 1024
+Nsubfiles = 1024
+filename = &quot;T_allsky.fits&quot;
+
+# this function takes care of mapping, image reduction
+distributed_allsky_map(filename, Nside, Nsubfiles, T_maps_of_subfile, reduce_image=true)</code></pre><h2 id="Comparison-to-Smac"><a class="docs-heading-anchor" href="#Comparison-to-Smac">Comparison to Smac</a><a id="Comparison-to-Smac-1"></a><a class="docs-heading-anchor-permalink" href="#Comparison-to-Smac" title="Permalink"></a></h2><p>As a reference for the mapping we use Smac <a href="https://ui.adsabs.harvard.edu/link_gateway/2005MNRAS.363...29D/doi:10.1111/j.1365-2966.2005.09452.x">(Dolag et al. 2005)</a>. You can see the comparison with the relative error in the following images. Please note that the bulk of the error in the density weighted map stems from a slightly different calculation of the temperature.</p><table><tr><th style="text-align: center">Line-of-sight integration</th><th style="text-align: center">Density weighted</th></tr><tr><td style="text-align: center"><img src="../assets/rho_allsky.png" alt="rho_allsky"/></td><td style="text-align: center"><img src="../assets/T_allsky.png" alt="T_allsky"/></td></tr></table></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../mapping/">« Mapping SPH Data</a><a class="docs-footer-nextpage" href="../effects/">Examples »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Monday 6 May 2024 21:33">Monday 6 May 2024</span>. Using Julia version 1.10.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
