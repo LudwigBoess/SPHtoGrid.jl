@@ -10,6 +10,7 @@ global const q_e        = 1.602176487e-20 * c_light
 global const yPrefac    = σ_T * k_B / m_e / c_light^2
 global const eV2cgs     = 1.60218e-12
 global const cgs2eV     = 1.0/eV2cgs
+global const kpc        = 3.085678e21
 
 # synchrotron
 const global C_crit = 3q_e / (4π * m_e^3 * c_light^5) # Donnert+16, MNRAS 462, 2014–2032 (2016), Eg. 20 
