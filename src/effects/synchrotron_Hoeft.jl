@@ -118,7 +118,7 @@ function analytic_synchrotron_HB07(rho_cgs::Array{<:Real}, m_cgs::Array{<:Real},
 
         if isnothing(dsa_model)
             # interpolate Ψ
-            η_tot = ηB * Ψ[Mach[i], T_keV[i]]
+            η_tot = ηB * Ψ(Mach[i], T_keV[i])
         else
             # evaluate DSA model
             η_tot = ηB * η_Ms_acc(η_model, Mach[i])
