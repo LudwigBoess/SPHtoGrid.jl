@@ -625,6 +625,12 @@ addprocs(2)
             # check if the maximum density error is within 20% of the Gadget density
             @test maximum(L1) < 0.2
         end
+
+        @testset "Faraday Rotation" begin 
+            @test rotation_measure(1.0, 1.0) ≈ SPHtoGrid.faraday_prefac * 1.e4
+
+            @test rotation_measure(1.0, 1.e-6, SPHtoGrid.kpc, 1.4e9) ≈ 2.6705855715515447
+        end
     end
 
     @testset "Image Functions" begin

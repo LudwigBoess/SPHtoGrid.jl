@@ -100,6 +100,16 @@ fo_image = map_path * "B.fits"
 write_fits_image(fo_image, quantitiy_map, par, snap = snap, units = "muG")
 ```
 
+## Faraday Rotation
+
+You can map the Faraday Rotation due to the LOS magnetic field strength for RM maps, or for continuous rotation of polarized synchrotron emission using
+```@docs
+rotation_measure
+```
+For the latter we provide the simple helper function
+```@docs
+get_dz
+```
 
 ## X-Ray emission
 
