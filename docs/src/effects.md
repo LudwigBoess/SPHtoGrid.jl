@@ -131,7 +131,7 @@ weights = part_weight_physical(length(hsml), par, GU.x_cgs)
 # actual mapping
 map = sphMapping(pos_map, hsml, mass, rho, Xray, weights,
                 param = par, kernel = k,
-                reduce_image = true)
+                reduce_image = false)
 
 # filename of the output image
 fo_image = map_path * "Xray.fits"
@@ -242,6 +242,17 @@ analytic_synchrotron_GS
 analytic_synchrotron_Longair
 analytic_synchrotron_HB07
 ```
+
+## Stellar/DM density
+
+If you want to map the mass density of a non-SPH particle, i.e. a particle distribution that does not have their density computed in the output snapshot you can do this with `mass_density`. This will perform an SPH loop to compute the mass density at particle position. Useful if you want to compute Stellar/DM density distributions.
+
+Please note that this function uses a fixed number of neighbors (for simplicity) so the results will diverge from a proper SPH loop.
+
+```@docs
+mass_density
+```
+
 
 # Image Functions
 
