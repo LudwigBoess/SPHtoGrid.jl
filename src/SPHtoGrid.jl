@@ -13,7 +13,7 @@ using Base.Threads
 using Healpix
 using NearestNeighbors
 using Distances
-
+using Statistics
 
 function output_time(t1, t2)
     return @sprintf("%0.3e", Float64((t2 - t1)) * 1.e-9)
@@ -66,7 +66,11 @@ include("healpix_interpolation/filter_particles.jl")
 include("healpix_interpolation/constributing_pixels.jl")
 include("healpix_interpolation/pixel_weights.jl")
 include("healpix_interpolation/main.jl")
-include("healpix_interpolation/distributed_mapping.jl")
+
+# distributed mapping
+include("distributed_mapping/main.jl")
+include("distributed_mapping/healpix.jl")
+include("distributed_mapping/cic.jl")
 
 # effect functions
 include("effects/constants.jl")
@@ -95,6 +99,7 @@ export mappingParameters,                         # parameters for SPH mapping
     sphMapping,                                # main function for mapping 
     map_it,
     healpix_map,
+    distributed_cic_map,
     distributed_allsky_map,
     reduce_image_healpix,
     filter_particles_in_image,                 # helper function to preselect particles
