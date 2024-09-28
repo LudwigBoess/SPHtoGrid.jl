@@ -321,6 +321,26 @@ addprocs(2)
                 @test d[1, 1, 1] ≈ 0.002470815089339027
             end
 
+            @testset "Mass conservation" begin
+                kernel = Cubic()
+                npix = 200
+                r = 64
+                param = mappingParameters(; x_lim=[-r, r], y_lim=[-r, r], z_lim=[-r, r], Npixels=npix)
+                pos = [0.0101; -0.001; 0.001;;]
+                hsms = [5]
+                mass = [3]
+                rho = ones(length(mass))
+                w = part_weight_physical(length(rho), param, 1)
+                map = sphMapping(pos, hsms, mass, rho, rho, w; param, dimensions=3, kernel, reduce_image=false)
+
+                # check mass conservation
+                mtot = sum(mass)
+
+                Vpix = (param.x_lim[2] - param.x_lim[1])^3 / npix^3
+                mmaptot = Vpix * sum(map)
+                @test mtot ≈ mmaptot
+            end
+
         end # 3D
 
     end

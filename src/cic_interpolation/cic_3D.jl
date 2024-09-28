@@ -163,7 +163,7 @@ function cic_mapping_3D( Pos, HSML,
 
         # normalisation factors for pixel contribution
         kernel_norm = vol / N
-        volume_norm = kernel_norm * weight_per_pix * los_weight
+        volume_norm = kernel_norm * weight_per_pix * los_weight * param.len2pix
 
         # loop over all contributing pixels
         @inbounds for i = iMin:iMax, j = jMin:jMax, k = kMin:kMax
