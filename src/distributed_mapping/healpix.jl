@@ -1,35 +1,9 @@
-using Statistics
-using Distributed
-
 # the job channels take their ID as a 32-bit integer
-const jobs = RemoteChannel(()->Channel{Int}(32))
+const healpix_jobs = RemoteChannel(()->Channel{Int}(32))
 
 # the maps are pointers with 80 bits each
-const results = RemoteChannel(()->Channel{Tuple}(160))
+const healpix_results = RemoteChannel(()->Channel{Tuple}(160))
 
-
-"""
-    do_work(jobs, results, f)
-
-Defines the work function `f` on all processes. 
-"""
-function do_work(jobs, results, f) 
-    while true
-        job_id = take!(jobs)
-        put!(results, f(job_id-1))
-    end
-end
-
-"""
-    make_jobs(n)
-
-Starts up `n` number of jobs.
-"""
-function make_jobs(n)
-    for i in 1:n
-        put!(jobs, i)
-    end
-end
 
 """
     distributed_allsky_map( allsky_filename::String, 
@@ -37,7 +11,7 @@ end
                             mapping_function::Function;
                             reduce_image::Bool=true)
 
-Dynamically dispatches workers to compute one allsky map per subfile, sum up the results and save to a fits file.
+Dynamically dispatches workers to compute one allsky map per subfile, sum up the healpix_results and save to a fits file.
 
 # Arguments
 - `allsky_filename::String`: Name of the file under which the image should be saved
@@ -54,14 +28,14 @@ function distributed_allsky_map(allsky_filename::String,
     println("starting workers")
 
     for p ∈ workers() # start tasks on the workers to process requests in parallel
-        remote_do(do_work, p, jobs, results, mapping_function)
+        remote_do(do_work, p, healpix_jobs, healpix_results, mapping_function)
     end
     
     println("allocating images")
     sum_allsky  = HealpixMap{Float64,RingOrder}(Nside)
     sum_weights = HealpixMap{Float64,RingOrder}(Nside)
 
-    # feed the jobs channel with "Nsubfiles" jobs
+    # feed the healpix_jobs channel with "Nsubfiles" healpix_jobs
     errormonitor(@async make_jobs(Nsubfiles)); 
     
     println("running")
@@ -71,7 +45,7 @@ function distributed_allsky_map(allsky_filename::String,
     @time while Nsubfiles > 0
 
         # collect result for subfile
-        allsky_map, weight_map = take!(results)
+        allsky_map, weight_map = take!(healpix_results)
 
         # sum up contribution
         @inbounds for i ∈ eachindex(allsky_map)
