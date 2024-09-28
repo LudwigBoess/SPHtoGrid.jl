@@ -323,6 +323,7 @@ function map_it(pos_in, hsml, mass, rho, bin_q, weights, RM=nothing;
                 show_progress::Bool=true,
                 sort_z::Bool=false,
                 stokes::Bool=false,
+                renorm::Bool=false,
                 projection="xy")
 
     # copy the positions to new array to be able to shift particles 
@@ -355,6 +356,9 @@ function map_it(pos_in, hsml, mass, rho, bin_q, weights, RM=nothing;
                                 calc_mean,
                                 sort_z, stokes)
 
+    if renorm
+        quantitiy_map ./= maximum(quantitiy_map)
+    end
 
     fo_image = image_prefix * ".$(projection).fits"
 
