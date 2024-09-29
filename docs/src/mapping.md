@@ -138,6 +138,100 @@ If you're lazy like me and don't want to go through the entire process of image 
 map_it
 ```
 
+### Distributed mapping
+
+If you want to map a region of the simulation that is too large to fit into memory you can instead produce a map of the individual sub-snapshots of a simulation and combine them in the end.
+For this you can use the helper function `distributed_cic_map`. If run on multiple cores it will dynamically dispatch parallel jobs for individual sub-snaps.
+
+```@docs
+distributed_cic_map
+```
+
+Example:
+
+```julia
+println("allocating cores")
+using Distributed, ClusterManagers
+
+# automatically decide if it needs to be run in slurm envirnoment
+try
+    println("allocating $(ENV["SLURM_NTASKS"]) slurm tasks")
+    addprocs_slurm(parse(Int64, ENV["SLURM_NTASKS"]))
+catch err
+    if isa(err, KeyError)
+        println("allocating 2 normal tasks")
+        addprocs(2)
+    end
+end
+
+println("done")
+flush(stdout);
+flush(stderr);
+
+println("loading packages")
+@everywhere using GadgetIO, GadgetUnits
+@everywhere using Printf
+@everywhere using SPHKernels, SPHtoGrid
+println("done")
+flush(stdout);
+flush(stderr);
+
+# snap base and unit conversion must be set constant here
+@everywhere const global snap_base = "/path/to/sim/snapdir_011/snap_011"
+@everywhere const global h = GadgetIO.read_header(snap_base)
+@everywhere const global GU = GadgetPhysical(h)
+
+# same for mapping parameters
+@everywhere const gpos = [245040.45, 327781.84, 246168.69]
+@everywhere const rvir = 10.0e3
+@everywhere const xy_size = 2rvir
+@everywhere const param = mappingParameters(center=gpos .* GU.x_physical,
+        x_size=xy_size * GU.x_physical,
+        y_size=xy_size * GU.x_physical,
+        z_size=xy_size * GU.x_physical,
+        Npixels=1024)
+
+# function that does the actual mapping. Must only take the subfile as an argument!
+@everywhere function Bfld_map_of_subfile(subfile)
+
+    println("B: subfile $subfile running on $(nthreads()) threads")
+    flush(stdout); flush(stderr)
+
+    # read the relevant data
+    hsml = read_block(snap_base * ".$subfile", "HSML", parttype=0) .* GU.x_physical
+    rho = read_block(snap_base * ".$subfile", "RHO", parttype=0) .* GU.rho_physical
+    m = read_block(snap_base * ".$subfile", "MASS", parttype=0) .* GU.m_physical
+    pos = read_block(snap_base * ".$subfile", "POS", parttype=0) .* GU.x_physical
+
+    # we want to map the magnetic field
+    B = read_block(snap_base * ".$subfile", "BFLD", parttype=0)
+    Babs = @. sqrt( B[1,:]^2 + B[2,:]^2 + B[3,:]^2 ) * 1.e6
+
+    # kernel used for mapping
+    kernel = WendlandC4(2)
+
+    map = sphMapping(pos, hsml, m, rho, Babs, rho, 
+        show_progress=false, parallel=false, return_both_maps=true; # these settings are important!
+        param, kernel)
+
+    # enforce de-allocation of memory
+    pos = hsml = rho = m = nothing
+    B = Babs = nothing
+    GC.gc()
+
+    # return quantity map(s) and weight map individually
+    return map[:,1:end-1], map[:,end]
+end
+
+
+filename = "/path/to/savefile.fits"
+# number of sub-snapshots
+Nsubsnaps = 1024
+
+# run the mapping
+distributed_cic_map(filename, Nsubsnaps, Bfld_map_of_subfile, param)
+```
+
 ## Comparison to Smac
 
 As a reference for the mapping we use Smac [(Dolag et al. 2005)](https://ui.adsabs.harvard.edu/link_gateway/2005MNRAS.363...29D/doi:10.1111/j.1365-2966.2005.09452.x).
