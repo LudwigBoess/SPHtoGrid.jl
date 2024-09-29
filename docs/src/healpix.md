@@ -67,7 +67,7 @@ end
 saveToFITS(allsky, allsky_filename)
 ```
 
-## Multi core mapping
+## Distributed mapping
 
 Usually these allsky maps are performed over whole boxes that may consist of multiple sub-snapshots.
 To allow for a parallel execution there's a helper function
