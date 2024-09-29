@@ -1,3 +1,7 @@
+# the job channels take their ID as a 32-bit integer
+const jobs = RemoteChannel(()->Channel{Int}(32))
+const results = RemoteChannel(()->Channel{Tuple}(160))
+
 """
     do_work(jobs, results, f)
 

@@ -273,8 +273,6 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
 end
 
 
-using Statistics
-using Printf
 
 """
     map_it(pos_in, hsml, mass, rho, bin_q, weights, RM=nothing;

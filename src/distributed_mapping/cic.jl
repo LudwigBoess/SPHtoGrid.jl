@@ -1,17 +1,10 @@
-# the job channels take their ID as a 32-bit integer
-const cic_jobs = RemoteChannel(()->Channel{Int}(32))
-
-# the maps are pointers with 80 bits each
-const cic_results = RemoteChannel(()->Channel{Matrix}(160))
-
-
 """
     distributed_allsky_map( allsky_filename::String, 
                             Nside::Integer, Nsubfiles::Integer, 
                             mapping_function::Function;
                             reduce_image::Bool=true)
 
-Dynamically dispatches workers to compute one allsky map per subfile, sum up the cic_results and save to a fits file.
+Dynamically dispatches workers to compute one allsky map per subfile, sum up the results and save to a fits file.
 
 # Arguments
 - `allsky_filename::String`: Name of the file under which the image should be saved
@@ -31,7 +24,7 @@ function distributed_cic_map(cic_filename::String, Nsubfiles::Integer,
     println("starting workers")
 
     for p ∈ workers() # start tasks on the workers to process requests in parallel
-        remote_do(do_work, p, cic_jobs, cic_results, mapping_function)
+        remote_do(do_work, p, jobs, results, mapping_function)
     end
     
     println("allocating image")
@@ -39,9 +32,10 @@ function distributed_cic_map(cic_filename::String, Nsubfiles::Integer,
     for i = 1:Ndim
         N_distr *= param.Npixels[i]
     end
-    sum_map = zeros(Float64, N_distr, Nimages+1)
+    sum_map = zeros(Float64, N_distr, Nimages)
+    sum_weights = zeros(Float64, N_distr)
 
-    # feed the cic_jobs channel with "Nsubfiles" cic_jobs
+    # feed the jobs channel with "Nsubfiles" jobs
     errormonitor(@async make_jobs(Nsubfiles)); 
     
     println("running")
@@ -51,16 +45,22 @@ function distributed_cic_map(cic_filename::String, Nsubfiles::Integer,
     @time while Nsubfiles > 0
 
         # collect result for subfile
-        map = take!(cic_results)
+        local_map, local_weight_map = take!(results)
 
-        # sum up contribution
-        @inbounds for i ∈ eachindex(allsky_map)
-            if !isnan(allsky_map[i]) && !isinf(allsky_map[i])
-                sum_map[i]  += map[i]
+        if !isnothing(local_map)
+            # sum up contribution
+            @inbounds for i ∈ eachindex(local_map)
+                if !isnan(local_map[i]) && !isinf(local_map[i])
+                    sum_map[i]  += local_map[i]
+                end
+
+                if !isnan(local_weight_map[i]) && !isinf(local_weight_map[i])
+                    sum_weights[i] += local_weight_map[i]
+                end
             end
         end
 
-        map = nothing 
+        local_map = local_weight_map = nothing 
         GC.gc()
 
         # count down
@@ -70,10 +70,12 @@ function distributed_cic_map(cic_filename::String, Nsubfiles::Integer,
     println("reducing image")
     flush(stdout); flush(stderr)
 
+    sum_map = [sum_map sum_weights]
+
     if Ndim == 2
-        image = reduce_image_2D(sum_map, Npixels, Npixels, reduce_image)
+        image = reduce_image_2D(sum_map, param.Npixels[1], param.Npixels[2], reduce_image)
     elseif Ndim == 3
-        image = reduce_image_3D(sum_map, Npixels, Npixels, Npixels)
+        image = reduce_image_3D(sum_map, param.Npixels[1], param.Npixels[2], param.Npixels[3])
     else
         error("Only 2D and 3D are possible")
     end
