@@ -33,6 +33,7 @@ include("shared/periodic_mapping.jl")
 include("shared/rotate_particles.jl")
 include("shared/rotate_parameters.jl")
 include("shared/io.jl")
+include("shared/vtk.jl")
 
 # multi-core functionality 
 include("parallel/domain_decomp.jl")
@@ -150,7 +151,8 @@ export mappingParameters,                         # parameters for SPH mapping
     # IO
     read_fits_image,
     read_allsky_fits_image,
-    write_fits_image
+    write_fits_image,
+    write_vtk_image
 
 
 end # module
