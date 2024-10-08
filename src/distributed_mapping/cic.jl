@@ -5,7 +5,8 @@
                         reduce_image::Bool=true,
                         Ndim::Integer=2,
                         snap::Integer=0,
-                        units::String="")
+                        units::String="",
+                        vtk::Bool=true)
 
 Dynamically dispatches workers to compute one cic map per subfile, sum up the results and save to a fits file.
 
@@ -27,7 +28,8 @@ function distributed_cic_map(cic_filename::String, Nsubfiles::Integer,
                              reduce_image::Bool=true,
                              Ndim::Integer=2,
                              snap::Integer=0,
-                             units::String="")
+                             units::String="",
+                             vtk::Bool=true)
 
     println("starting workers")
 
@@ -90,7 +92,14 @@ function distributed_cic_map(cic_filename::String, Nsubfiles::Integer,
 
     println("saving")
     flush(stdout); flush(stderr)
-    write_fits_image(cic_filename, image, param, snap = snap, units = units)
+
+    if Ndim == 3 && vtk
+        # save 3D grid in vtk file format
+        write_vtk_image(cic_filename, image, "map", param, snap = snap, units = units)
+    else
+        # defaults to fits file
+        write_fits_image(cic_filename, image, param, snap = snap, units = units)
+    end
 
     println("Image values")
     println("    Min:    $(minimum(image[.!isnan.(image)]))")
