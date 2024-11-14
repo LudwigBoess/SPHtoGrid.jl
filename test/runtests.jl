@@ -714,6 +714,28 @@ addprocs(2)
             end
         end
     end
+
+    @testset "Bug fixes" begin
+        @testset "Particle not overlapping with centers in 2D" begin
+            kernel = Cubic()
+            npix = 4
+            r = 10
+            param = mappingParameters(; x_lim=[-r, r], y_lim=[-r, r], z_lim=[-r, r], Npixels=npix)
+            pos = Float64[0.5; 0; 0;;]
+            hsms = Float64[1]
+            mass = Float64[1]
+            rho = ones(length(mass))
+            w = part_weight_physical(length(mass), param, 1)
+            map = sphMapping(pos, hsms, mass, rho, rho, w; param=param, kernel, reduce_image=false)
+
+            # check mass conservation
+            mtot = sum(mass)
+
+            Apix = (param.x_lim[2] - param.x_lim[1])^2 / npix^2
+            mmaptot = Apix * sum(map)
+            @test isapprox(mtot, mmaptot; rtol=1e-10)
+        end
+    end
 end
 
 
