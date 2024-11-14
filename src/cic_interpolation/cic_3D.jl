@@ -59,7 +59,10 @@ function calculate_weights( wk::Vector{Float64}, V::Vector{Float64},
         n_distr_pix = n_tot_pix
 
         # write full particle quantity into the pixel
-        wk[1:n_tot_pix] .= 1.0
+        @inbounds for i = iMin:iMax, j = jMin:jMax, k = kMin:kMax
+            idx = calculate_index(i, j, k, x_pixels, y_pixels)
+            wk[idx] = 1.0
+        end
         
         # the weight is normalized by the pixel area
         if !iszero(distr_volume)
