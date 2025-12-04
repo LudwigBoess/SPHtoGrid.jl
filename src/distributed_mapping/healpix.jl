@@ -81,6 +81,7 @@ function distributed_allsky_map(allsky_filename::String,
     println("    Max:    $(maximum(sum_allsky[.!isnan.(sum_allsky)]))")
     println("    Mean:   $(mean(sum_allsky[.!isnan.(sum_allsky)]))")
     println("    Median: $(median(sum_allsky[.!isnan.(sum_allsky)]))")
+    println("    Sum:    $(sum(sum_allsky[.!isnan.(sum_allsky)]))")
 
     flush(stdout); flush(stderr)
 end
