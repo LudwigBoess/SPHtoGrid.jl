@@ -75,6 +75,7 @@ include("distributed_mapping/cic.jl")
 
 # effect functions
 include("effects/constants.jl")
+include("effects/utils.jl")
 include("effects/density.jl")
 include("effects/sz_effect.jl")
 include("effects/x_ray.jl")
@@ -140,6 +141,8 @@ export mappingParameters,                         # parameters for SPH mapping
     gamma_luminosity_pions_PE04,
     gamma_flux_pions_PE04,
     mass_density,
+    get_smac_T_rho_filter,
+    apply_smac_T_rho_filter!,
     # image functions
     beam_in_kpc,
     convert_Pnu_map_to_mJy_beam,
