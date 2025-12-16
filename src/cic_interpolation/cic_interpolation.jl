@@ -230,6 +230,10 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
             if !reduce_image
                 image[:,2] .= 1.0
             end
+
+            if return_both_maps
+                return image
+            end
                                 
             return reduce_image_3D( image, 
                         param.Npixels[1], param.Npixels[2], param.Npixels[3] )
@@ -264,6 +268,10 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
 
             if !reduce_image 
                 image[:,2] .= 1.0
+            end
+
+            if return_both_maps
+                return image
             end
 
             return reduce_image_3D( image,
