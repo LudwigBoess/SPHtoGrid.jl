@@ -94,7 +94,8 @@ function x_ray_emissivity(T_keV::Vector{<:Real},
                         E0::Real=0.1, E1::Real=2.4, 
                         xH::Real=0.752,
                         cooling_function::Bool=false,
-                        z::Real=0.0)
+                        z::Real=0.0,
+                        smac_filter::Bool=false)
 
     # shift from observer to rest-frame
     E0 *= (1 + z)
@@ -123,6 +124,11 @@ function x_ray_emissivity(T_keV::Vector{<:Real},
             cutoff = exp(-E0 / T_keV[i]) - exp(-E1 / T_keV[i])
             q_x[i] = xray_prefactor * cutoff * rho_cgs[i]^2 * √(T_keV[i])
         end
+    end
+
+    # apply smac filter if requested
+    if smac_filter
+        apply_smac_T_rho_filter!(q_x, T_keV .* keV2K, rho_cgs)
     end
 
     return q_x
