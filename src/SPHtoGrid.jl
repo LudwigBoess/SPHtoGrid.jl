@@ -14,6 +14,7 @@ using Healpix
 using NearestNeighbors
 using Distances
 using Statistics
+using FFTW
 
 function output_time(t1, t2)
     return @sprintf("%0.3e", Float64((t2 - t1)) * 1.e-9)
@@ -94,6 +95,9 @@ include("image_functions/stokes_parameters.jl")
 include("image_functions/synchrotron_luminosity.jl")
 include("image_functions/surface_brightness.jl")
 
+# functions for powerspectrum computation
+include("powerspectrum/powerspectrum.jl")
+
 # precompile step 
 include("precompile.jl")
 
@@ -155,7 +159,9 @@ export mappingParameters,                         # parameters for SPH mapping
     read_fits_image,
     read_allsky_fits_image,
     write_fits_image,
-    write_vtk_image
+    write_vtk_image,
+    # power spectrum
+    power_spectrum
 
 
 end # module
