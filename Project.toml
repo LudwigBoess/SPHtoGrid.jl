@@ -36,7 +36,7 @@ WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 [compat]
 Cosmology = "1"
 DelimitedFiles = "1"
-DiffusiveShockAccelerationModels = "0.1"
+DiffusiveShockAccelerationModels = "0.2"
 Distances = "0.10"
 Documenter = "0.25, 0.26, 0.27, 1"
 DocumenterTools = "0.1"
