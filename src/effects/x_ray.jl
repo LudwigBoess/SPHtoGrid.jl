@@ -113,7 +113,7 @@ function x_ray_emissivity(T_keV::Vector{<:Real},
         xray_prefactor = 4C_j * gg * (1 + xH)^2 * (n2ne / (mol * m_p))^2
         
         """
-            Steinmetz & Bartelmann, based on Spizer 1968, gg = 1.2 (!?)
+            Steinmetz & Bartelmann, based on Spitzer 1968, gg = 1.2 (!?)
         Beside the fact, that it is not clear which value they used for the Gaunt factor
         it is the best formulation, as composition H/He (fr) and conversion from particle
         number to electron number (n2ne) is explicite formulated.
