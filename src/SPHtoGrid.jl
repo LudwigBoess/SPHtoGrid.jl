@@ -102,8 +102,9 @@ include("powerspectrum/powerspectrum.jl")
 include("precompile.jl")
 
 export mappingParameters,                         # parameters for SPH mapping
-    sphMapping,                                # main function for mapping 
+    sphMapping,                                # main function for mapping
     map_it,
+    mass_conservation_report,                  # grid-vs-particle coverage diagnostic
     healpix_map,
     distributed_cic_map,
     distributed_allsky_map,

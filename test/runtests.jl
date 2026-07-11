@@ -109,6 +109,24 @@ addprocs(2)
         rotate_3D!(x_out, 0.0, 0.0, 0.0)
         @test x_out ≈ x_rand
 
+        # inplace with a real (non-identity) rotation must mutate the
+        # passed array in place (Correctness issue C8)
+        x_buf = copy(x_rand)
+        ref   = rotate_3D(x_rand, 30.0, 45.0, 60.0)
+        ret   = rotate_3D!(x_buf, 30.0, 45.0, 60.0)
+        @test x_buf ≈ ref          # the caller's buffer was mutated
+        @test ret  === x_buf       # returns the same array
+
+        # project along axis 1 (yz-plane) must process all particles,
+        # not only the first 3 columns (Correctness issue C9)
+        x_in1 = Float64[1 2 3 4 5
+                        6 7 8 9 10
+                        11 12 13 14 15]
+        x_out1 = project_along_axis(x_in1, 1)
+        @test x_out1 ≈ [6.0 7.0 8.0 9.0 10.0
+                        11.0 12.0 13.0 14.0 15.0
+                        1.0 2.0 3.0 4.0 5.0]
+
         # project along axis
         x_in = [1.0 1.0
                 1.0 1.0
@@ -483,6 +501,17 @@ addprocs(2)
 
         @test_nowarn get_map_grid_2D(par)
         @test_nowarn get_map_grid_3D(par)
+
+        # C1: the z grid must be built from z_lim, not y_lim. Use a
+        # parameter set whose z range differs from the y range.
+        par_z = mappingParameters(x_lim = [-3.0, 3.0],
+            y_lim = [-3.0, 3.0],
+            z_lim = [10.0, 16.0],
+            Npixels = 8)
+        x_grid, y_grid, z_grid = get_map_grid_3D(par_z)
+        @test z_grid[1] ≈ par_z.z_lim[1] + 0.5 * par_z.pixelSideLength
+        @test z_grid[end] ≈ par_z.z_lim[2] - 0.5 * par_z.pixelSideLength
+        @test minimum(z_grid) > maximum(y_grid)   # z clearly offset from y
     end
 
     @testset "Weight functions" begin
@@ -734,6 +763,119 @@ addprocs(2)
             Apix = (param.x_lim[2] - param.x_lim[1])^2 / npix^2
             mmaptot = Apix * sum(map)
             @test isapprox(mtot, mmaptot; rtol=1e-10)
+        end
+
+        @testset "CIC mass conservation" begin
+
+            # Invariant: with reduce_image=false, rho=1 and
+            # w = part_weight_physical(N,param,1), the deposited mass
+            #   Vpix * sum(map)   (3D)   /   Apix * sum(map)   (2D)
+            # must equal sum(mass) for every kept particle, regardless of
+            # resolution or boundary (eq. (5) of the mass-conservation
+            # analysis). Verified to machine precision.
+
+            function cons2D(pos, hsms, mass, kernel, npix, r; boxsize=-1.0)
+                param = boxsize > 0 ?
+                    mappingParameters(; x_lim=[-r,r], y_lim=[-r,r], z_lim=[-r,r],
+                                        Npixels=npix, boxsize=boxsize) :
+                    mappingParameters(; x_lim=[-r,r], y_lim=[-r,r], z_lim=[-r,r],
+                                        Npixels=npix)
+                rho = ones(length(mass))
+                w   = part_weight_physical(length(mass), param, 1)
+                map = sphMapping(pos, hsms, mass, rho, rho, w; param,
+                                 dimensions=2, kernel, reduce_image=false,
+                                 show_progress=false)
+                Apix = (param.x_lim[2]-param.x_lim[1])^2 / npix^2
+                return sum(mass), Apix*sum(map), map
+            end
+
+            function cons3D(pos, hsms, mass, kernel, npix, r; boxsize=-1.0)
+                param = boxsize > 0 ?
+                    mappingParameters(; x_lim=[-r,r], y_lim=[-r,r], z_lim=[-r,r],
+                                        Npixels=npix, boxsize=boxsize) :
+                    mappingParameters(; x_lim=[-r,r], y_lim=[-r,r], z_lim=[-r,r],
+                                        Npixels=npix)
+                rho = ones(length(mass))
+                w   = part_weight_physical(length(mass), param, 1)
+                map = sphMapping(pos, hsms, mass, rho, rho, w; param,
+                                 dimensions=3, kernel, reduce_image=false,
+                                 show_progress=false)
+                Vpix = (param.x_lim[2]-param.x_lim[1])^3 / npix^3
+                return sum(mass), Vpix*sum(map), map
+            end
+
+            @testset "Interior, well-resolved" begin
+                for k in (Cubic(2), WendlandC4(2), WendlandC6(2))
+                    mtot, mmap, _ = cons2D(Float64[0.3;-0.2;0.0;;], [3.0], [3.0],
+                                           k, 50, 10.0)
+                    @test isapprox(mtot, mmap; rtol=1e-10)
+                end
+                for k in (Cubic(3), WendlandC4(3), WendlandC6(3))
+                    mtot, mmap, _ = cons3D(Float64[0.3;-0.2;0.1;;], [3.0], [3.0],
+                                           k, 30, 10.0)
+                    @test isapprox(mtot, mmap; rtol=1e-10)
+                end
+            end
+
+            @testset "Under-resolved (hsml << pixel)" begin
+                # particle on a pixel boundary, no pixel center in kernel
+                mtot, mmap, _ = cons3D(Float64[0.0;0.0;0.0;;], [0.05], [3.0],
+                                       Cubic(3), 10, 5.0)
+                @test isapprox(mtot, mmap; rtol=1e-10)
+                mtot, mmap, _ = cons2D(Float64[0.0;0.0;0.0;;], [0.05], [3.0],
+                                       Cubic(2), 10, 5.0)
+                @test isapprox(mtot, mmap; rtol=1e-10)
+            end
+
+            @testset "Edge straddler, non-periodic" begin
+                # center inside the grid, kernel reaches past the edge:
+                # the visible (renormalised) mass equals the full f_p
+                mtot, mmap, map = cons3D(Float64[4.7;0.0;0.0;;], [1.0], [3.0],
+                                         WendlandC4(3), 20, 5.0)
+                @test isapprox(mtot, mmap; rtol=1e-10)
+                @test all(isfinite, map)
+            end
+
+            @testset "Periodic straddler" begin
+                # full-box periodic map, particle within hsml of the edge:
+                # mass must be conserved (regression for C3 / B3, in
+                # particular the boxsize (not boxsize/2) wrap fix)
+                mtot, mmap, map = cons3D(Float64[4.7;0.0;0.0;;], [1.0], [3.0],
+                                         WendlandC4(3), 20, 5.0; boxsize=10.0)
+                @test isapprox(mtot, mmap; rtol=1e-10)
+                @test all(isfinite, map)
+            end
+
+            @testset "3D reduce divide path is finite (C6/B4)" begin
+                # signed quantity that sums to ~0 weight in some cells must
+                # not produce Inf/NaN after the reduce (divide by weight,
+                # not by value) — regression for the 3D reduce guard.
+                kernel = WendlandC4(3)
+                npix = 16
+                r = 5.0
+                param = mappingParameters(; x_lim=[-r,r], y_lim=[-r,r],
+                                            z_lim=[-r,r], Npixels=npix)
+                pos  = Float64[0.0 0.05; 0.0 -0.03; 0.0 0.02]
+                hsms = Float64[2.0, 2.0]
+                mass = Float64[1.0, 1.0]
+                rho  = ones(2)
+                bin  = Float64[1.0, -1.0]   # cancels -> ~0 weighted sum
+                cube = sphMapping(pos, hsms, mass, rho, bin, rho; param,
+                                  dimensions=3, kernel, reduce_image=true,
+                                  show_progress=false)
+                @test all(isfinite, cube)
+            end
+        end
+
+        @testset "part_weight_XrayBand realistic (C7)" begin
+            # cgs2eV must resolve and yield a sensible, monotonically
+            # increasing band fraction in (0, 1) for realistic temperatures.
+            w1 = part_weight_XrayBand([1.0e7], 5.0e4, 1.0e10)[1]
+            w2 = part_weight_XrayBand([1.0e8], 5.0e4, 1.0e10)[1]
+            @test isfinite(w1) && isfinite(w2)
+            @test 0.0 < w1 < 1.0
+            @test 0.0 < w2 < 1.0
+            @test w2 > w1
         end
     end
 end

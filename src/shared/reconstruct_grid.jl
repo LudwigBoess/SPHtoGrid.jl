@@ -39,7 +39,7 @@ function get_map_grid_3D(par::mappingParameters)
     end
 
     for i = 1:par.Npixels[3]
-        z_grid[i] = par.y_lim[1] + ( i - 0.5 ) * par.pixelSideLength
+        z_grid[i] = par.z_lim[1] + ( i - 0.5 ) * par.pixelSideLength
     end
 
     return x_grid, y_grid, z_grid

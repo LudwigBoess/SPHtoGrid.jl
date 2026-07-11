@@ -45,8 +45,8 @@ Unflattens an image array to a 3D array of pixels.
     @inbounds for i = 1:z_pixels, j = 1:y_pixels, k = 1:x_pixels
 
         im_plot[k,j,i] = image[m,1]
-        
-        if image[m,1] > 0.0
+
+        if image[m,2] > 0.0
             im_plot[k, j, i] /= image[m,2]
         end
         m += 1

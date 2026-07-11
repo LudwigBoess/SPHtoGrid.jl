@@ -85,6 +85,17 @@ function mappingParameters( T::DataType=Float64;
         center[3] = z_lim[1] + 0.5*z_size
     end
 
+    # NOTE: only square (in the x-y grid plane) maps are currently supported.
+    # `pixelSideLength` is derived from `max(x_size, y_size)` and `Npixels` is
+    # replicated for all axes, so requesting `x_size != y_size` silently
+    # produces a square grid covering the larger extent in both directions.
+    # Warn loudly instead of failing silently (see Correctness issue C2).
+    if !(x_size ≈ y_size)
+        @warn "Non-square maps are not supported: x_size=$x_size != " *
+              "y_size=$y_size. The map will be square, covering the larger " *
+              "extent in both x and y."
+    end
+
     # find the maximum extent of the map
     max_size = max(x_size, y_size)
 

@@ -163,3 +163,39 @@ function free_memory(x, hsml, m, rho, bin_q, weights)
     x = hsml = m = rho = bin_q = weights = nothing
     GC.gc()
 end
+
+"""
+    mass_conservation_report(image, M, Rho, Weights, len2pix; ndim=2)
+
+Logs how much of the mappable quantity landed on the grid, as a
+grid-vs-particle comparison. The CIC deposition sums the weight image to a
+closed form per particle:
+
+    Σ_pixels pix_weight = len2pix^(ndim+1) · Weights·M/Rho
+
+(`ndim=2` → `len2pix³` for a 2D map, `ndim=3` → `len2pix⁴` for a 3D cube), so
+the total of the weight image (`image[:, end]`) divided by that factor
+recovers `Σ Weights·M/Rho` over the particles actually deposited. For the
+default density weighting (`Weights == Rho`) that is the total mass.
+
+Because each kept particle is renormalised over its *in-grid* pixels, this
+quantity is conserved to machine precision for every particle overlapping ≥1
+in-grid pixel centre (edge tails are piled onto the near edge, not lost). A
+ratio < 1 therefore measures *coverage* loss — particles off-grid, filtered
+out, or too small to hit a pixel centre — and NOT interpolation/resolution
+error. Returns `(on_grid, expected)` in code-mass units.
+"""
+function mass_conservation_report(image::AbstractArray, M, Rho, Weights, len2pix; ndim::Integer=2)
+
+    on_grid  = sum(@view image[:, end]) / len2pix^(ndim+1)   # Σ Weights·M/Rho deposited
+    expected = sum(Weights .* M ./ Rho)                      # Σ Weights·M/Rho of inputs
+    ratio    = iszero(expected) ? 1.0 : on_grid / expected
+
+    @info "Mass conservation (grid vs. particles):"
+    @info "  On grid:   $(on_grid)"
+    @info "  Expected:  $(expected)"
+    @info "  Ratio:     $(ratio)"
+    @info "  Rel. loss: $(1.0 - ratio)  (coverage loss, not interpolation error)"
+
+    return on_grid, expected
+end

@@ -64,13 +64,17 @@ function calculate_weights( wk::Vector{Float64}, V::Vector{Float64},
             wk[idx] = 1.0
         end
         
-        # the weight is normalized by the pixel area
+        # the weight is normalized by the pixel volume
         if !iszero(distr_volume)
             weight_per_pix = n_distr_pix / distr_volume
         else
-            weight_per_pix = 1
+            # particle touches no in-grid pixel (clamped empty range);
+            # use 1.0 (not Int 1) for type stability. The caller guards
+            # against n_distr_pix == 0 so this particle is skipped and
+            # does not corrupt the cube with Inf/NaN.
+            weight_per_pix = 1.0
         end
-    else 
+    else
         weight_per_pix = n_distr_pix / distr_weight
     end
 
@@ -131,9 +135,6 @@ function cic_mapping_3D( Pos, HSML,
         P = Progress(N)
     end
 
-    grid_mass = 0.0
-    particle_mass = 0.0
-
     # loop over all particles
     @inbounds for p = 1:N
 
@@ -155,17 +156,28 @@ function cic_mapping_3D( Pos, HSML,
         kMin, kMax = pix_index_min_max( z, hsml, param.Npixels[3] )
         
         # calculate all relevant quantities
-        wk, V, N, weight_per_pix  = calculate_weights(wk, V, 
+        wk, V, n_distr_pix, weight_per_pix  = calculate_weights(wk, V,
                                                             iMin, iMax, jMin, jMax,
                                                             kMin, kMax,
-                                                            x, y, z, 
-                                                            hsml, hsml_inv, 
+                                                            x, y, z,
+                                                            hsml, hsml_inv,
                                                             kernel,
-                                                            param.Npixels[1], 
+                                                            param.Npixels[1],
                                                             param.Npixels[2])
 
+        # particle touches no in-grid pixel (e.g. clamped out at the edge or
+        # off-grid): skip it instead of dividing vol / 0 = Inf and writing
+        # NaNs into the cube. The off-grid fraction is lost by design for a
+        # sub-region map.
+        if iszero(n_distr_pix)
+            if show_progress
+                next!(P)
+            end
+            continue
+        end
+
         # normalisation factors for pixel contribution
-        kernel_norm = vol / N
+        kernel_norm = vol / n_distr_pix
         volume_norm = kernel_norm * weight_per_pix * los_weight * param.len2pix
 
         # loop over all contributing pixels
@@ -182,14 +194,7 @@ function cic_mapping_3D( Pos, HSML,
                 update_image!(image, idx, pix_weight, bin_q)
             end
 
-            # store mass computed from grid cells
-            grid_mass += Rho[p] * wk[idx] * V[idx] / param.len2pix^3
-            
         end # i, j, k
-
-
-        # store mass of contributing particle 
-        particle_mass += M[p]
 
         # update for ProgressMeter
         if show_progress
@@ -197,11 +202,9 @@ function cic_mapping_3D( Pos, HSML,
         end
     end # p
 
+    # report grid-vs-particle mass conservation (coverage diagnostic)
     if show_progress
-        @info "Mass conservation:"
-        @info "\tMass on grid:      $(grid_mass*1.e10) Msun"
-        @info "\tMass in particles: $(particle_mass*1.e10) Msun"
-        @info "\tRel. Error:        $(abs(particle_mass-grid_mass)/particle_mass)"
+        mass_conservation_report(image, M, Rho, Weights, param.len2pix; ndim=3)
     end
 
     return image

@@ -138,8 +138,8 @@ function splash_mapping_3D(Pos, HSML, Bin_Q;
                     param.Npixels[1],
                     param.Npixels[2])
         
-                image[idx] = wk[idx] * bin_q
-        
+                image[idx] += wk[idx] * bin_q
+
             end # i, j, k
         end # k_periodic
     

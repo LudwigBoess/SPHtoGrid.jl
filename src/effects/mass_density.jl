@@ -58,6 +58,9 @@ function mass_density(pos::Matrix{<:Real}, mass::Vector{<:Real};
     if verbose
         println("Running SPH density loop on $(nthreads()) threads")
         p = Progress(length(hsml))
+        # ProgressMeter's Progress is not guaranteed thread-safe across all
+        # versions, so guard the counter update with our own lock.
+        p_lock = ReentrantLock()
     end
 
     # parallel loop over all particles
@@ -87,9 +90,11 @@ function mass_density(pos::Matrix{<:Real}, mass::Vector{<:Real};
         
         # update progress
         if verbose
-            next!(p)
-            flush(stdout)
-            flush(stderr)
+            lock(p_lock) do
+                next!(p)
+                flush(stdout)
+                flush(stderr)
+            end
         end
     end
 

@@ -6,6 +6,7 @@
                 kernel::AbstractSPHKernel,
                 show_progress::Bool=true,
                 parallel::Bool=false,
+                threaded::Bool=false,
                 reduce_image::Bool=true,
                 return_both_maps::Bool=false,
                 filter_particles::Bool=true,
@@ -25,12 +26,15 @@ Maps the data in `Bin_Quant` to a grid. Parameters of mapping are supplied in
 - `param`: `mappingParameters` for this map
 - `kernel`: `AbstractSPHKernel` to be used for mapping
 - `show_progress`: Show progress bar
-- `parallel`: Run on multiple processors
+- `parallel`: Run on multiple processors (distributed, via `@spawnat`)
+- `threaded`: Run the 2D CIC particle loop on multiple threads (`Threads.nthreads()`), shared memory. Composes with `parallel`: each distributed worker then threads its own chunk (start the workers with multiple threads, e.g. `addprocs(n; exeflags="--threads=8")`; workers started single-threaded fall back to serial automatically). Ignored for the Faraday-rotation (`RM`)/`stokes` path, which is order-dependent and stays serial.
 - `reduce_image`: If weights need to be applied or not. Set to `false` for [`part_weight_physical`](@ref)
 - `return_both_maps`: Returns the full image array. To be used with parallel mapping of subfiles
 - `filter_particles`: Find the particles that are actually contained in the image
 - `dimensions`: Number of mapping dimensions (2 = to grid, 3 = to cube)
 - `calc_mean`: Calculates the mean value along the line of sight. If set to `false` the particle only contributes if its `Bin_Quant` is larger than 0
+
+When `show_progress=true` a grid-vs-particle mass-conservation check is also logged: the fraction of `Σ Weights·M/Rho` captured on the grid. This is a *coverage* diagnostic (particles lost off-grid / filtered / too small to hit a pixel centre), not an interpolation-error metric — see [`mass_conservation_report`](@ref).
 """
 function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real}, 
                     Rho::Array{<:Real}, Bin_Quant::Array{<:Real}, 
@@ -40,6 +44,7 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
                     kernel::AbstractSPHKernel,
                     show_progress::Bool=true,
                     parallel::Bool=false,
+                    threaded::Bool=false,
                     reduce_image::Bool=true,
                     return_both_maps::Bool=false,
                     dimensions::Int=2,
@@ -152,7 +157,8 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
             image = cic_mapping_2D(x, hsml, m, rho, bin_q, weights, _rm;
                                 param=par, kernel=kernel,
                                 show_progress=show_progress,
-                                calc_mean=calc_mean)
+                                calc_mean=calc_mean,
+                                threaded=threaded)
 
             if show_progress
                 t2 = time_ns()
@@ -193,10 +199,17 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
                                                         _bin_q, weights[batch[i]];
                                                         param=par, kernel=kernel,
                                                         show_progress=false,
-                                                        calc_mean=calc_mean)
+                                                        calc_mean=calc_mean,
+                                                        threaded=threaded)
             end
-            
+
             image = sum(fetch.(futures))
+
+            # global grid-vs-particle mass conservation over all workers'
+            # chunks (workers stay silent to avoid per-chunk logs)
+            if show_progress
+                mass_conservation_report(image, m, rho, weights, par.len2pix; ndim=2)
+            end
 
             if show_progress
                 t2 = time_ns()
@@ -259,6 +272,13 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
             # get and reduce results
             image = sum(fetch.(futures))
 
+            # global grid-vs-particle mass conservation over all workers'
+            # chunks (computed before the weight column may be overwritten
+            # below; workers stay silent to avoid per-chunk logs)
+            if show_progress
+                mass_conservation_report(image, m, rho, weights, par.len2pix; ndim=3)
+            end
+
             if show_progress
                 t2 = time_ns()
                 @info "  elapsed: $(output_time(t1,t2)) s"
@@ -266,7 +286,7 @@ function sphMapping(Pos::Array{<:Real}, HSML::Array{<:Real}, M::Array{<:Real},
 
             free_memory(x, hsml, m, rho, bin_q, weights)
 
-            if !reduce_image 
+            if !reduce_image
                 image[:,2] .= 1.0
             end
 
@@ -289,8 +309,9 @@ end
            snap::Integer=0, 
            units::AbstractString="", 
            image_prefix::String="dummy",
-           reduce_image::Bool=true, 
+           reduce_image::Bool=true,
            parallel=true,
+           threaded::Bool=false,
            calc_mean::Bool=true, show_progress::Bool=true,
            sort_z::Bool=false,
            stokes::Bool=false,
@@ -311,10 +332,13 @@ Small helper function to copy positions, map particles and save the fits file.
 - `image_prefix`: Name of the file to save, withou `.fits` file-ending
 - `reduce_image`: If weights need to be applied or not. Set to `false` for [`part_weight_physical`](@ref)
 - `parallel`: Run on multiple processors.
+- `threaded`: Run the 2D CIC particle loop on multiple threads (`Threads.nthreads()`), shared memory. Composes with `parallel`. Ignored for the Faraday-rotation (`RM`)/`stokes` path, which stays serial.
 - `calc_mean`: Calculates the mean value along the line of sight. If set to `false` the particle only contributes if its `bin_q` is larger than 0.
 - `show_progress`: Show progress bar
 - `sort_z`: Sort the particles according to their line-of-sight direction. Needed for polarisation mapping.
 - `stokes`: Set to `true` of you are mapping Stokes parameters to account for Faraday rotation of the polarisation angle.
+
+When `show_progress=true` a grid-vs-particle mass-conservation check is also logged (coverage diagnostic) - see [`mass_conservation_report`](@ref).
 - `projection`: Which plane the position should be rotated in. Can also be an Array of 3 Euler angles (in [°]) (not used yet!)
 """
 function map_it(pos_in, hsml, mass, rho, bin_q, weights, RM=nothing;
@@ -323,9 +347,10 @@ function map_it(pos_in, hsml, mass, rho, bin_q, weights, RM=nothing;
                 snap::Integer=0, 
                 units::AbstractString="", 
                 image_prefix::String="dummy",
-                reduce_image::Bool=true, 
+                reduce_image::Bool=true,
                 parallel=true,
-                calc_mean::Bool=true, 
+                threaded::Bool=false,
+                calc_mean::Bool=true,
                 show_progress::Bool=true,
                 sort_z::Bool=false,
                 stokes::Bool=false,
@@ -355,9 +380,10 @@ function map_it(pos_in, hsml, mass, rho, bin_q, weights, RM=nothing;
     # get cic map
     quantitiy_map = sphMapping( pos, hsml, mass, rho,
                                 bin_q, weights, RM,
-                                param=par; 
-                                show_progress, kernel, 
+                                param=par;
+                                show_progress, kernel,
                                 parallel,
+                                threaded,
                                 reduce_image,
                                 calc_mean,
                                 sort_z, stokes)

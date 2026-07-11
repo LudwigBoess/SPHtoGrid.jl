@@ -1,4 +1,4 @@
-function get_norm(pos::Vector{T}) where T
+function get_norm(pos::AbstractVector{T}) where T
 
     Δx = zero(T)
     
