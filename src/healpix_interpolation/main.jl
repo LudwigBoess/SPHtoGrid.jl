@@ -143,10 +143,14 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
     # approximate diameter of pixel (in radians)
     ang_pix = √( 4π / length(allsky_map) )
 
-    # storage array for kernel weights
-    wk = Vector{Float64}(undef, length(allsky_map))
-    # storage array for mapped area
-    A = Vector{Float64}(undef, length(allsky_map))
+    # scratch arrays for kernel weights and mapped area. These are indexed
+    # per contributing pixel (1:length(pixidx)), NOT by healpix pixel index,
+    # so they only need to hold one particle's disc. Start empty and let
+    # `calculate_weights` grow them on demand, instead of allocating the full
+    # map (which is ~100 MB per array at Nside=1024 while a single particle
+    # only ever touches a small disc of pixels).
+    wk = Vector{Float64}(undef, 0)
+    A = Vector{Float64}(undef, 0)
 
     # storage for grid and particle masses 
     grid_mass = 0.0
@@ -207,9 +211,19 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
             A, N, weight_per_pix,
             weights[ipart], bin_q[ipart])
 
-        # store mass on grid and in particles
-        grid_mass += rho[ipart] * sum(@view wk[1:length(pixidx)]) * sum(@view A[1:length(pixidx)]) *
-                    dz * (ang_pix * Δx)^2
+        # store mass on grid and in particles.
+        # `grid_mass` accumulates the mass actually deposited into the weight
+        # map: Σ_pix pix_weight × physical pixel area at the horizon (ang_pix·Δx)².
+        # Because the deposit is per-particle renormalized (weight_per_pix), this
+        # equals weights·m/ρ for fully-covered particles and drops to the
+        # deposited fraction when a particle lands on zero pixel area -- i.e. it
+        # is a *coverage* diagnostic (like the CIC mass_conservation_report),
+        # not a measure of the cylinder-on-sphere projection accuracy.
+        # NOTE: the previous `rho·sum(wk)·sum(A)·dz·(ang_pix·Δx)²` was a product
+        # of sums missing the deposition normalization, giving an error that
+        # scaled ~Nside⁶ instead of reflecting the (machine-zero) deposit error.
+        grid_mass += (area / N) * weight_per_pix * weights[ipart] * dz *
+                    sum(wk[i] * A[i] for i in 1:length(pixidx)) * (ang_pix * Δx)^2
         part_mass += m[ipart]
 
         # update the progress meter

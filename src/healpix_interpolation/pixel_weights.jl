@@ -94,6 +94,14 @@ function calculate_weights(wk::Vector{T}, A::Vector{T},
     # number of pixels to which the particle contributes
     Npixels = length(pixidx)
 
+    # grow the reused scratch buffers if this particle covers more pixels
+    # than any previous one (they are never shrunk, so this settles at the
+    # largest disc encountered)
+    if Npixels > length(wk)
+        resize!(wk, Npixels)
+        resize!(A, Npixels)
+    end
+
     # compute here once
     hsml_inv = 1 / _hsml
 
