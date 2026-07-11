@@ -433,9 +433,59 @@ addprocs(2)
         @test minimum(allsky_map) ≈ 5312.211023105265
         @test maximum(allsky_map) ≈ 7.478005891665593e7
 
-        # check sum of all pixels 
+        # check sum of all pixels
         @test sum(allsky_map[:]) ≈ 3.877477851438817e11
 
+    end
+
+    @testset "HealPix shell filtering" begin
+
+        # Directly exercise the particle filter/sort used by `healpix_map`.
+        # The default all-sky test above always keeps every particle
+        # (radius_limits = [0, Inf]), so it cannot catch bugs in the shell
+        # selection. Here we request a genuine radial shell.
+        #
+        # Six particles on the +x axis at radii 10,20,...,60. We tag each with
+        # bin_q = radius so we can identify which particles survive filtering.
+        N = 6
+        Pos = zeros(3, N)
+        for i in 1:N
+            Pos[1, i] = 10.0 * i
+        end
+        Hsml    = fill(1.0, N)
+        M       = fill(1.0, N)
+        Rho     = fill(1.0, N)
+        Bin_q   = [10.0 * i for i in 1:N]   # tag == radius
+        Weights = fill(1.0, N)
+        center  = [0.0, 0.0, 0.0]
+
+        # keep radii in [25, 55] -> particles at r = 30,40,50.
+        # filter_sort_particles returns them far->near, i.e. [50,40,30].
+        # The previous `sorted[sel]` indexing mixed index spaces and would
+        # return [40,30,20] here (dropping the in-shell r=50 particle and
+        # wrongly including the out-of-shell r=20 particle).
+        pos, hsml, m, rho, bin_q, weights =
+            SPHtoGrid.filter_sort_particles(copy(Pos), copy(Hsml), copy(M), copy(Rho),
+                                            copy(Bin_q), copy(Weights),
+                                            copy(center), [25.0, 55.0], true)
+
+        @test length(hsml) == 3
+        @test bin_q == [50.0, 40.0, 30.0]
+        @test vec(pos[1, :]) == [50.0, 40.0, 30.0]
+
+        # calc_mean = false additionally drops bin_q == 0 particles. The old
+        # `sel = sel[Bin_q[sel] .> 0.0]` threw a BoundsError whenever the shell
+        # cut removed any particle; the fixed element-wise mask must not.
+        Bin_q0 = copy(Bin_q)
+        Bin_q0[4] = 0.0   # zero out the r = 40 particle
+        pos2, hsml2, m2, rho2, bin_q2, weights2 =
+            SPHtoGrid.filter_sort_particles(copy(Pos), copy(Hsml), copy(M), copy(Rho),
+                                            Bin_q0, copy(Weights),
+                                            copy(center), [25.0, 55.0], false)
+
+        # in-shell AND bin_q > 0, far->near: r = 50, 30 (r = 40 was zeroed)
+        @test length(hsml2) == 2
+        @test bin_q2 == [50.0, 30.0]
     end
 
     @testset "FITS io" begin
