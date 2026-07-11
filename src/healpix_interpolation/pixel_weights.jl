@@ -13,12 +13,13 @@ end
 
 Compute the distance between particle vector and pixel center in radians.
 """
-function distance_to_pixel_center(r::T, pos::Vector{T}, pixel_center::Tuple{T,T,T}) where T<:Real
+function distance_to_pixel_center(r::T, pos::AbstractVector{T}, pixel_center::Tuple{T,T,T}) where T<:Real
     d = 0.0
     @inbounds for i = eachindex(pos)
         d += pos[i] * pixel_center[i]
     end
-    acos( min(d/r, 1.0) )
+    # clamp to [-1, 1] to guard against acos DomainErrors from rounding
+    acos( clamp(d/r, -1.0, 1.0) )
 end
 
 """
@@ -31,7 +32,7 @@ end
 
 Helper function to compute the weights for one pixel
 """
-function weight_per_index(_Δx::T, _pos::Vector{T}, _hsml::T, _hsml_inv::T,
+function weight_per_index(_Δx::T, _pos::AbstractVector{T}, _hsml::T, _hsml_inv::T,
                           _pixidx::Integer,
                           distr_area::T, distr_weight::T, 
                           n_tot_pix::Integer, n_distr_pix::Integer, 
@@ -84,8 +85,8 @@ end
 
 
 """
-function calculate_weights(wk::Vector{T}, A::Vector{T}, 
-                            _pos::Vector{T}, _hsml::T,
+function calculate_weights(wk::Vector{T}, A::Vector{T},
+                            _pos::AbstractVector{T}, _hsml::T,
                             _Δx::T, res::Resolution,
                             pixidx::Vector{Int64}, ang_pix::T,
                             kernel::AbstractSPHKernel) where T

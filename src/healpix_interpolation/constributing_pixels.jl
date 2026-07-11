@@ -4,7 +4,7 @@
 
 Computes the pixels the particle contributes to.
 """
-function contributing_pixels(pos::Vector{T}, radius::T, res::Resolution, allsky_map) where {T}
+function contributing_pixels(pos::AbstractVector{T}, radius::T, res::Resolution, allsky_map) where {T}
 
     # transform position vector to spherical coordinates 
     (theta, phi) = vec2ang(pos...)

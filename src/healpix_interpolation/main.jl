@@ -164,8 +164,12 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
             end
         end
 
+        # view into this particle's position (avoids allocating a column copy
+        # on every use below)
+        p = @view pos[:, ipart]
+
         # get distance to particle
-        Δx = get_norm(pos[:, ipart])
+        Δx = get_norm(p)
 
         # if the particle is closer than its smoothing length
         # we get too much noise in the map
@@ -174,15 +178,15 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
             continue
         #     proj_hsml = π
         # else
-        #     # projected hsml at particle distance in radians 
+        #     # projected hsml at particle distance in radians
         #     proj_hsml = asin(hsml[ipart] / Δx)
         end
 
-        # projected hsml at particle distance in radians 
+        # projected hsml at particle distance in radians
         proj_hsml = asin(hsml[ipart] / Δx)
 
         # find pixels to which particle contributes
-        pixidx = contributing_pixels(pos[:, ipart], proj_hsml, res, allsky_map)
+        pixidx = contributing_pixels(p, proj_hsml, res, allsky_map)
 
         # area of particle and length along line of sight
         area, dz = particle_area_and_depth(hsml[ipart], m[ipart], rho[ipart])
@@ -193,7 +197,7 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
         dz   /= (ang_pix * Δx)^2 
         
         # calculate kernel weights and mapped area
-        wk, A, N, weight_per_pix = calculate_weights(wk, A, pos[:, ipart], proj_hsml,
+        wk, A, N, weight_per_pix = calculate_weights(wk, A, p, proj_hsml,
             Δx, res, pixidx, ang_pix, kernel)
 
         # update the actual images
@@ -204,7 +208,7 @@ function healpix_map(Pos, Hsml, M, Rho, Bin_q, Weights;
             weights[ipart], bin_q[ipart])
 
         # store mass on grid and in particles
-        grid_mass += rho[ipart] * sum(wk[1:length(pixidx)]) * sum(A[1:length(pixidx)]) * 
+        grid_mass += rho[ipart] * sum(@view wk[1:length(pixidx)]) * sum(@view A[1:length(pixidx)]) *
                     dz * (ang_pix * Δx)^2
         part_mass += m[ipart]
 
