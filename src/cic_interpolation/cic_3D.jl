@@ -6,18 +6,20 @@
                                     x::Real, y::Real, z::Real, 
                                     hsml::Real, hsml_inv::Real,
                                     kernel::AbstractSPHKernel,
-                                    x_pixels::Integer, y_pixels::Integer )
-                                                
+                                    y_pixels::Integer, z_pixels::Integer )
+
 Calculates the kernel- and geometric weights of the pixels a particle contributes to.
+`y_pixels`/`z_pixels` are the pixel counts along the two inner-loop axes, i.e.
+the strides of the flattened 3D cube.
 """
 function calculate_weights( wk::Vector{Float64}, V::Vector{Float64},
-                            iMin::Integer, iMax::Integer, 
+                            iMin::Integer, iMax::Integer,
                             jMin::Integer, jMax::Integer,
                             kMin::Integer, kMax::Integer,
-                            x::T, y::T, z::T, 
+                            x::T, y::T, z::T,
                             hsml::T, hsml_inv::T,
                             kernel::AbstractSPHKernel,
-                            x_pixels::Integer, y_pixels::Integer ) where T
+                            y_pixels::Integer, z_pixels::Integer ) where T
 
     # storage variables for count operations
     n_distr_pix  = 0
@@ -35,7 +37,7 @@ function calculate_weights( wk::Vector{Float64}, V::Vector{Float64},
                 z_dist, dz = get_x_dx(z, hsml, k)
 
                 # current (flattened) index
-                idx = calculate_index(i, j, k, x_pixels, y_pixels)
+                idx = calculate_index(i, j, k, y_pixels, z_pixels)
 
                 # contributing volume
                 dxdydz = dx * dy * dz
@@ -60,7 +62,7 @@ function calculate_weights( wk::Vector{Float64}, V::Vector{Float64},
 
         # write full particle quantity into the pixel
         @inbounds for i = iMin:iMax, j = jMin:jMax, k = kMin:kMax
-            idx = calculate_index(i, j, k, x_pixels, y_pixels)
+            idx = calculate_index(i, j, k, y_pixels, z_pixels)
             wk[idx] = 1.0
         end
         
@@ -162,8 +164,8 @@ function cic_mapping_3D( Pos, HSML,
                                                             x, y, z,
                                                             hsml, hsml_inv,
                                                             kernel,
-                                                            param.Npixels[1],
-                                                            param.Npixels[2])
+                                                            param.Npixels[2],
+                                                            param.Npixels[3])
 
         # particle touches no in-grid pixel (e.g. clamped out at the edge or
         # off-grid): skip it instead of dividing vol / 0 = Inf and writing
@@ -183,9 +185,9 @@ function cic_mapping_3D( Pos, HSML,
         # loop over all contributing pixels
         @inbounds for i = iMin:iMax, j = jMin:jMax, k = kMin:kMax
 
-            idx = calculate_index( i, j, k, 
-                                    param.Npixels[1],
-                                    param.Npixels[2] )
+            idx = calculate_index( i, j, k,
+                                    param.Npixels[2],
+                                    param.Npixels[3] )
 
             # compute pixel weight 
             pix_weight = wk[idx] * V[idx] * volume_norm

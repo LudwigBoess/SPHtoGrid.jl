@@ -183,6 +183,157 @@ addprocs(2)
         end
     end
 
+    @testset "Non-square maps" begin
+
+        @testset "mappingParameters per-axis Npixels" begin
+            # non-square in the x/y plane; pixels stay square
+            par = mappingParameters(x_lim=[-4.0, 4.0],   # Lx = 8
+                                    y_lim=[-2.0, 2.0],   # Ly = 4
+                                    z_lim=[-1.0, 1.0],   # Lz = 2
+                                    pixelSideLength=0.1)
+            @test par.Npixels == [80, 40, 20]
+            @test par.pixelSideLength ≈ 0.1
+
+            # Npixels sets resolution along the largest in-plane extent
+            par2 = mappingParameters(x_lim=[-4.0, 4.0],  # Lx = 8 (largest)
+                                     y_lim=[-2.0, 2.0],  # Ly = 4
+                                     z_lim=[-2.0, 2.0],  # Lz = 4
+                                     Npixels=80)
+            @test par2.pixelSideLength ≈ 8.0 / 80
+            @test par2.Npixels == [80, 40, 40]
+
+            # square case unchanged
+            par3 = mappingParameters(center=[0.0, 0.0, 0.0],
+                                     x_size=6.0, y_size=6.0, z_size=6.0, Npixels=100)
+            @test par3.Npixels == [100, 100, 100]
+
+            # non-square must no longer warn
+            @test_nowarn mappingParameters(x_lim=[-4.0, 4.0], y_lim=[-2.0, 2.0],
+                                           z_lim=[-2.0, 2.0], Npixels=80)
+        end
+
+        @testset "Index bijection" begin
+            Nx, Ny = 5, 8
+            seen = falses(Nx * Ny)
+            for i = 0:Nx-1, j = 0:Ny-1
+                idx = SPHtoGrid.calculate_index(i, j, Ny)   # stride = Ny (inner axis)
+                @test 1 <= idx <= Nx * Ny
+                @test !seen[idx]
+                seen[idx] = true
+            end
+            @test all(seen)
+
+            Nx, Ny, Nz = 4, 5, 7
+            seen3 = falses(Nx * Ny * Nz)
+            for i = 0:Nx-1, j = 0:Ny-1, k = 0:Nz-1
+                idx = SPHtoGrid.calculate_index(i, j, k, Ny, Nz)  # strides = (Ny, Nz)
+                @test 1 <= idx <= Nx * Ny * Nz
+                @test !seen3[idx]
+                seen3[idx] = true
+            end
+            @test all(seen3)
+        end
+
+        # asymmetric particles used by the symmetry checks below
+        pos_ns  = [ 1.3 -2.1  0.4  2.9 -3.0
+                    0.7 -1.2  1.5 -0.3  0.9
+                    0.0  0.0  0.0  0.0  0.0 ]
+        hsml_ns = [0.6, 0.9, 0.4, 0.7, 0.5]
+        mass_ns = [1.0, 2.0, 0.5, 1.5, 0.8]
+        rho_ns  = ones(5)
+        binq_ns = [3.0, 1.0, 2.0, 4.0, 0.5]
+
+        @testset "2D transpose symmetry" begin
+            k = Cubic(2)
+
+            parA = mappingParameters(x_lim=[-4.0, 4.0], y_lim=[-2.0, 2.0], z_lim=[-4.0, 4.0],
+                                     pixelSideLength=0.1)
+            @test parA.Npixels[1] == 80 && parA.Npixels[2] == 40
+
+            imgA = sphMapping(pos_ns, hsml_ns, mass_ns, rho_ns, binq_ns, rho_ns;
+                              param=parA, kernel=k, show_progress=false,
+                              parallel=false, calc_mean=true)
+            @test size(imgA) == (80, 40, 1)
+            @test !any(isnan, imgA)
+
+            # swap x <-> y in both the geometry and the particle coordinates:
+            # the output must transpose exactly
+            posT = copy(pos_ns)
+            posT[1, :] .= pos_ns[2, :]
+            posT[2, :] .= pos_ns[1, :]
+            parB = mappingParameters(x_lim=[-2.0, 2.0], y_lim=[-4.0, 4.0], z_lim=[-4.0, 4.0],
+                                     pixelSideLength=0.1)
+            @test parB.Npixels[1] == 40 && parB.Npixels[2] == 80
+
+            imgB = sphMapping(posT, hsml_ns, mass_ns, rho_ns, binq_ns, rho_ns;
+                              param=parB, kernel=k, show_progress=false,
+                              parallel=false, calc_mean=true)
+            @test size(imgB) == (40, 80, 1)
+            @test imgB[:, :, 1] ≈ permutedims(imgA[:, :, 1], (2, 1))
+        end
+
+        @testset "2D threaded == serial" begin
+            k   = Cubic(2)
+            par = mappingParameters(x_lim=[-4.0, 4.0], y_lim=[-2.0, 2.0], z_lim=[-4.0, 4.0],
+                                    pixelSideLength=0.1)
+            s = sphMapping(pos_ns, hsml_ns, mass_ns, rho_ns, binq_ns, rho_ns; param=par,
+                           kernel=k, show_progress=false, parallel=false, threaded=false)
+            t = sphMapping(pos_ns, hsml_ns, mass_ns, rho_ns, binq_ns, rho_ns; param=par,
+                           kernel=k, show_progress=false, parallel=false, threaded=true)
+            @test s ≈ t
+        end
+
+        @testset "3D non-cube mass conservation" begin
+            k   = Cubic(3)
+            par = mappingParameters(x_lim=[-64.0, 64.0],   # Lx = 128
+                                    y_lim=[-32.0, 32.0],   # Ly = 64
+                                    z_lim=[-96.0, 96.0],   # Lz = 192
+                                    pixelSideLength=0.64)
+            @test par.Npixels == [200, 100, 300]
+
+            pos  = reshape([0.0101, -0.001, 0.001], 3, 1)
+            hsml = [5.0]
+            mass = [3.0]
+            rho  = [1.0]
+            w    = part_weight_physical(1, par, 1)
+
+            mp = sphMapping(pos, hsml, mass, rho, rho, w; param=par, kernel=k,
+                            dimensions=3, reduce_image=false, show_progress=false,
+                            parallel=false)
+            @test size(mp) == (200, 100, 300)
+
+            Vpix = par.pixelSideLength^3
+            @test sum(mass) ≈ Vpix * sum(mp)
+        end
+
+        @testset "3D transpose symmetry" begin
+            k = Cubic(3)
+            pos  = [ 2.0 -3.0
+                     1.0  0.5
+                    -1.0  2.0 ]
+            hsml = [2.0, 1.5]
+            mass = [1.0, 2.0]
+            rho  = ones(2)
+            binq = [1.0, 1.0]
+
+            parA = mappingParameters(x_lim=[-8.0, 8.0], y_lim=[-4.0, 4.0], z_lim=[-6.0, 6.0],
+                                     pixelSideLength=0.5)
+            parB = mappingParameters(x_lim=[-4.0, 4.0], y_lim=[-8.0, 8.0], z_lim=[-6.0, 6.0],
+                                     pixelSideLength=0.5)
+            posT = copy(pos)
+            posT[1, :] .= pos[2, :]
+            posT[2, :] .= pos[1, :]
+
+            A = sphMapping(pos,  hsml, mass, rho, binq, rho; param=parA, kernel=k,
+                           dimensions=3, show_progress=false, parallel=false)
+            B = sphMapping(posT, hsml, mass, rho, binq, rho; param=parB, kernel=k,
+                           dimensions=3, show_progress=false, parallel=false)
+            @test size(A) == (32, 16, 24)
+            @test size(B) == (16, 32, 24)
+            @test B ≈ permutedims(A, (2, 1, 3))
+        end
+    end
+
     @testset "SPH Mapping" begin
 
         @info "SPH Mapping tests take a while..."

@@ -11,9 +11,9 @@ function rotate_to_xz_plane(par::mappingParameters)
     ylim = copy(par.z_lim)
     zlim = copy(par.y_lim)
     
-    return mappingParameters(center=cen, 
+    return mappingParameters(center=cen,
                              x_lim=xlim, y_lim=ylim, z_lim=zlim,
-                             Npixels=maximum(par.Npixels), 
+                             pixelSideLength=par.pixelSideLength,
                              boxsize=par.boxsize)
 end
 
@@ -33,6 +33,6 @@ function rotate_to_yz_plane(par::mappingParameters)
     
     return mappingParameters(center=cen,
                              x_lim=xlim, y_lim=ylim, z_lim=zlim,
-                             Npixels=maximum(par.Npixels), 
+                             pixelSideLength=par.pixelSideLength,
                              boxsize=par.boxsize)
 end

@@ -4,16 +4,18 @@
                                     jMin::Integer, jMax::Integer,
                                     x::Real, y::Real, hsml::Real, hsml_inv::Real,
                                     kernel::AbstractSPHKernel,
-                                    x_pixels::Integer )
+                                    y_pixels::Integer )
 
 Calculates the kernel- and geometric weights of the pixels a particle contributes to.
+`y_pixels` is the number of pixels along the (inner-loop) y axis, i.e. the row
+stride of the flattened image.
 """
 @fastmath function calculate_weights( wk::Vector{Float64}, A::Vector{Float64},
-                                      iMin::Integer, iMax::Integer, 
+                                      iMin::Integer, iMax::Integer,
                                       jMin::Integer, jMax::Integer,
                                       x::Real, y::Real, hsml::Real, hsml_inv::Real,
                                       kernel::AbstractSPHKernel,
-                                      x_pixels::Integer )
+                                      y_pixels::Integer )
 
     # storage variables for count operations
     n_distr_pix  = 0
@@ -35,7 +37,7 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
             dxdy = dx * dy
 
             # index in flattened 2D array
-            idx = calculate_index(i, j, x_pixels)
+            idx = calculate_index(i, j, y_pixels)
 
             A[idx], wk[idx], 
             distr_area, distr_weight, 
@@ -54,7 +56,7 @@ Calculates the kernel- and geometric weights of the pixels a particle contribute
 
         # write full particle quantity into the pixel
         @inbounds for i = iMin:iMax, j = jMin:jMax
-            idx = calculate_index(i, j, x_pixels)
+            idx = calculate_index(i, j, y_pixels)
             wk[idx] = 1.0
         end
         
@@ -145,7 +147,7 @@ function _cic_map_particle!(image::Array{Float64}, wk::Vector{Float64}, A::Vecto
                                                   iMin, iMax, jMin, jMax,
                                                   x, y, hsml, hsml_inv,
                                                   kernel,
-                                                  param.Npixels[1])
+                                                  param.Npixels[2])
 
     # particle touches no in-grid pixel (e.g. clamped out at the edge or
     # off-grid): skip it instead of dividing area / 0 = Inf and writing
@@ -163,7 +165,7 @@ function _cic_map_particle!(image::Array{Float64}, wk::Vector{Float64}, A::Vecto
     @inbounds for i = iMin:iMax, j = jMin:jMax
 
         # get the current index in the image array
-        idx = calculate_index(i, j, param.Npixels[1])
+        idx = calculate_index(i, j, param.Npixels[2])
 
         # compute pixel weight
         pix_weight = wk[idx] * A[idx] * area_norm

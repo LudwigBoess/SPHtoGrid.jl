@@ -38,8 +38,14 @@ end
                        pixelSideLength::Float64 =  -1.0,
                        Npixels::Int64           =   0)
 
-Parameter object for sph to grid mapping. Define either `*_lim`, or `center` and `*_size`. 
+Parameter object for sph to grid mapping. Define either `*_lim`, or `center` and `*_size`.
 Resolution is defined by `pixelSideLength` or `Npixels`.
+
+Non-square maps are supported: pixels are always square in physical units (one
+`pixelSideLength` for all axes), so different extents in `x`, `y` and `z` simply
+result in different pixel counts per axis (`Npixels` becomes a per-axis vector).
+When `Npixels` is passed it sets the resolution along the largest in-plane
+(x/y) extent and the remaining axes are scaled to keep pixels square.
 """
 function mappingParameters( T::DataType=Float64;
                             x_lim::Vector{<:Real}   = [-1.0, -1.0],
@@ -85,35 +91,26 @@ function mappingParameters( T::DataType=Float64;
         center[3] = z_lim[1] + 0.5*z_size
     end
 
-    # NOTE: only square (in the x-y grid plane) maps are currently supported.
-    # `pixelSideLength` is derived from `max(x_size, y_size)` and `Npixels` is
-    # replicated for all axes, so requesting `x_size != y_size` silently
-    # produces a square grid covering the larger extent in both directions.
-    # Warn loudly instead of failing silently (see Correctness issue C2).
-    if !(x_size ≈ y_size)
-        @warn "Non-square maps are not supported: x_size=$x_size != " *
-              "y_size=$y_size. The map will be square, covering the larger " *
-              "extent in both x and y."
-    end
-
-    # find the maximum extent of the map
-    max_size = max(x_size, y_size)
-
-    if (pixelSideLength == -1.0) & (Npixels != 0)
-        pixelSideLength = max_size/Npixels
-    elseif (pixelSideLength != -1.0) & (Npixels == 0)
-        Npixels = floor(Int64, max_size/pixelSideLength)
-        # recalculate pixelSideLength to account for rounding
-        pixelSideLength = max_size/Npixels
-    else
+    # A single pixel side length is used for every axis, so pixels stay square
+    # in physical units even for non-square maps — each axis then just gets its
+    # own pixel count. When `Npixels` is given it sets the resolution along the
+    # largest in-plane (x/y) extent; the other axes are scaled to match.
+    if (pixelSideLength != -1.0) & (Npixels != 0)
+        error("Please specify pixelSideLength or number of pixels!")
+    elseif (pixelSideLength == -1.0) & (Npixels == 0)
         error("Please specify pixelSideLength or number of pixels!")
     end
 
-    # area of a pixel in code units
-    # pixelArea = pixelSideLength^2
+    max_size = max(x_size, y_size)
 
-    # number of pixels in each dimension
-    Npix = [ Npixels, Npixels, Npixels ]
+    if pixelSideLength == -1.0
+        pixelSideLength = max_size / Npixels
+    end
+
+    # number of pixels per axis from the uniform pixel size
+    Npix = [ max(1, round(Int64, x_size / pixelSideLength)),
+             max(1, round(Int64, y_size / pixelSideLength)),
+             max(1, round(Int64, z_size / pixelSideLength)) ]
 
     periodic = false 
 

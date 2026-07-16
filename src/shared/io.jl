@@ -129,11 +129,13 @@ function read_fits_image(filename::String, Nimage::Integer=1; verbose::Bool = fa
         @info "Read Header"
     end
 
-    # construct mappingParameters by now
+    # construct mappingParameters by now. Reconstruct from the pixel size (not
+    # the single NPIXELS value) so non-square maps recover the correct per-axis
+    # pixel counts from the stored limits.
     par = mappingParameters(x_lim = [header["XMIN"], header["XMAX"]],
         y_lim = [header["YMIN"], header["YMAX"]],
         z_lim = [header["ZMIN"], header["ZMAX"]],
-        Npixels = Int64(header["NPIXELS"]),
+        pixelSideLength = header["PIX_SIZE"],
         boxsize = header["BOXSIZE"]
     )
 

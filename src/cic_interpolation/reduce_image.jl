@@ -1,55 +1,56 @@
 
 """
     function reduce_image_2D( image::Array{<:Real},
-                              x_pixels::Int64, y_pixels::Int64)
+                              x_pixels::Int64, y_pixels::Int64,
+                              reduce_image::Bool )
 
-Unflattens an image array to a 2D array of pixels.
+Unflattens the deposited image into an `(x_pixels, y_pixels, N_images)` array.
+The flattened deposition uses `idx = ix*y_pixels + iy + 1` (x is the outer,
+y the inner axis), so the result is indexed `[ix, iy]` and works for
+non-square maps (`x_pixels != y_pixels`).
 """
 function reduce_image_2D( image::Matrix{<:Real},
                                   x_pixels::Int64, y_pixels::Int64,
                                   reduce_image::Bool)
 
+    N_images = size(image, 2) - 1
+    im_plot  = zeros(x_pixels, y_pixels, N_images)
 
-    im_plot = zeros(y_pixels, x_pixels, size(image,2)-1)
-    k = 1
-    @inbounds for i = 1:y_pixels, j = 1:x_pixels
-        for Nimage = 1:size(image, 2)-1
-            # assign image to 
-            im_plot[j, i, Nimage] = image[k, Nimage]
-            if reduce_image && (image[k,end] > 0.0)
-                im_plot[j, i, Nimage] /= image[k,end]
+    @inbounds for ix = 0:x_pixels-1, iy = 0:y_pixels-1
+        k = ix * y_pixels + iy + 1
+        for Nimage = 1:N_images
+            val = image[k, Nimage]
+            if reduce_image && (image[k, end] > 0.0)
+                val /= image[k, end]
             end
+            im_plot[ix+1, iy+1, Nimage] = val
         end
-        # count up pixels
-        k += 1
     end
-    # rotate to correct orientation
-    for Nimage = 1:size(image, 2)-1
-        im_plot[:, :, Nimage] = copy(transpose(im_plot[:, :, Nimage]))
-    end
+
     return im_plot
 end
 
 """
-    function reduce_image_3D( image::Array{<:Real}, w_image::Array{<:Real},
-                                            x_pixels::Int64, y_pixels::Int64, z_pixels::Int64)
+    function reduce_image_3D( image::Array{<:Real},
+                              x_pixels::Int64, y_pixels::Int64, z_pixels::Int64)
 
-Unflattens an image array to a 3D array of pixels.
+Unflattens the deposited cube into an `(x_pixels, y_pixels, z_pixels)` array.
+The flattened deposition uses `idx = ix*y_pixels*z_pixels + iy*z_pixels + iz + 1`,
+so the result is indexed `[ix, iy, iz]` and works for non-cubic maps.
 """
 @inline @fastmath function reduce_image_3D( image::Matrix{<:Real},
                                             x_pixels::Int64, y_pixels::Int64, z_pixels::Int64)
 
+    im_plot = zeros(x_pixels, y_pixels, z_pixels)
 
-    im_plot = zeros(z_pixels, y_pixels, x_pixels)
-    m = 1
-    @inbounds for i = 1:z_pixels, j = 1:y_pixels, k = 1:x_pixels
-
-        im_plot[k,j,i] = image[m,1]
-
-        if image[m,2] > 0.0
-            im_plot[k, j, i] /= image[m,2]
+    @inbounds for ix = 0:x_pixels-1, iy = 0:y_pixels-1, iz = 0:z_pixels-1
+        m   = ix * y_pixels * z_pixels + iy * z_pixels + iz + 1
+        val = image[m, 1]
+        if image[m, 2] > 0.0
+            val /= image[m, 2]
         end
-        m += 1
+        im_plot[ix+1, iy+1, iz+1] = val
     end
+
     return im_plot
 end
